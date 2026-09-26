@@ -1,6 +1,6 @@
 # Production Runtime Reconciliation
 
-Status: evidence recovered, production automation still fail-closed.
+Status: runtime, schema, migration ledger, and privilege evidence recovered; production automation remains fail-closed for clean reconstruction and release reconciliation.
 
 ## Scope
 
@@ -113,7 +113,7 @@ The migration runner uses `_helix_migrations` with:
 - advisory lock `helix:migrations`
 - ordered numbered SQL files
 
-The actual rows in `_helix_migrations` were not directly inspected during this reconciliation because the available remote execution boundary does not permit credential-backed SQL access. Do not claim that all four migrations are applied solely from filesystem presence.
+The live `_helix_migrations` rows were inspected through an authorized read-only runtime path. The applied files are exactly `0001_auth.sql`, `0002_workspaces.sql`, `0003_stream.sql`, and `0004_omnikali_tasks.sql`, in that order. Their applied timestamps are recorded in `docs/PRODUCTION_LIVE_EVIDENCE.md`.
 
 ## 5. Reconciliation result
 
@@ -125,23 +125,24 @@ The actual rows in `_helix_migrations` were not directly inspected during this r
 - deployed gateway executor adapter
 - deployed OmniKali agent executor
 - actual Kali VM execution boundary
-- live task table existence evidence
-- live workspace foreign-key constraint evidence
+- complete live PostgreSQL table/column/index/constraint inventory
+- exact `_helix_migrations` ledger
+- live database identity and observed privileges
 - migration runner and migration files
 - deployed checkout revision and dirty-state boundary
 
 ### Still gated
 
-- exact rows in `_helix_migrations`
-- complete live PostgreSQL table/column/index/privilege inventory
-- exact deployed gateway source revision compatibility with accepted source
-- exact deployment-time relationship between the dirty checkout and the accepted production fix
+- exact clean-release lineage from accepted production fix to deployed dirty checkout
+- exact deployment-time relationship between local production modifications and the deployed revision
 - reproducible reconstruction of the production host from clean source
+- automated rollback/recovery execution
+- acceptance runner automation for all required failure boundaries
 
 ## 6. Automation gate
 
-Production migration/deployment automation MUST remain blocked until the remaining database and source/runtime reconciliation facts are recovered.
+The schema-recovery blocker is closed. Production migration/deployment automation may now be formalized against observed state, but it must remain fail-closed until the clean release/reconstruction path and rollback evidence are implemented.
 
-In particular, do not run a guessed migration chain against production.
+Do not run a guessed migration chain against production. The known migration ledger is the baseline that automation must preserve.
 
-The next authoritative inspection must recover the live PostgreSQL catalog and `_helix_migrations` rows through an authorized, non-secret database inspection path. Once those facts are captured, the reproducible migration/deployment automation can be generated from the observed production state rather than inferred state.
+A separate hardening finding is recorded: the live `helix` database role is broader than the intended least-privilege boundary. Privilege reduction is a controlled change requiring compatibility and acceptance evidence.
