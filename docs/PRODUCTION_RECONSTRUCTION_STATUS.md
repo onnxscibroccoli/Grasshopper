@@ -27,10 +27,12 @@ The repository now has:
 - gateway/worker service-lifecycle contract;
 - reconstruction manifest;
 - exact recovered OmniKali agent bridge fingerprint;
-- byte-for-byte verification of the recovered agent bridge against the production host;
+- byte-for-byte verification of the recovered bridge against the production host;
 - production agent artifact credential scan;
 - explicit secret-reference deployment boundary;
-- formal agent bridge execution-guarantee hardening contract.
+- formal agent bridge execution-guarantee hardening contract;
+- canonical source copy of the recovered bridge;
+- machine-verifiable canonical-source fingerprint gate.
 
 Production mutation remains fail-closed.
 
@@ -44,25 +46,39 @@ The live production PostgreSQL schema and _helix_migrations ledger have been dir
 
 The accepted Helix revision's migration files have also been recovered as evidence copies under reference/production/helix-accepted/migrations/. Their clean-source content is not assumed to be byte-identical to the live deployed migration artifacts. The live SHA-256 evidence differs, so clean source/runtime lineage remains an explicit gate.
 
-## Agent bridge provenance result
+## Agent bridge source designation
 
-The production bridge is:
+The exact recovered bridge is now promoted to the Grasshopper canonical source path:
+
+src/production/omni-agent.mjs
+
+The canonical source is intentionally byte-identical to:
 
 reference/production/deployed/omni-agent.mjs
 
-Production SHA-256:
+and to the recovered production artifact:
+
+/opt/helix/production/agent/omni-agent.mjs
+
+Canonical and evidence SHA-256:
+
 ee0a9898e706752098ef2dcce87b18cf577ff37e8726de3fb41721490078c46d
 
-The artifact is now verified byte-for-byte against /opt/helix/production/agent/omni-agent.mjs on the production host.
+This designation formalizes source ownership without changing the production deployment or adding runtime behavior.
 
-Its source-authoring provenance is resolved through the production remote-session journal. It was authored directly on the production host on 2026-09-24, followed by service installation, nginx routing, health testing, and gateway integration.
+The bridge remains the proven QEMU execution primitive. Hardening must be layered around it rather than replaced with a different executor.
 
-Canonical Git provenance remains a separate designation decision. The recovered artifact is preserved as production evidence and must not be treated as permission for production mutation.
+## Secret boundary
+
+The source references AGENT_TOKEN only through runtime environment configuration.
+
+Deployment automation may carry OMNIKALI_AGENT_SECRET_ID or OMNIKALI_AGENT_SECRET_ARN as a reference. It must never carry AGENT_TOKEN or another secret payload.
+
+Production currently still uses the existing protected host environment configuration. Migration to secret-manager-backed injection remains a controlled production change requiring credential rotation and full acceptance.
 
 ## Remaining reconstruction gates
 
 - clean source/release lineage for the full deployed Helix stack;
-- infrastructure/IAM/service formalization;
 - deterministic clean-host reconstruction;
 - secret-manager-backed agent credential injection and controlled rotation;
 - readiness and acceptance automation;
