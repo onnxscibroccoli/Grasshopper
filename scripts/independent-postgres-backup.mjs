@@ -2,14 +2,12 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, stat, writeFile, rm } from "node:fs/promises";
 import { spawn } from "node:child_process";
-import { dirname, join, basename } from "node:path";
+import { join, basename } from "node:path";
 import { tmpdir } from "node:os";
 import { validateManifest } from "../lib/independent-backup-policy.mjs";
 
-const required = ["aws","pg_dump","sha256sum"];
 const command = process.argv[2] ?? "help";
 const env = process.env;
-
 function die(message) { console.error(`ERROR: ${message}`); process.exit(2); }
 function requireEnv(name) { if (!env[name]) die(`missing required environment variable ${name}`); return env[name]; }
 
@@ -40,39 +38,52 @@ async function create() {
   const sourceInstance = requireEnv("BACKUP_SOURCE_INSTANCE");
   const migrationRevision = requireEnv("BACKUP_MIGRATION_REVISION");
   const encryptionKeyId = requireEnv("BACKUP_ENCRYPTION_KEY_ID");
-  const destination = env.BACKUP_S3_URI;
-  if (!destination) die("BACKUP_S3_URI is required for durable offload");
+  const destination = requireEnv("BACKUP_S3_URI");
   await mkdir(outDir, { recursive: true, mode: 0o700 });
+
   const s = await secret();
-  const requiredSecret = ["host","username","password"];
-  for (const key of requiredSecret) if (!s[key]) die(`database secret missing ${key`);
-  const work = await mkdir(join(tmpdir(), `omnikali-backup-${Date.now()}`), { recursive: true, mode: 0o700 }).then(()=>join(tmpdir(), `omnikali-backup-${Date.now()}`));
-  // Re-resolve because the directory name is generated once below.
-  await rm(work, { recursive: true, force: true }).catch(()=>{});
+  for (const key of ["host", "username", "password"]) {
+    if (!s[key]) die(`database secret missing ${key}`);
+  }
+
   const workDir = join(tmpdir(), `omnikali-backup-${process.pid}-${Date.now()}`);
   await mkdir(workDir, { recursive: true, mode: 0o700 });
   const passFile = join(workDir, "pgpass");
   await writeFile(passFile, `${s.host}:${s.port ?? 5432}:${s.dbname ?? "*"}:${s.username}:${s.password}\n`, { mode: 0o600 });
+
   const raw = join(workDir, "database.dump");
   const compressed = join(workDir, "database.dump.zst");
-  const encrypted = join(outDir, `${sourceInstance}-${new Date().toISOString().replace(/[:.]/g,"-")}.dump.zst.age`);
+  const encrypted = join(outDir, `${sourceInstance}-${new Date().toISOString().replace(/[:.]/g, "-")}.dump.zst.age`);
+
   try {
     await run("pg_dump", ["--format=custom","--no-owner","--no-acl","--host",s.host,"--port",String(s.port ?? 5432),"--username",s.username,"--dbname",s.dbname ?? "postgres","--file",raw], {env:{PGPASSFILE:passFile}});
     await run("zstd", ["--ultra","-19","--rm",raw,"-o",compressed]);
     await run("age", ["-R", requireEnv("BACKUP_RECIPIENT_FILE"), "-o", encrypted, compressed]);
+
     const hash = createHash("sha256").update(await readFile(encrypted)).digest("hex");
     const size = (await stat(encrypted)).size;
-    const manifest = { backup_id: basename(encrypted), created_at: new Date().toISOString(), source_instance: sourceInstance, postgres_version: String(s.server_version ?? "unknown"), migration_revision: migrationRevision, artifact_sha256: hash, artifact_size: size, compression: "zstd", encryption_key_id: encryptionKeyId, restore_test_status: "not-tested" };
+    const manifest = {
+      backup_id: basename(encrypted),
+      created_at: new Date().toISOString(),
+      source_instance: sourceInstance,
+      postgres_version: String(s.server_version ?? "unknown"),
+      migration_revision: migrationRevision,
+      artifact_sha256: hash,
+      artifact_size: size,
+      compression: "zstd",
+      encryption_key_id: encryptionKeyId,
+      restore_test_status: "not-tested"
+    };
     validateManifest(manifest);
     const manifestPath = encrypted + ".json";
     await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n", { mode: 0o600 });
-    await run("aws", ["s3","cp",encrypted,destination], {stdio:"inherit"});
-    await run("aws", ["s3","cp",manifestPath,destination], {stdio:"inherit"});
+
+    await run("aws", ["s3","cp",encrypted,destination]);
+    await run("aws", ["s3","cp",manifestPath,destination]);
     console.log(JSON.stringify({status:"PASS",backup_id:manifest.backup_id,artifact_sha256:hash,artifact_size:size}));
   } finally {
-    await rm(workDir, { recursive:true, force:true }).catch(()=>{});
+    await rm(workDir, {recursive:true,force:true}).catch(()=>{});
   }
 }
-
 if (command === "create") await create();
 else die("usage: independent-postgres-backup.mjs create");
