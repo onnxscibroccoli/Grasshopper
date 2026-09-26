@@ -1,0 +1,21 @@
+[Unit]
+Description=OmniKali authenticated remote agent bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/omnikali
+EnvironmentFile=/etc/helix/agent-runtime.env
+ExecStart=/opt/omnikali/scripts/start-omni-agent-from-secret.sh
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/lib/helix
+
+[Install]
+WantedBy=multi-user.target
