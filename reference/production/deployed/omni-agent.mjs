@@ -39,9 +39,7 @@ function readBody(req) {
     });
     req.on("error", reject);
   });
-}
-
-function authorized(req) {
+}function authorized(req) {
   const h = req.headers.authorization || "";
   return h === `Bearer ${TOKEN}`;
 }
@@ -71,8 +69,7 @@ async function guestExec(command, cwd = "/root", timeout = 300) {
       "/usr/bin/virsh",
       ["-c", "qemu:///system", "qemu-agent-command", VM, statusPayload],
       { timeout: 15000, maxBuffer: 2 * 1024 * 1024 }
-    );
-    const status = JSON.parse(statusOut).return;
+    );    const status = JSON.parse(statusOut).return;
     if (status.exited) {
       return {
         exitCode: status.exitcode ?? null,
@@ -97,8 +94,7 @@ const server = createServer(async (req, res) => {
     const body = await readBody(req);
     const command = String(body.command || "");
     const cwd = String(body.cwd || "/root");
-    const timeout = Math.min(Math.max(Number(body.timeout || 300), 1), 900);
-    if (!command.trim()) return json(res, 400, { error: "command is required" });
+    const timeout = Math.min(Math.max(Number(body.timeout || 300), 1), 900);    if (!command.trim()) return json(res, 400, { error: "command is required" });
     if (!cwd.startsWith("/") || cwd.includes("\0"))
       return json(res, 400, { error: "invalid cwd" });
     const id = randomUUID();
