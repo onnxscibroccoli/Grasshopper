@@ -30,6 +30,10 @@ The authoritative application repository is identified as `onnxscibroccoli/helix
 
 Inspection of the current Helix default branch confirms that it contains PostgreSQL migration tooling and production gateway/hypervisor code, but its database abstraction still contains historical Neon/PGlite terminology. It therefore cannot be treated as the authoritative current production database binding without revision reconciliation.
 
-The current repository also does not provide enough evidence to safely reconstruct the accepted task/lease/idempotency schema. Production schema recovery remains an explicit gate.
+The live production PostgreSQL schema and `_helix_migrations` ledger have now been directly recovered. The numbered chain is applied in order through `0004_omnikali_tasks.sql`, and the live catalog matches the established task/workspace contract. The schema-recovery gate is closed.
 
-See `docs/AUTHORITATIVE_SOURCE_RECOVERY.md`.
+The remaining reconstruction gates are clean source/release reconciliation, infrastructure/IAM/service formalization, deterministic clean-host reconstruction, readiness and acceptance automation, rollback/recovery automation, and executor hardening.
+
+A live privilege hardening finding is also recorded: the `helix` database role is non-superuser but broader than the intended least-privilege boundary. This must be handled as a controlled compatibility-tested change, not an ad hoc production edit.
+
+See `docs/PRODUCTION_LIVE_EVIDENCE.md`, `docs/PRODUCTION_RUNTIME_RECONCILIATION.md`, and `docs/AUTHORITATIVE_SOURCE_RECOVERY.md`.
