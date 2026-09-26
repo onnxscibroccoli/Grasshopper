@@ -1,0 +1,6 @@
+{
+  "name": "local-reference",
+  "version": 1,
+  "execution": { "kind": "deterministic" },
+  "recovery": { "staleTaskAfterMs": 60000, "lockGraceMs": 5000 }
+}
