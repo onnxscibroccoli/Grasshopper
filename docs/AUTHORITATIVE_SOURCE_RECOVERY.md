@@ -51,6 +51,8 @@ Schema metadata, migration names, service identities, commit identifiers, and no
 
 Source repository identity is established.
 
-Production revision, service lifecycle values, and authoritative task/lease schema remain reconciliation inputs.
+The accepted production revision is identified as `38903b021cca75189a99e1ed88b508bae577f048`. The authoritative task/lease schema and task-control implementation have now been recovered from that revision and preserved in `docs/PRODUCTION_TASK_STATE_CONTRACT.md` and `reference/production/omnikali-task-schema.sql`.
+
+The complete production database schema, applied migration inventory, exact deployed executor implementation, service lifecycle definitions, and runtime configuration binding remain reconciliation inputs.
 
 No new production schema is invented by Grasshopper.
