@@ -14,6 +14,7 @@ It intentionally contains **references and contracts, not secrets or guessed inf
 - Task lifecycle: PENDING -> RUNNING -> COMPLETED | FAILED
 - Recovery: durable lease expiry and replacement-worker ownership
 - Runtime database configuration: authorized secret-manager-backed runtime configuration
+- Runtime agent credential: secret-manager-backed reference required for reproducible reconstruction
 - Runtime configuration protection: production environment file is protected and must not be committed
 
 ## Required deployment inputs
@@ -25,13 +26,22 @@ An authorized deployment environment must supply, outside source control:
 3. PostgreSQL instance/cluster identity and connection endpoint
 4. Database name and migration target
 5. Secret reference used by the gateway runtime
-6. IAM role identities and required policy attachments
-7. Gateway service lifecycle definition
-8. Worker service lifecycle definition
-9. Public gateway/readiness endpoint
-10. Authenticated acceptance mechanism
-11. Kali worker execution target
-12. Rollback and recovery authority
+6. Secret reference used by the agent bridge runtime
+7. IAM role identities and required policy attachments
+8. Gateway service lifecycle definition
+9. Worker service lifecycle definition
+10. Public gateway/readiness endpoint
+11. Authenticated acceptance mechanism
+12. Kali worker execution target
+13. Rollback and recovery authority
+
+## Secret boundary
+
+Secret references such as OMNIKALI_DATABASE_SECRET_ID and OMNIKALI_AGENT_SECRET_ID are valid deployment inputs.
+
+Secret payloads are never valid deployment inputs.
+
+In particular, AGENT_TOKEN, database passwords, browser cookies, session tokens, private keys, and credential-bearing URLs must not be supplied as deployment-input variables.
 
 ## Safety rules
 
