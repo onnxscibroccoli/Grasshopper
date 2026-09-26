@@ -33,7 +33,7 @@ export class DurableAgentExecutor {
       if (existing.status === "confirmed" || existing.status === "cancelled" || existing.status === "indeterminate") {
         return { ...existing, duplicate: true };
       }
-      if (existing.status === "dispatched") {
+      if (existing.status === "dispatching" || existing.status === "dispatched") {
         return {
           ...existing,
           duplicate: true,
@@ -70,7 +70,7 @@ export class DurableAgentExecutor {
       return {
         ...reservation,
         duplicate: true,
-        ...(reservation.status === "dispatching"
+        ...(reservation.status === "dispatching" || reservation.status === "dispatched"
           ? {
               result: {
                 code: null,
