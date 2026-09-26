@@ -58,12 +58,32 @@ export class DurableAgentExecutor {
       cancellation: { requested: false, acknowledged: false, acknowledgedAt: null }
     };
 
-    await this.store.update(s => {
+    const reservation = await this.store.update(s => {
       s.executions ||= {};
       const current = s.executions[operationKey];
-      if (current) return;
+      if (current) return current;
       s.executions[operationKey] = execution;
+      return execution;
     });
+
+    if (reservation.executionId !== execution.executionId) {
+      return {
+        ...reservation,
+        duplicate: true,
+        ...(reservation.status === "dispatching"
+          ? {
+              result: {
+                code: null,
+                signal: null,
+                stdout: "",
+                stderr: "",
+                completion: COMPLETION_STATES.INDETERMINATE,
+                interrupted: true
+              }
+            }
+          : {})
+      };
+    }
 
     try {
       const result = await this.adapter.start(task);
