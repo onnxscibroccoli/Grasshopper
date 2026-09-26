@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "status": "reconstruction-gate",
+  "source_of_truth": {
+    "repository": "onnxscibroccoli/helix",
+    "accepted_production_fix": "38903b021cca75189a99e1ed88b508bae577f048",
+    "deployed_checkout": "46ba4b71158a74db5ede97e300099370792ecff8",
+    "deployed_checkout_clean": false
+  },
+  "verified_topology": {
+    "gateway": "Helix gateway",
+    "persistence": "provider-neutral PostgreSQL",
+    "worker": "Helix worker",
+    "execution": "Kali",
+    "path": "authenticated client -> gateway -> PostgreSQL -> worker -> Kali"
+  },
+  "runtime_overlay": {
+    "gateway_unit": "/etc/systemd/system/helix-gateway.service",
+    "gateway_launcher": "/usr/local/sbin/helix-gateway-launcher",
+    "gateway_dropin": "/etc/systemd/system/helix-gateway.service.d/10-database-secret.conf",
+    "execution_service": "omni-agent.service",
+    "execution_bridge": "127.0.0.1:8093",
+    "database_secret": "external-reference-required"
+  },
+  "database": {
+    "engine": "postgresql",
+    "logical_name": "helix-control-plane",
+    "database_name": "helix",
+    "migration_ledger": [
+      "0001_auth.sql",
+      "0002_workspaces.sql",
+      "0003_stream.sql",
+      "0004_omnikali_tasks.sql"
+    ],
+    "migration_source_reference": "reference/production/helix-accepted/migrations",
+    "live_ledger_status": "verified"
+  },
+  "gates": {
+    "clean_release_lineage": "blocked",
+    "clean_host_reconstruction": "blocked",
+    "production_mutation": "blocked",
+    "rollback_recovery_evidence": "blocked",
+    "acceptance_automation": "incomplete",
+    "executor_hardening": "in_progress",
+    "least_privilege_hardening": "pending_controlled_reconstruction"
+  },
+  "safety": {
+    "secrets_in_source": false,
+    "credential_values_in_manifest": false,
+    "production_mutation_allowed": false,
+    "guessed_infrastructure_identifiers": false
+  }
+}
