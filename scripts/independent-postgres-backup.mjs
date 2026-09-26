@@ -39,6 +39,7 @@ async function create() {
   const migrationRevision = requireEnv("BACKUP_MIGRATION_REVISION");
   const encryptionKeyId = requireEnv("BACKUP_ENCRYPTION_KEY_ID");
   const destination = requireEnv("BACKUP_S3_URI");
+  if (!destination.startsWith("s3://")) die("BACKUP_S3_URI must be an s3:// URI");
   await mkdir(outDir, { recursive: true, mode: 0o700 });
 
   const s = await secret();
@@ -78,8 +79,9 @@ async function create() {
     const manifestPath = encrypted + ".json";
     await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n", { mode: 0o600 });
 
-    await run("aws", ["s3","cp",encrypted,destination]);
-    await run("aws", ["s3","cp",manifestPath,destination]);
+    const s3Prefix = `${destination.replace(/\/+$/, "")}/${sourceInstance}/`;
+    await run("aws", ["s3","cp",encrypted,`${s3Prefix}${basename(encrypted)}`]);
+    await run("aws", ["s3","cp",manifestPath,`${s3Prefix}${basename(manifestPath)}`]);
     console.log(JSON.stringify({status:"PASS",backup_id:manifest.backup_id,artifact_sha256:hash,artifact_size:size}));
   } finally {
     await rm(workDir, {recursive:true,force:true}).catch(()=>{});
