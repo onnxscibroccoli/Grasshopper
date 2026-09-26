@@ -17,6 +17,7 @@
     "validate:canonical-agent-executor": "node scripts/validate-canonical-agent-executor.mjs",
     "validate:rds-infrastructure": "node scripts/validate-rds-infrastructure.mjs",
     "validate:independent-backup-retention": "node scripts/check-backup-retention.mjs",
+    "validate:independent-backup-storage": "node scripts/validate-independent-backup-storage.mjs",
     "verify:independent-backup": "node scripts/verify-independent-backup.mjs",
     "test:agent-secret-launcher": "sh scripts/test-agent-secret-launcher.sh",
     "test:executor-contract": "node --test test/executor-contract.test.mjs",
