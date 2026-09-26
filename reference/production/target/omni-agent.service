@@ -6,9 +6,9 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/opt/omnikali
+WorkingDirectory=/opt/helix
 EnvironmentFile=/etc/helix/agent-runtime.env
-ExecStart=/opt/omnikali/scripts/start-omni-agent-from-secret.sh
+ExecStart=/opt/helix/scripts/start-omni-agent-from-secret.sh
 Restart=always
 RestartSec=2
 NoNewPrivileges=true
