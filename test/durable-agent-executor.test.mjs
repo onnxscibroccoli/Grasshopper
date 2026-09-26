@@ -119,3 +119,37 @@ test("live cancellation capability is required for cancellation acknowledgement"
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("duplicate while first dispatch is still in flight is not dispatched twice", async () => {
+  let starts = 0;
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  const { executor, dir } = await harness({
+    start() {
+      starts++;
+      return pending;
+    }
+  });
+
+  try {
+    const task = {
+      id: "task-6",
+      operationKey: "op-6",
+      commandDisposition: COMMAND_DISPOSITIONS.IDEMPOTENT_MUTATION,
+      command: "update"
+    };
+    const firstPromise = executor.start(task);
+    await new Promise(resolve => setTimeout(resolve, 10));
+    const duplicate = await executor.start({ ...task, id: "task-7" });
+
+    assert.equal(starts, 1);
+    assert.equal(duplicate.duplicate, true);
+    assert.equal(duplicate.result.completion, "indeterminate");
+
+    release({ code: 0, signal: null, stdout: "ok\n", stderr: "", completion: "confirmed" });
+    const first = await firstPromise;
+    assert.equal(first.status, "confirmed");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
