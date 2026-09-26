@@ -10,6 +10,7 @@
     "verify:reference": "sh ./scripts/verify-reference.sh",
     "validate:production-inputs": "node scripts/validate-production-inputs.mjs",
     "verify:production-readiness": "node scripts/verify-production-readiness.mjs",
-    "validate:service-lifecycle": "node scripts/validate-service-lifecycle.mjs"
+    "validate:service-lifecycle": "node scripts/validate-service-lifecycle.mjs",
+    "validate:production-baseline": "node scripts/validate-production-baseline.mjs"
   }
 }
