@@ -26,6 +26,8 @@ The local environment implements agent registration, resource declaration, durab
 - test/recovery.test.mjs — crash/restart recovery tests
 - environments/local.json — reference environment
 - scripts/bootstrap.sh — source-to-running-state bootstrap
+- docs/SERVICE_LIFECYCLE_CONTRACT.md — gateway/worker lifecycle boundary
+- scripts/validate-service-lifecycle.mjs — lifecycle manifest validator
 
 ## Reproduce
 
