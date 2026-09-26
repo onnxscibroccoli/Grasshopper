@@ -5,9 +5,9 @@ The production acceptance contract remains frozen. These are controlled hardenin
 ## 1. Database runtime privilege reduction
 
 Observed live state:
-- runtime role: `helix`
+- runtime role: helix
 - non-superuser
-- CREATE on `public`
+- CREATE on public
 - CREATEROLE
 - CREATEDB
 - broad table privileges
@@ -22,7 +22,40 @@ Required implementation:
 
 No direct production privilege change is authorized by this document.
 
-## 2. Backup and recovery hardening
+## 2. Agent bridge credential hardening
+
+Observed live state:
+- the production bridge is an exact recovered artifact;
+- its source-authoring event is resolved;
+- the original authoring path placed the bearer credential in the host runtime environment and exposed it in remote-tool journal metadata.
+
+Required implementation:
+1. preserve the exact bridge artifact and fingerprint;
+2. provision a secret-manager reference for the bridge credential;
+3. inject the credential at runtime without placing the secret payload in source or deployment inputs;
+4. rotate the existing bridge credential;
+5. validate local and authenticated remote bridge health;
+6. run normal execution and the complete recovery/failure acceptance suite;
+7. retain rollback evidence.
+
+The current artifact is evidence, not permission to mutate production. The bridge implementation itself must remain the execution primitive while credential handling is hardened.
+
+## 3. Executor semantics hardening
+
+The recovered bridge currently provides command execution, but not durable executor-side idempotency or cancellation fencing.
+
+Required implementation:
+1. retain durable operation identity in the control plane;
+2. classify operations by side-effect semantics;
+3. propagate operation identity to the executor where the command type supports it;
+4. acknowledge cancellation only at a defined executor boundary;
+5. keep interrupted external operations indeterminate until reconciled;
+6. prevent control-plane completion from implying stronger external guarantees than the executor provides;
+7. acceptance-test duplicate fencing, cancellation, interruption, and reconciliation.
+
+See docs/PRODUCTION_AGENT_BRIDGE_HARDENING.md.
+
+## 4. Backup and recovery hardening
 
 Observed live RDS state:
 - automated backup retention: 1 day
@@ -39,7 +72,7 @@ Required implementation:
 4. document restore/recovery procedure;
 5. prove that durable task ownership survives service/database recovery.
 
-## 3. Release reproducibility
+## 5. Release reproducibility
 
 The deployed Helix checkout is dirty. The observed migration artifacts match that checkout, but the checkout itself is not a release artifact.
 
