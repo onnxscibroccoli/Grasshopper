@@ -6,6 +6,9 @@ cd "$ROOT"
 
 ./scripts/bootstrap.sh >/dev/null
 npm test
+node scripts/validate-production-agent-artifact.mjs
+node scripts/validate-canonical-agent-source.mjs
+sh -n scripts/start-omni-agent-from-secret.sh
 node bin/omnikali.mjs status >/dev/null
 
 test -f .state/omnikali.json
