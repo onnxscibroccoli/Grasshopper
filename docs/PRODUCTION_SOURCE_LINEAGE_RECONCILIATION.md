@@ -18,6 +18,16 @@ GitHub comparison of the accepted production-fix revision against current Helix 
 
 The exact deployed checkout is not present as a Git commit in the repository's visible history, so the deployed dirty checkout must remain a separate runtime-evidence boundary until its complete lineage is recovered.
 
+## Executor lineage finding
+
+The accepted production-fix revision does not contain `production/gateway/state/agent-executor.mjs` or `production/agent/omni-agent.mjs`. GitHub code search of the authoritative Helix repository found no indexed source for those filenames or the observed `guest-exec` implementation.
+
+These artifacts therefore remain production-runtime evidence, not canonical source.
+
+The exact same rule applies to the production gateway launcher and systemd database-secret drop-in.
+
+See `docs/PRODUCTION_EXECUTOR_LINEAGE_GATE.md`.
+
 ## Migration reconciliation
 
 The accepted Helix revision contains the authoritative numbered migration chain:
