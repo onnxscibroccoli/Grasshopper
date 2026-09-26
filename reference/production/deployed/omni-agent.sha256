@@ -1,0 +1,13 @@
+# Recovered production OmniKali agent bridge fingerprint
+
+artifact: reference/production/deployed/omni-agent.mjs
+runtime_path: /opt/helix/production/agent/omni-agent.mjs
+sha256: ee0a9898e706752098ef2dcce87b18cf577ff37e8726de3fb41721490078c46d
+size_bytes: 4040
+owner: root:root
+mode: "0644"
+filesystem_birth_utc: 2026-09-24T22:18:36Z
+filesystem_mtime_utc: 2026-09-24T22:18:42Z
+source_authoring: production-host remote-session write_file operations
+canonical_source: not_yet_designated
+production_mutation_allowed_from_this_artifact: false
