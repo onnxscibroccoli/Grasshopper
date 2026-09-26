@@ -16,6 +16,7 @@
     "validate:canonical-agent-source": "node scripts/validate-canonical-agent-source.mjs",
     "validate:canonical-agent-executor": "node scripts/validate-canonical-agent-executor.mjs",
     "test:agent-secret-launcher": "sh scripts/test-agent-secret-launcher.sh",
-    "test:executor-contract": "node --test test/executor-contract.test.mjs"
+    "test:executor-contract": "node --test test/executor-contract.test.mjs",
+    "test:durable-executor": "node --test test/durable-agent-executor.test.mjs"
   }
 }
