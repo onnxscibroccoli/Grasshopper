@@ -17,4 +17,4 @@ export AGENT_TOKEN=$(
 )
 unset secret_json
 
-exec /usr/bin/node /opt/omnikali/src/production/omni-agent.mjs
+exec /usr/bin/node /opt/helix/src/production/omni-agent.mjs
