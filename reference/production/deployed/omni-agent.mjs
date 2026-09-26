@@ -2,14 +2,14 @@ import { createServer } from "node:http";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
+import { loadAgentBridgeToken } from "./agent-secret.mjs";
 
 const execFileAsync = promisify(execFile);
 const HOST = process.env.AGENT_HOST || "127.0.0.1";
 const PORT = Number(process.env.AGENT_PORT || 8093);
-const TOKEN = process.env.AGENT_TOKEN || "";
 const VM = process.env.AGENT_VM || "helix-omnikali";
 const MAX_BODY = 1024 * 1024;
-if (!TOKEN) throw new Error("AGENT_TOKEN is required");
+let tokenPromise = loadAgentBridgeToken();
 
 function json(res, code, body) {
   const data = JSON.stringify(body);
@@ -39,9 +39,10 @@ function readBody(req) {
     });
     req.on("error", reject);
   });
-}function authorized(req) {
+}async function authorized(req) {
   const h = req.headers.authorization || "";
-  return h === `Bearer ${TOKEN}`;
+  const token = await tokenPromise;
+  return h === `Bearer ${token}`;
 }
 
 async function guestExec(command, cwd = "/root", timeout = 300) {
@@ -90,7 +91,7 @@ const server = createServer(async (req, res) => {
       return json(res, 200, { ok: true, service: "omni-agent", vm: VM });
     if (req.method !== "POST" || url.pathname !== "/execute")
       return json(res, 404, { error: "not found" });
-    if (!authorized(req)) return json(res, 401, { error: "unauthorized" });
+    if (!(await authorized(req))) return json(res, 401, { error: "unauthorized" });
     const body = await readBody(req);
     const command = String(body.command || "");
     const cwd = String(body.cwd || "/root");
@@ -108,4 +109,5 @@ const server = createServer(async (req, res) => {
   }
 });
 
+tokenPromise.catch(error => { console.error("agent bridge secret unavailable:", error?.message || error); process.exitCode = 1; });
 server.listen(PORT, HOST, () => console.log(`[omni-agent] ${HOST}:${PORT} vm=${VM}`));
