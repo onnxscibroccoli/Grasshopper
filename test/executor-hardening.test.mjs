@@ -17,7 +17,7 @@ test("cancellation is acknowledged and produces a canceled result", async () => 
   const executor = new DeterministicExecutor();
   let result;
   const execution = await executor.start({ id: "task-hold", operationKey: "op-hold", command: "hold: external work" }, async r => { result = r; });
-  const cancellation = await executor.cancel(execution.executionId);
+  const cancellation = await executor.cancel(execution.executionId, async r => { result = r; });
   assert.equal(cancellation.acknowledged, true);
   assert.equal(result.canceled, true);
   assert.equal(result.signal, "SIGTERM");
