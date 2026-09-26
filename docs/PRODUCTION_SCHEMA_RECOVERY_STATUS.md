@@ -1,28 +1,36 @@
 # Production schema recovery status
 
-## Recovered source evidence
+Status: live schema and migration ledger recovered.
 
-From Helix revision `38903b021cca75189a99e1ed88b508bae577f048`:
+## Recovered production evidence
 
-- `workspaces`, `workspace_files`, and `workspace_events` are defined by `migrations/0002_workspaces.sql`.
-- `omnikali_tasks` and `omnikali_task_events` are defined by `production/gateway/state/schema.sql`.
-- The task schema references `workspaces(id)`.
+The live PostgreSQL control-plane database was inspected through an authorized runtime path without exposing credential values or modifying database state.
 
-These artifacts are preserved in `reference/production/`.
+The live `_helix_migrations` ledger contains, in order:
 
-## What is not yet established
+1. `0001_auth.sql`
+2. `0002_workspaces.sql`
+3. `0003_stream.sql`
+4. `0004_omnikali_tasks.sql`
 
-Source files do not prove that these exact migration files are the complete database state of the accepted production instance.
+The live public catalog contains the Better Auth tables, workspace tables, and OmniKali task/event tables. The task schema contains the established durable task identity, target, workspace, payload, idempotency key, state, owner, lease, heartbeat, attempts, result/error, timestamps, and event fields.
 
-Before migration automation is allowed to mutate production, it must recover, through an authorized non-secret inspection path:
+The live database confirms the task claim index, idempotency unique index, workspace index, task-event index, workspace foreign key, and task-event foreign key. Migration 0003 is confirmed by the `stream_ticket` and `vnc_port` columns on `workspaces`.
 
-1. applied migration identifiers and ordering;
-2. actual table, column, index, and constraint definitions;
-3. schema ownership and privileges relevant to the gateway runtime;
-4. whether the task tables were created by `schema.sql` outside the numbered application migration chain;
-5. compatibility of the recovered source schema with the deployed database;
-6. a rollback/recovery procedure that preserves durable task ownership.
+## Migration/source reconciliation
 
-## Safety rule
+The live migration files exactly match the files at deployed Helix checkout `46ba4b71158a74db5ede97e300099370792ecff8` by SHA-256. The deployed checkout is dirty and therefore remains runtime evidence, not a reproducible release artifact.
 
-Do not execute a guessed migration chain against production. Source artifacts are evidence until reconciled with the live database state.
+The accepted production fix remains Helix commit `38903b021cca75189a99e1ed88b508bae577f048`. The accepted commit is historical acceptance evidence and is not treated as proof of the later deployed checkout contents.
+
+## Privilege finding
+
+The live runtime role is non-superuser but has broader database authority than the intended least-privilege boundary, including CREATE on the public schema, CREATEROLE, CREATEDB, and broad table privileges on the control-plane tables.
+
+This is a hardening finding, not a justification for an immediate production privilege change. Any reduction must be compatibility-tested and followed by normal execution, recovery, migration, and acceptance evidence.
+
+## Gate status
+
+The previous schema-recovery blocker is closed. Reproducible deployment automation must preserve the observed migration ordering and durable state, define rollback/recovery behavior, and prove the clean-host reconstruction path.
+
+See `docs/PRODUCTION_LIVE_EVIDENCE.md`, `docs/PRODUCTION_STATE_AND_MIGRATION.md`, and `docs/AUTHORITATIVE_SOURCE_RECOVERY.md`.
