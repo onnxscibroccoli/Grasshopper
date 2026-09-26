@@ -15,6 +15,7 @@
     "validate:production-agent-artifact": "node scripts/validate-production-agent-artifact.mjs",
     "validate:canonical-agent-source": "node scripts/validate-canonical-agent-source.mjs",
     "validate:canonical-agent-executor": "node scripts/validate-canonical-agent-executor.mjs",
+    "validate:rds-infrastructure": "node scripts/validate-rds-infrastructure.mjs",
     "test:agent-secret-launcher": "sh scripts/test-agent-secret-launcher.sh",
     "test:executor-contract": "node --test test/executor-contract.test.mjs",
     "test:durable-executor": "node --test test/durable-agent-executor.test.mjs"

@@ -26,7 +26,11 @@ Provision or verify the existing boundary:
 - required Secrets Manager entries;
 - authenticated external gateway entry point.
 
+The repository now contains the reproducible AWS RDS PostgreSQL module at infra/aws/control-plane-db. It consumes the existing production VPC, private DB subnets, and application security groups rather than creating a replacement application topology.
+
 Do not substitute another database provider or change the gateway/database/worker topology.
+
+The RDS module defaults to the intended 14-day PITR retention target. The live instance remains at 1 day because AWS rejected the attempted increase under the current Free Tier restriction. The target is not considered achieved until an authorized infrastructure change succeeds and is verified.
 
 ### 3. Database initialization
 - resolve the database secret through the authorized runtime identity;
@@ -54,6 +58,8 @@ Readiness must establish:
 4. worker initialized;
 5. authenticated task submission reaches the control plane.
 
+The repository includes machine-verifiable static gates for the production baseline, service lifecycle, artifact provenance, and RDS infrastructure contract. Live readiness and acceptance remain deployment-time operations.
+
 ### 6. Acceptance
 Automate normal execution, worker interruption, stale lease reclamation, replacement-worker completion, duplicate-side-effect fencing, gateway restart, database connectivity failure, and simulated network interruption.
 
@@ -67,18 +73,17 @@ An interrupted external operation remains indeterminate unless executor-side evi
 
 ## Current artifact gaps
 
-Live production schema and migration-ledger recovery is complete. The observed baseline is recorded in `reference/production/observed-db-baseline.json` and `docs/PRODUCTION_LIVE_EVIDENCE.md`.
+Live production schema and migration-ledger recovery is complete. The observed baseline is recorded in reference/production/observed-db-baseline.json and docs/PRODUCTION_LIVE_EVIDENCE.md.
 
-The repository still needs:
-- infrastructure-as-code for deterministic AWS/network/database/compute reconstruction;
-- IAM policy definitions and least-privilege reconciliation;
-- secret reference/ownership/rotation contract;
-- a reproducible wrapper around the reconciled PostgreSQL migration runner;
-- service lifecycle definition tied to the clean release artifact;
-- machine-verifiable readiness checks;
-- automated acceptance runner;
-- rollback procedure;
-- recovery diagnostics and telemetry.
+Remaining reproducibility work is intentionally separated into code-complete reference artifacts and deployment-time authorization:
+
+- reconcile the actual production VPC, two or more private DB subnets across Availability Zones, and application security-group IDs through an authorized AWS identity;
+- perform Terraform format/validation/plan/apply from that authorized infrastructure identity;
+- complete the production IAM policy definition and reconciliation for every service boundary;
+- complete a deterministic production migration/readiness wrapper around the actual Helix release artifact;
+- complete the automated live acceptance runner for normal, recovery, duplicate-fencing, restart, database-failure, and network-interruption scenarios;
+- complete operational telemetry and recovery diagnostics;
+- retain rollback and recovery evidence for each production release.
 
 A manual deployment that works is not considered reproducibility.
 
