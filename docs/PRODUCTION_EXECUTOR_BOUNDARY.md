@@ -44,3 +44,18 @@ This runtime artifact does not itself implement durable operation idempotency, c
 The verified acceptance result `FIRST -> FIRST_COMPLETE -> DUPLICATE_BLOCKED` therefore remains control-plane evidence for the specific accepted test, not proof that arbitrary commands executed through this bridge have universal exactly-once semantics.
 
 Executor hardening must be layered on this recovered production boundary rather than replacing it with an unrelated reference executor.
+
+## Reference hardening layer
+
+The reference implementation adds `src/production/durable-agent-executor.mjs` above the recovered adapter boundary.
+
+Its contract is deliberately conservative:
+
+- operation identity is durably reserved before dispatch;
+- an existing terminal or indeterminate operation is never dispatched again;
+- an operation already recorded as dispatched is treated as requiring reconciliation;
+- executor connectivity failure after dispatch is persisted as `indeterminate`;
+- cancellation is reported as acknowledged only when the underlying executor exposes a real cancellation operation;
+- the recovered adapter is not modified to manufacture cancellation or idempotency guarantees it does not provide.
+
+This layer is reference hardening, not production acceptance. Production adoption requires an executor protocol that can carry durable operation identity and provide command-appropriate cancellation or reconciliation evidence.
