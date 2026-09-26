@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, stat, writeFile, rm } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { join, basename } from "node:path";
@@ -54,7 +54,8 @@ async function create() {
 
   const raw = join(workDir, "database.dump");
   const compressed = join(workDir, "database.dump.zst");
-  const encrypted = join(outDir, `${sourceInstance}-${new Date().toISOString().replace(/[:.]/g, "-")}.dump.zst.age`);
+  const backupId = `${sourceInstance}-${new Date().toISOString().replace(/[:.]/g, "-")}-${randomUUID()}.dump.zst.age`;
+  const encrypted = join(outDir, backupId);
 
   try {
     await run("pg_dump", ["--format=custom","--no-owner","--no-acl","--sslmode=require","--host",s.host,"--port",String(s.port ?? 5432),"--username",s.username,"--dbname",s.dbname ?? "postgres","--file",raw], {env:{PGPASSFILE:passFile}});
