@@ -6,10 +6,17 @@ Status: **reconciliation required before production reconstruction**.
 
 - Application repository: `onnxscibroccoli/helix`
 - Accepted production-fix revision: `38903b021cca75189a99e1ed88b508bae577f048`
+- Current Helix `main`: `a7cb8dc98b1cc668c1e481a845a48af004c4f510`
 - Observed deployed checkout: `46ba4b71158a74db5ede97e300099370792ecff8`
 - Deployed checkout state: dirty
 
 The accepted revision remains the source-of-truth reference for validated production behavior. The observed deployed checkout is runtime evidence, not a clean release artifact.
+
+## Git lineage finding
+
+GitHub comparison of the accepted production-fix revision against current Helix `main` reports `main` as 28 commits behind the accepted revision. Therefore current `main` is not a descendant of the accepted production-fix revision and cannot be used by itself as the clean reconstruction source for the accepted production state.
+
+The exact deployed checkout is not present as a Git commit in the repository's visible history, so the deployed dirty checkout must remain a separate runtime-evidence boundary until its complete lineage is recovered.
 
 ## Migration reconciliation
 
@@ -22,7 +29,7 @@ The accepted Helix revision contains the authoritative numbered migration chain:
 
 Those files were recovered into `reference/production/helix-accepted/migrations/` as evidence copies. They are not a replacement for the Helix source repository.
 
-The live production migration ledger contains the same four filenames in the same order. The live migration SHA-256 evidence in `reference/production/observed-db-baseline.json` differs from the clean accepted-source artifacts. This means the deployed migration artifacts are not proven byte-for-byte identical to the accepted revision.
+The live production migration ledger contains the same four filenames in the same order. The live migration SHA-256 evidence differs from the clean accepted-source artifacts. This means the deployed migration artifacts are not proven byte-for-byte identical to the accepted revision.
 
 That discrepancy is evidence of source/runtime drift and must be resolved before a clean production release is declared reproducible.
 
