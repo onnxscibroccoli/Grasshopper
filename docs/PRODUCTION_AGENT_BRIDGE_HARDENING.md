@@ -111,3 +111,25 @@ Implementing them in production changes a validated contract and therefore requi
 - full acceptance evidence covering normal execution, worker termination, stale lease reclaim, duplicate fencing, gateway restart, database failure, and network interruption.
 
 No production executor behavior is changed by this document.
+
+
+## Formal executor disposition boundary
+
+The reference implementation now models command disposition explicitly:
+
+- `read_only`
+- `idempotent_mutation`
+- `non_idempotent_mutation`
+- `interactive`
+
+Executor results must explicitly identify one of:
+
+- `confirmed`
+- `cancelled`
+- `indeterminate`
+
+This is a contract layer, not a claim that the recovered production bridge already enforces these semantics.
+
+A non-idempotent or interactive operation interrupted after dispatch must remain indeterminate until executor-side or external reconciliation establishes the outcome. A cancellation result cannot simultaneously be reported as confirmed completion.
+
+Production adoption requires wiring these fields through the recovered gateway/bridge boundary and adding command-type-specific acceptance evidence. The recovered QEMU execution primitive remains unchanged.
