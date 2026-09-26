@@ -8,7 +8,9 @@ cd "$ROOT"
 npm test
 node scripts/validate-production-agent-artifact.mjs
 node scripts/validate-canonical-agent-source.mjs
+node scripts/validate-canonical-agent-executor.mjs
 sh -n scripts/start-omni-agent-from-secret.sh
+node --check src/production/agent-executor.mjs
 node bin/omnikali.mjs status >/dev/null
 
 test -f .state/omnikali.json
