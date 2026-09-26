@@ -1,6 +1,12 @@
 # Grasshopper
 
-A clean, reproducible control-plane reference implementation. The existing OmniKali/Helix stack is evidence only; this repository defines the contract independently.
+A clean, reproducible OmniKali implementation project continuing from the verified production acceptance gate. The deployed production system is the source of truth; this repository formalizes, hardens, and reproduces that validated architecture.
+
+## Final implementation seed
+
+See [`IMPLEMENTATION_SEED.md`](./IMPLEMENTATION_SEED.md) for the canonical implementation constraints, verified production baseline, execution semantics, hardening priorities, security boundaries, acceptance coverage, and Definition of Done.
+
+The project begins with hardening, formalization, and reproducibility—not architectural discovery.
 
 ## North star
 
