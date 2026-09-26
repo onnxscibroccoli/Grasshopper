@@ -1,18 +1,14 @@
 import { id, now } from "../model.mjs";
 import { COMMAND_DISPOSITIONS, COMPLETION_STATES, commandDisposition } from "../executor-contract.mjs";
 
-function resultForFailure(error, disposition) {
-  const nonRetryable =
-    disposition === COMMAND_DISPOSITIONS.NON_IDEMPOTENT_MUTATION ||
-    disposition === COMMAND_DISPOSITIONS.INTERACTIVE;
-
+function resultForFailure(error) {
   return {
     code: null,
     signal: null,
     stdout: "",
     stderr: error?.message || "executor failure",
     interrupted: true,
-    completion: nonRetryable ? COMPLETION_STATES.INDETERMINATE : COMPLETION_STATES.INDETERMINATE
+    completion: COMPLETION_STATES.INDETERMINATE
   };
 }
 
@@ -58,19 +54,31 @@ export class DurableAgentExecutor {
       cancellation: { requested: false, acknowledged: false, acknowledgedAt: null }
     };
 
-    const reservation = await this.store.update(s => {
+    await this.store.update(s => {
       s.executions ||= {};
       const current = s.executions[operationKey];
-      if (current) return current;
+      if (current) return;
       s.executions[operationKey] = execution;
-      return execution;
     });
 
-    if (reservation.executionId !== execution.executionId) {
+    const reservation = (await this.store.load()).executions?.[operationKey];
+
+    if (!reservation || reservation.executionId !== execution.executionId) {
       return {
-        ...reservation,
+        ...(reservation || {
+          operationKey,
+          status: "indeterminate",
+          result: {
+            code: null,
+            signal: null,
+            stdout: "",
+            stderr: "operation reservation lost",
+            completion: COMPLETION_STATES.INDETERMINATE,
+            interrupted: true
+          }
+        }),
         duplicate: true,
-        ...(reservation.status === "dispatching" || reservation.status === "dispatched"
+        ...(reservation?.status === "dispatching" || reservation?.status === "dispatched"
           ? {
               result: {
                 code: null,
@@ -101,7 +109,7 @@ export class DurableAgentExecutor {
       await this.store.update(s => { s.executions[operationKey] = completed; });
       return completed;
     } catch (error) {
-      const result = resultForFailure(error, disposition);
+      const result = resultForFailure(error);
       const indeterminate = { ...execution, status: "indeterminate", result, finishedAt: now() };
       await this.store.update(s => { s.executions[operationKey] = indeterminate; });
       return indeterminate;

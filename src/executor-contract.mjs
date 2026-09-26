@@ -20,13 +20,14 @@ export function commandDisposition(task) {
 }
 
 export function assertCompletion(result, disposition) {
-  if (!result || !COMPLETION_STATES[result.completion]) {
+  if (!result || !Object.values(COMPLETION_STATES).includes(result.completion)) {
     throw new Error("executor completion state is required");
   }
 
   if (
     result.completion === COMPLETION_STATES.INDETERMINATE &&
-    disposition === COMMAND_DISPOSITIONS.READ_ONLY
+    disposition === COMMAND_DISPOSITIONS.READ_ONLY &&
+    !result.reconciliation
   ) {
     throw new Error("read-only execution cannot report indeterminate without reconciliation metadata");
   }
