@@ -10,6 +10,7 @@ node scripts/validate-production-agent-artifact.mjs
 node scripts/validate-canonical-agent-source.mjs
 node scripts/validate-canonical-agent-executor.mjs
 sh -n scripts/start-omni-agent-from-secret.sh
+sh scripts/test-agent-secret-launcher.sh
 node --check src/production/agent-executor.mjs
 node bin/omnikali.mjs status >/dev/null
 
