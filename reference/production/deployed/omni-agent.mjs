@@ -108,4 +108,4 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => console.log(`[omni-agent] ${HOST}:${PORT} vm=${VM}`));\n
+server.listen(PORT, HOST, () => console.log(`[omni-agent] ${HOST}:${PORT} vm=${VM}`));
