@@ -7,6 +7,6 @@
     "test": "node --test test/*.test.mjs",
     "start": "node bin/omnikali.mjs status",
     "bootstrap": "./scripts/bootstrap.sh",
-    "verify:reference": "./scripts/verify-reference.sh"
+    "verify:reference": "sh ./scripts/verify-reference.sh"
   }
 }
