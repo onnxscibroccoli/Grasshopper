@@ -8,6 +8,7 @@
     "start": "node bin/omnikali.mjs status",
     "bootstrap": "./scripts/bootstrap.sh",
     "verify:reference": "sh ./scripts/verify-reference.sh",
-    "validate:production-inputs": "node scripts/validate-production-inputs.mjs"
+    "validate:production-inputs": "node scripts/validate-production-inputs.mjs",
+    "verify:production-readiness": "node scripts/verify-production-readiness.mjs"
   }
 }
