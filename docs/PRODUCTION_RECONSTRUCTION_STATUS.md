@@ -68,6 +68,16 @@ This designation formalizes source ownership without changing the production dep
 
 The bridge remains the proven QEMU execution primitive. Hardening must be layered around it rather than replaced with a different executor.
 
+## Executor adapter source designation
+
+The recovered production executor adapter is now also promoted to the canonical source path:
+
+src/production/agent-executor.mjs
+
+It remains byte-identical to reference/production/deployed/agent-executor.mjs and preserves the validated adapter behavior. This adapter is a transport boundary, not executor-side exactly-once enforcement.
+
+The full control-plane and executor hardening contract remains command-type-specific.
+
 ## Secret boundary
 
 The source references AGENT_TOKEN only through runtime environment configuration.
