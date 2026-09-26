@@ -38,6 +38,10 @@ Before reducing privileges:
 
 No plaintext credentials, secret payloads, session cookies, or database passwords belong in the remediation artifacts.
 
+## Additional infrastructure observation
+
+The live RDS instance currently reports 1 day of automated backup retention. If the production recovery objective requires the previously intended longer retention/PITR window, this is an infrastructure hardening change that must be implemented and acceptance-tested rather than assumed from infrastructure code.
+
 ## Current disposition
 
 Open hardening item.
