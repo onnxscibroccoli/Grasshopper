@@ -1,0 +1,49 @@
+{
+  "captured_at": "2026-09-26T14:00:00Z",
+  "source": "live Helix production runtime",
+  "status": "observed-baseline",
+  "database": {
+    "engine": "postgresql",
+    "version": "18.3",
+    "logical_name": "helix-control-plane",
+    "database_name": "helix",
+    "multi_az": true,
+    "publicly_accessible": false,
+    "storage_encrypted": true,
+    "deletion_protection": true,
+    "iam_database_authentication": false,
+    "migration_ledger": [
+      {"filename": "0001_auth.sql", "applied_at": "2026-09-26T06:08:39.116Z"},
+      {"filename": "0002_workspaces.sql", "applied_at": "2026-09-26T06:08:39.138Z"},
+      {"filename": "0003_stream.sql", "applied_at": "2026-09-26T06:08:39.153Z"},
+      {"filename": "0004_omnikali_tasks.sql", "applied_at": "2026-09-26T06:08:39.159Z"}
+    ]
+  },
+  "deployed_checkout": {
+    "revision": "46ba4b71158a74db5ede97e300099370792ecff8",
+    "dirty": true,
+    "accepted_production_fix": "38903b021cca75189a99e1ed88b508bae577f048"
+  },
+  "migration_sha256": {
+    "0001_auth.sql": "f953cacc448c0c81ae4fe63e66b0e59569e840782ad279fdee201dff529363e9",
+    "0002_workspaces.sql": "eb343cfe1df2a8e66a619b2210d65f0e18963533180054ad72b261b98c12f1a2",
+    "0003_stream.sql": "90d2ef6df1283449ba52cbc327e76d7d834abb13afb7f3a2473ad15726755a03",
+    "0004_omnikali_tasks.sql": "6fb6375a598ce4cc31a6e19150b7bdd187b21a6289e167dc136ce28508d8f75e"
+  },
+  "task_contract": {
+    "states": ["PENDING", "RUNNING", "COMPLETED", "FAILED"],
+    "idempotency_unique": true,
+    "lease_claim_index": true,
+    "workspace_foreign_key": true,
+    "task_event_foreign_key": true,
+    "task_event_index": true
+  },
+  "security_finding": {
+    "runtime_role": "helix",
+    "superuser": false,
+    "public_schema_create": true,
+    "create_role": true,
+    "create_database": true,
+    "least_privilege_status": "requires-hardening"
+  }
+}
