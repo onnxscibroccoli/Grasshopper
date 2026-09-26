@@ -14,6 +14,7 @@
     "validate:production-baseline": "node scripts/validate-production-baseline.mjs",
     "validate:production-agent-artifact": "node scripts/validate-production-agent-artifact.mjs",
     "validate:canonical-agent-source": "node scripts/validate-canonical-agent-source.mjs",
-    "validate:canonical-agent-executor": "node scripts/validate-canonical-agent-executor.mjs"
+    "validate:canonical-agent-executor": "node scripts/validate-canonical-agent-executor.mjs",
+    "test:executor-contract": "node --test test/executor-contract.test.mjs"
   }
 }
