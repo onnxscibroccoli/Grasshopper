@@ -11,6 +11,7 @@
     "validate:production-inputs": "node scripts/validate-production-inputs.mjs",
     "verify:production-readiness": "node scripts/verify-production-readiness.mjs",
     "validate:service-lifecycle": "node scripts/validate-service-lifecycle.mjs",
-    "validate:production-baseline": "node scripts/validate-production-baseline.mjs"
+    "validate:production-baseline": "node scripts/validate-production-baseline.mjs",
+    "validate:production-agent-artifact": "node scripts/validate-production-agent-artifact.mjs"
   }
 }
