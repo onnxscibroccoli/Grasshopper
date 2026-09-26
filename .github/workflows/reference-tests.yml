@@ -19,3 +19,5 @@ jobs:
       - run: node --check scripts/independent-postgres-backup.mjs
       - run: node --check scripts/verify-independent-backup.mjs
       - run: node --check scripts/check-backup-retention.mjs
+      - run: node --check scripts/validate-independent-backup-storage.mjs
+      - run: node scripts/validate-independent-backup-storage.mjs
