@@ -1,5 +1,11 @@
 import { event, id, now } from "./model.mjs";
 
+function stateForResult(result) {
+  if (result.completion === "cancelled" || result.canceled) return "stopped";
+  if (result.completion === "indeterminate" || result.interrupted) return "orphaned";
+  return result.code === 0 ? "completed" : "failed";
+}
+
 export class ControlPlane {
   constructor(store, executor) { this.store=store; this.executor=executor; }
   async registerAgent(input) { return this.store.update(s=>{ const existing=Object.values(s.agents).find(a=>a.name===input.name); if(existing)return s; const agentId=input.id||id("agent"); s.agents[agentId]={id:agentId,name:input.name,environment:input.environment,state:"ready",createdAt:now()}; s.events.push(event("agent.registered",s.agents[agentId])); }); }
@@ -23,7 +29,7 @@ export class ControlPlane {
       const t=s.tasks[taskId]; if(!t)return;
       if(t.execution?.result)return;
       t.execution={...(t.execution||{}),result};
-      t.state=result.canceled?"stopped":result.code===0?"completed":"failed";
+      t.state=stateForResult(result);
       t.finishedAt=now();
       s.events.push(event("task.finished",{taskId,state:t.state,result}));
     }));
@@ -32,7 +38,7 @@ export class ControlPlane {
       const t=s.tasks[taskId];
       t.execution={...(t.execution||{}),...execution};
       if(execution.result&&!t.finishedAt){
-        t.state=execution.result.canceled?"stopped":execution.result.code===0?"completed":"failed";
+        t.state=stateForResult(execution.result);
         t.finishedAt=now();
       }
       return t;
@@ -47,7 +53,7 @@ export class ControlPlane {
     return this.executor.cancel(task.execution.executionId,async result=>this.store.update(s=>{
       const t=s.tasks[taskId]; if(!t)return;
       t.execution={...(t.execution||{}),result,cancellation:{requested:true,acknowledged:true,acknowledgedAt:now()}};
-      t.state="stopped";
+      t.state=stateForResult(result);
       t.finishedAt=now();
       s.events.push(event("task.cancelled",{taskId,result}));
     }));

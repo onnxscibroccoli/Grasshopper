@@ -27,8 +27,10 @@ export class DeterministicExecutor {
     }
 
     const result = task.command.startsWith("fail:")
-      ? { code: 1, signal: null, stdout: "", stderr: task.command.slice(5), canceled: false }
-      : { code: 0, signal: null, stdout: task.command.replace(/^ok:/, "").trim() + "\n", stderr: "", canceled: false };
+      ? { code: 1, signal: null, stdout: "", stderr: task.command.slice(5), canceled: false, completion: "confirmed" }
+      : task.command.startsWith("interrupt:")
+        ? { code: null, signal: "SIGKILL", stdout: "", stderr: "", canceled: false, interrupted: true, completion: "indeterminate" }
+        : { code: 0, signal: null, stdout: task.command.replace(/^ok:/, "").trim() + "\n", stderr: "", canceled: false, completion: "confirmed" };
 
     execution.result = result;
     execution.finishedAt = now();
@@ -43,7 +45,7 @@ export class DeterministicExecutor {
     execution.cancellation.requested = true;
     execution.cancellation.acknowledged = true;
     execution.cancellation.acknowledgedAt = now();
-    execution.result = { code: null, signal: "SIGTERM", stdout: "", stderr: "", canceled: true };
+    execution.result = { code: null, signal: "SIGTERM", stdout: "", stderr: "", canceled: true, completion: "cancelled" };
     execution.finishedAt = now();
     if (onExit) await onExit(execution.result);
     return { acknowledged: true, reason: "cancelled" };
