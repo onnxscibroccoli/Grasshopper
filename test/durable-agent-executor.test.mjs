@@ -107,8 +107,11 @@ test("live cancellation capability is required for cancellation acknowledgement"
     });
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    const state = await executor.cancel("missing-execution");
-    assert.equal(state.acknowledged, false);
+    const state = await executor.store.load();
+    const executionId = state.executions["op-5"].executionId;
+    const cancellation = await executor.cancel(executionId);
+    assert.equal(cancellation.acknowledged, false);
+    assert.equal(cancellation.reason, "executor_cancellation_unsupported");
 
     release({ code: 0, signal: null, stdout: "", stderr: "", completion: "confirmed" });
     await startPromise;
