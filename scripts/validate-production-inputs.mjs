@@ -1,5 +1,3 @@
-import fs from "node:fs";
-
 const required = [
   "OMNIKALI_AWS_REGION",
   "OMNIKALI_VPC_ID",
