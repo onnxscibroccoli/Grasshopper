@@ -1,6 +1,6 @@
 # Production agent bridge recovery findings
 
-Status: **source-authoring provenance resolved; canonical source import remains gated**.
+Status: **source-authoring provenance resolved; exact artifact reconciliation resolved; canonical source designation remains gated**.
 
 ## Exact authoring event
 
@@ -40,6 +40,27 @@ The source implements loopback HTTP, bearer authentication, bounded request size
 
 It does not implement durable operation identity, durable cancellation, cancellation acknowledgement, executor-side idempotency, or durable execution receipts.
 
+## Exact artifact reconciliation
+
+Grasshopper preserves the recovered bridge at:
+
+`reference/production/deployed/omni-agent.mjs`
+
+The committed artifact was verified byte-for-byte against the live production file:
+
+`/opt/helix/production/agent/omni-agent.mjs`
+
+Verification result:
+
+- SHA-256 matches exactly;
+- size matches exactly at 4040 bytes;
+- byte comparison returned exact equality;
+- the production-artifact validator passed its credential scan and execution-boundary checks.
+
+The fingerprint is recorded in:
+
+`reference/production/deployed/omni-agent.sha256`
+
 ## Companion artifacts
 
 The same authoring sequence created:
@@ -58,7 +79,11 @@ This conflicts with the current Grasshopper security invariant that production c
 
 The credential value is intentionally omitted from this record.
 
-Correct remediation is controlled credential rotation and secret-manager-backed runtime injection, followed by the complete acceptance suite. No production credential mutation was performed during this investigation.
+The reproducible deployment contract now requires an agent secret-manager reference rather than an agent-token payload.
+
+The live instance currently has no discoverable agent secret reference available through its existing AWS secret listing path, so no production credential mutation has been attempted.
+
+Correct remediation remains controlled credential rotation and secret-manager-backed runtime injection, followed by the complete acceptance suite.
 
 ## Historical relationship
 
@@ -74,12 +99,13 @@ Therefore:
 
 - executor provenance: Git-resolved
 - agent bridge source-authoring provenance: runtime-session-resolved
-- agent bridge canonical source provenance: controlled import still required
+- agent bridge exact artifact: byte-resolved
+- agent bridge canonical source designation: controlled import still required
 
 ## Reconstruction consequence
 
 The bridge should now be treated as a recovered production-local implementation, not an unexplained artifact.
 
-The next implementation step is to preserve the exact source and hash in a clearly marked evidence boundary, create a controlled canonical-source decision, and harden it without changing the validated production execution path.
+The exact source is preserved and fingerprinted. The next implementation gate is to designate the canonical source location and reproduce it from clean automation, then apply executor hardening without replacing the validated QEMU execution boundary.
 
 No production mutation was performed during this investigation.
