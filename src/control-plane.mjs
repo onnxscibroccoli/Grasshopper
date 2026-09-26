@@ -34,7 +34,7 @@ export class ControlPlane {
       s.events.push(event("task.finished",{taskId,state:t.state,result}));
     }));
 
-    return this.store.update(s=>{
+    const saved=await this.store.update(s=>{
       const t=s.tasks[taskId];
       t.execution={...(t.execution||{}),...execution};
       if(execution.result&&!t.finishedAt){
@@ -43,6 +43,7 @@ export class ControlPlane {
       }
       return t;
     });
+    return saved.tasks[taskId];
   }
 
   async cancelTask(taskId) {
