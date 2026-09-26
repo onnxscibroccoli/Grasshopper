@@ -1,0 +1,25 @@
+# Authoritative source snapshot from onnxscibroccoli/helix
+# revision 38903b021cca75189a99e1ed88b508bae577f048
+# This is source evidence, not proof that this exact unit is the deployed unit.
+
+[Unit]
+Description=Helix authenticated OIDC desktop gateway
+After=network-online.target helix-libvirt-hypervisor.service
+Wants=network-online.target
+Requires=helix-libvirt-hypervisor.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/helix
+EnvironmentFile=/etc/helix/gateway.env
+ExecStart=/bin/sh /opt/helix/production/gateway/start-helix-gateway.sh
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/helix
+
+[Install]
+WantedBy=multi-user.target
