@@ -85,7 +85,7 @@ The acceptance record must contain no passwords, database URLs, browser cookies,
 
 Daily execution is the minimum practical schedule for a 14-day recovery-point requirement. Keep at least 14 distinct recovery points.
 
-The S3 prefix should use an explicit lifecycle policy consistent with the required retention period. The validator is an additional guard, not a replacement for lifecycle policy.
+The runner stores each recovery point beneath `<BACKUP_S3_URI>/<source-instance>/` using a collision-resistant backup ID, so the artifact and its manifest cannot overwrite each other when the destination is an S3 prefix. The S3 prefix should use an explicit lifecycle policy consistent with the required retention period. The validator is an additional guard, not a replacement for lifecycle policy.
 
 ## Hypervisor note
 
