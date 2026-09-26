@@ -67,12 +67,14 @@ An interrupted external operation remains indeterminate unless executor-side evi
 
 ## Current artifact gaps
 
+Live production schema and migration-ledger recovery is complete. The observed baseline is recorded in `reference/production/observed-db-baseline.json` and `docs/PRODUCTION_LIVE_EVIDENCE.md`.
+
 The repository still needs:
 - infrastructure-as-code for deterministic AWS/network/database/compute reconstruction;
-- IAM policy definitions;
+- IAM policy definitions and least-privilege reconciliation;
 - secret reference/ownership/rotation contract;
-- deterministic PostgreSQL migration runner;
-- service lifecycle definition;
+- a reproducible wrapper around the reconciled PostgreSQL migration runner;
+- service lifecycle definition tied to the clean release artifact;
 - machine-verifiable readiness checks;
 - automated acceptance runner;
 - rollback procedure;
