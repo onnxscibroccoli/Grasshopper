@@ -8,8 +8,8 @@ const paths = [
   "src/production/omni-agent.mjs",
   "reference/production/deployed/omni-agent.mjs"
 ];
-const expectedSha = "ee0a9898e706752098ef2dcce87b18cf577ff37e8726de3fb41721490078c46d";
-const expectedSize = 4040;
+const expectedSha = "ffd3d5981cb8cc749cb112d312018b119c95e5613376f1695c59e226aed9b349";
+const expectedSize = 4223;
 
 const results = [];
 for (const relative of paths) {
