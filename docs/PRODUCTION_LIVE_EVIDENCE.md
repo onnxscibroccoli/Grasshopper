@@ -22,6 +22,7 @@ Observed in us-east-1:
 - Storage: gp3, 20 GiB allocated, autoscaling to 100 GiB
 - Storage encryption: enabled with KMS
 - Deletion protection: enabled
+- Backup retention: 1 day
 - CloudWatch PostgreSQL and upgrade log exports: enabled
 - IAM database authentication: disabled
 - RDS-managed master secret: active
