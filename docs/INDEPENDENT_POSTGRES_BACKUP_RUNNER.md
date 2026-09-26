@@ -63,7 +63,7 @@ This verifies required manifest fields, SHA-256, and artifact size. It does not 
 
 ## Fourteen-day acceptance
 
-The independent path is accepted only when there are at least 14 independently restorable recovery points within the policy window and the oldest required point is demonstrably retained.
+The independent path is accepted only when there are at least 14 distinct, independently restorable recovery points within the policy window, with unique backup identities and the oldest required point demonstrably retained.
 
 npm run validate:independent-backup-retention -- /path/manifests.json 2026-09-26T12:00:00Z
 
