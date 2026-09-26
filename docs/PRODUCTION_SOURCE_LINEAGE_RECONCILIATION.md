@@ -40,9 +40,9 @@ The deployed `agent-executor.mjs` SHA-256 exactly matches the blob in `357121db9
 
 This resolves the provenance of the executor adapter.
 
-## Remaining runtime artifact gap
+## Agent bridge provenance finding
 
-The deployed execution service:
+The deployed QEMU execution bridge:
 
 `production/agent/omni-agent.mjs`
 
@@ -50,23 +50,33 @@ has SHA-256:
 
 `ee0a9898e706752098ef2dcce87b18cf577ff37e8726de3fb41721490078c46d`.
 
-It is untracked in the production checkout, has no Git history in the checkout, and its exact blob was not found in the unreachable Git object set examined.
+It is not represented by a Git commit, but its source-authoring event is now directly established by the production host journal.
 
-Therefore the executor adapter is provenance-resolved, but the actual QEMU guest-execution bridge remains a production-local artifact requiring source/build provenance recovery.
+The exact authoring sequence began at 22:18:28 UTC on 2026-09-24 and wrote the bridge in several remote `write_file` operations. The companion environment, systemd unit, OpenAPI contract, nginx proxy, service activation, health test, and gateway proxy integration immediately followed.
 
-The same provenance rule applies to the production gateway launcher and systemd database-secret overlay.
+Therefore the bridge is no longer an unexplained artifact or an unknown deployment package. It was directly authored on the production host.
 
-See `docs/PRODUCTION_EXECUTOR_PROVENANCE.md`.
+This resolves **source-authoring provenance**, but not canonical Git provenance.
+
+See `docs/PRODUCTION_AGENT_BRIDGE_RECOVERY.md`.
+
+## Security provenance finding
+
+The original authoring operation placed the bridge bearer credential into a host environment file and exposed it in remote-tool journal metadata. The value is intentionally not recorded in Grasshopper.
+
+This is a known hardening violation against the current secret-management invariant. Remediation requires controlled credential rotation and secret-manager-backed runtime injection, followed by the complete acceptance suite.
+
+No production credential mutation was performed during provenance recovery.
 
 ## Historical related repositories
 
-GitHub history in `onnxscibroccoli/kali-node` also documents earlier OmniKali execution/control work, including:
+GitHub history in `onnxscibroccoli/kali-node` documents earlier OmniKali execution/control work, including:
 
 - `0e1143a92f71381b1d37a07370560f39b5243ff7` — one-node allowlisted headless jobs over loopback SSH plus guest watchdog.
 - `13e14970b9979ea2cd5aa2daa1863fada55d0dd8` — KVM agent/QEMU supervisor integration.
 - `043985d2ab12d685b5c2b5adbd351fdc938c2b13` — authenticated RFB gateway to persistent Kali KVM guest.
 
-These establish documented historical implementation lineage, but they are not evidence that the current `omni-agent.mjs` was copied from them.
+These establish historical implementation lineage, but not direct source derivation of the current bridge.
 
 ## Migration reconciliation
 
@@ -81,19 +91,18 @@ Those files were recovered into `reference/production/helix-accepted/migrations/
 
 The live production migration ledger contains the same four filenames in the same order. The live migration SHA-256 evidence differs from the clean accepted-source artifacts. This remains a source/runtime drift gate.
 
-## Required next gate
+## Remaining reconstruction gates
 
-An authorized automation workflow must establish:
-
-1. exact provenance for `omni-agent.mjs`;
-2. exact provenance for the gateway launcher and systemd database-secret overlay;
-3. the clean Helix release boundary containing the recovered task/executor chain;
-4. deterministic build/deployment artifact hashes;
-5. readiness and full acceptance on a reconstruction target;
-6. rollback/recovery evidence from that clean artifact.
+1. Preserve the exact bridge source in a clearly marked production-evidence boundary.
+2. Decide and document controlled canonical-source import.
+3. Establish deterministic build/deployment artifact hashes.
+4. Reconstruct on a clean target.
+5. Run readiness and full acceptance.
+6. Establish rollback/recovery evidence.
+7. Rotate the bridge credential and move runtime injection to the required secret-management boundary.
 
 Until those gates pass, production mutation remains disabled by the reconstruction manifest.
 
 ## Safety
 
-This document contains no passwords, credential-bearing URLs, tokens, cookies, private keys, or secret values. Evidence copies must never become a second source of truth.
+No passwords, credential values, bearer tokens, cookies, private keys, or secret payloads are recorded here.
