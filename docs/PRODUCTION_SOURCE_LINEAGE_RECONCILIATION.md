@@ -7,12 +7,12 @@ Status: **partially resolved; reconstruction still gated**.
 - Application repository: `onnxscibroccoli/helix`
 - Accepted production-fix revision: `38903b021cca75189a99e1ed88b508bae577f048`
 - Accepted fix branch tip (verified 2026-09-27): `omnikali/production-db-bootstrap-20260926` → `38903b0…`
-- Helix `main` at verification (2026-09-27): `d632064004eee30297d084d4cce876398a0b7112`
+- Helix `main` at current verification: `26c6879ed37df42c9c52178a5c55a429d65efdc1`
 - Merge-base of that `main` and the accepted fix: `a7cb8dc98b1cc668c1e481a845a48af004c4f510`
 - Observed deployed checkout: `46ba4b71158a74db5ede97e300099370792ecff8`
 - Deployed checkout state: dirty
 
-The accepted revision remains the source-of-truth reference for validated production behavior. The observed deployed checkout is runtime evidence, not a clean release artifact.
+The accepted revision remains the source-of-truth reference for validated production behavior. The observed deployed checkout is runtime evidence, not a clean release artifact. The Grasshopper live-pin overlay evidence is now preserved separately from the accepted Helix tree.
 
 Pinned machine-readable evidence: `reference/production/helix-lineage-pin.json` and `docs/HELIX_RELEASE_LINEAGE_PIN.md`.
 
@@ -20,7 +20,7 @@ Pinned machine-readable evidence: `reference/production/helix-lineage-pin.json` 
 
 Verified via GitHub API `get_commit` and a local clone of `onnxscibroccoli/helix` on 2026-09-27: accepted SHA `38903b0…` exists; Helix `main` (`d632064…`) is **not** a descendant of the accepted fix; `git rev-list --left-right --count origin/main...38903b0` reports **4 ahead / 28 behind**. Therefore current `main` cannot be used by itself as the clean reconstruction source for the accepted production state.
 
-The exact deployed checkout SHA is not present in the Helix GitHub object store (`git cat-file` after clone failed). No Helix tags contained the accepted SHA at verification.
+The exact deployed checkout SHA is not present in the Helix GitHub object store (`git cat-file` after clone failed). The annotated Helix tag `clean-reconstruction-38903b0` now explicitly points to the accepted SHA; this is a pin/reproducibility reference, not evidence that current `main` contains the full deployed stack.
 
 ## Production-host Git lineage finding
 
@@ -101,7 +101,7 @@ Atom 3 evidence (2026-09-27): three-way matrix and fail-closed validator are in 
 
 The exact bridge has since been preserved at `reference/production/deployed/omni-agent.mjs` and designated canonical source at `src/production/omni-agent.mjs` (see `PRODUCTION_RECONSTRUCTION_STATUS.md`). These completed source steps do not close the full-stack release gate. Remaining steps are:
 
-1. Establish deterministic build/deployment artifact hashes for the full stack and reconcile the dirty checkout and differing live migration bytes.
+1. Reconcile the live-pin overlay, accepted Helix tree, dirty deployed checkout, and differing live migration bytes into a deterministic full-stack release lineage.
 2. Reconstruct on a clean target, including host services and their dependencies.
 3. Run readiness and full acceptance.
 4. Establish rollback/recovery evidence.
