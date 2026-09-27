@@ -59,6 +59,17 @@ for (const key of ["clean_release_lineage", "clean_host_reconstruction", "produc
   if (manifest.gates?.[key] !== "blocked") fail(`manifest gate ${key} must remain blocked`);
 }
 
+const tagsContaining = pin.accepted_production_fix?.tags_containing;
+if (!Array.isArray(tagsContaining) || tagsContaining.length < 1) {
+  fail("tags_containing must include clean-reconstruction tag evidence");
+}
+const cleanTag = tagsContaining.find((t) => t?.name === "clean-reconstruction-38903b0");
+if (!cleanTag) fail("tags_containing missing clean-reconstruction-38903b0");
+if (cleanTag.target_commit !== acceptedSha) fail("clean-reconstruction tag target_commit mismatch");
+if (cleanTag.tag_object_sha !== "6ef4db852a945d957b1e577327d6260bdd693197") {
+  fail("clean-reconstruction tag_object_sha mismatch");
+}
+
 const missing = pin.acceptance_tree_gaps?.missing_paths_in_accepted_fix;
 if (!Array.isArray(missing) || missing.length < 2) fail("acceptance_tree_gaps.missing_paths incomplete");
 
