@@ -95,19 +95,35 @@ export class DurableAgentExecutor {
 
     try {
       const result = await this.adapter.start(task);
+      const persisted = (await this.store.load()).executions?.[operationKey];
+      const cancellation = persisted?.cancellation || execution.cancellation;
+      const cancellationConflict =
+        cancellation.acknowledged &&
+        result.completion === COMPLETION_STATES.CONFIRMED;
+      const resolvedResult = cancellationConflict
+        ? {
+            ...result,
+            completion: COMPLETION_STATES.INDETERMINATE,
+            interrupted: true,
+            reconciliation: {
+              source: "cancellation_acknowledged_after_dispatch",
+              outcome: "external_side_effect_requires_reconciliation"
+            }
+          }
+        : result;
       const completed = {
         ...execution,
         status:
-          result.completion === COMPLETION_STATES.CANCELLED
+          resolvedResult.completion === COMPLETION_STATES.CANCELLED
             ? "cancelled"
-            : result.completion === COMPLETION_STATES.INDETERMINATE
+            : resolvedResult.completion === COMPLETION_STATES.INDETERMINATE
               ? "indeterminate"
               : "confirmed",
-        result,
+        result: resolvedResult,
         finishedAt: now()
       };
       await this.store.update(s => {
-        completed.cancellation = s.executions[operationKey]?.cancellation || execution.cancellation;
+        completed.cancellation = s.executions[operationKey]?.cancellation || cancellation;
         s.executions[operationKey] = completed;
       });
       return completed;
