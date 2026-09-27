@@ -1,0 +1,28 @@
+{
+  "id": "replacement_completion_stale_owner_fenced",
+  "description": "After replacement claim, previous owner cannot complete (owner mismatch).",
+  "nowMs": 1000000,
+  "leaseMs": 45000,
+  "steps": [
+    { "op": "create", "taskId": "task-replace-2" },
+    { "op": "claim", "ownerId": "worker-a", "taskId": "task-replace-2" },
+    { "op": "advance", "ms": 50000 },
+    { "op": "claim", "ownerId": "worker-b", "taskId": "task-replace-2" },
+    { "op": "assert", "taskId": "task-replace-2", "state": "RUNNING", "ownerId": "worker-b" },
+    {
+      "op": "complete",
+      "taskId": "task-replace-2",
+      "ownerId": "worker-a",
+      "result": { "ok": true },
+      "expectError": "owner mismatch"
+    },
+    { "op": "assert", "taskId": "task-replace-2", "state": "RUNNING", "ownerId": "worker-b" },
+    { "op": "complete", "taskId": "task-replace-2", "ownerId": "worker-b", "result": { "ok": true } },
+    { "op": "assert", "taskId": "task-replace-2", "state": "COMPLETED", "ownerId": "worker-b" }
+  ],
+  "expect": {
+    "taskId": "task-replace-2",
+    "finalState": "COMPLETED",
+    "finalOwner": "worker-b"
+  }
+}
