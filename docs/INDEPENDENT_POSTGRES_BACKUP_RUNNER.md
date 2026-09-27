@@ -8,8 +8,25 @@ The runner provides an independent logical recovery path for the verified produc
 
 The production target remains:
 - RDS native automated backup/PITR: currently 1 day
-- independent logical recovery: at least 14 retained recovery points
+- independent logical recovery: at least 14 retained recovery points (target, not yet accepted)
 - RDS native 14-day PITR: still pending authorized AWS change
+
+## Observed activation status (2026-09-27)
+
+| Boundary | Observation | Evidence still required |
+|---|---|---|
+| Dedicated runner EC2 and scheduler | Instance exists; timer active; manual service invocation exited 0 | Documented clean installation and successful scheduled invocations |
+| Storage | Encrypted, versioned S3 bucket exists; first encrypted `.age` artifact (5,185 bytes) and JSON manifest (561 bytes) uploaded at 2026-09-27 02:42 UTC; downloaded encrypted artifact matched manifest checksum and size | Observe scheduled uploads and verify further recovery points |
+| Recovery key and encryption input | Age recovery secret has `AWSCURRENT`; public recipient installed; isolated decryption succeeded using the separately held recovery identity | Repeatable recovery-key procedure and authenticated application restore acceptance |
+| Database backup identity | Dedicated `helix_backup` role provisioned with read-only grants; first backup service run exited 0 | Reconcile role grants and deployment policy with clean source |
+| Runner service | Earlier missing policy module installed with hash verified; TLS fix installed; wrapper patched to pass `create`; service subsequently exited 0 | Reconcile installed files and wrapper with clean source and prove repeatable scheduled execution |
+| Recovery objective | One backup decrypted and restored into isolated PostgreSQL 17; database checks passed | Authenticated application acceptance, then qualifying retained history |
+
+These are dated observations, not a fourteen-day recovery claim. The pending inventory and TLS pull requests are separate work; neither is a merged release. The currently checked-in script imports `../lib/independent-backup-policy.mjs` relative to its `scripts/` location and passes `--sslmode=require` to `pg_dump`. The installed TLS fix and `create` wrapper are runtime changes until their reviewed source and deployed bytes agree. The database restore proves this one artifact is restorable at the database level; it does not prove authenticated application operation against that restore.
+
+### Isolated restore evidence for the first point
+
+The encrypted S3 artifact and manifest from 2026-09-27 were taken to an isolated Unix-socket-only PostgreSQL 17 cluster on the Kali host. The artifact was age-decrypted and zstd-decompressed; `pg_restore --no-owner --no-acl --exit-on-error` exited 0. Checks found migrations `0001`–`0004`, two `COMPLETED` tasks, seven task events, zero orphan events, and zero leases without an owner. The temporary plaintext and database cluster on tmpfs were removed, and temporary IAM grants were removed. No row contents or credentials are recorded here. An isolated Helix gateway/worker authenticated task and the fourteen-day retention history remain outstanding.
 
 ## Execution boundary
 
@@ -93,6 +110,12 @@ If the runner is hosted in a QEMU/libvirt VM, the hypervisor snapshot protects t
 
 ## Production activation gate
 
-Do not point this runner at production until the backup identity, Secrets Manager policy, S3 destination, encryption recipient, scheduler, and isolated restore environment have been provisioned and reviewed.
+Use this order for a controlled deployment or repair:
 
-No live production backup is claimed by this code-only change.
+1. Record the host unit, environment references, installed file paths and hashes, IAM/DB permissions, network boundary, earlier failures, and first successful run without recording secret values. Reconcile the reviewed TLS fix, policy import, and wrapper command with one clean source revision.
+2. Build a complete, versioned installation from that source. Deploy the runner and `lib/independent-backup-policy.mjs` together at paths that preserve their relative import (or use a tested package layout). Install the reviewed service and timer definitions; confirm the service invokes the intended revision. Verify the backup identity, scoped Secrets Manager access, S3 destination, public recipient, and separately held recovery private key.
+3. In a controlled run, verify a zero-exit service result, a fresh encrypted artifact and manifest in S3, and manifest checksum/size against the downloaded artifact. Do not treat timer activation or a local staging file as upload success.
+4. Decrypt and restore into an isolated database, verify schema and representative state, and run authenticated application acceptance against that isolated restore. Keep production traffic and production database writes away from the restore test.
+5. Observe scheduled runs and retention until at least 14 distinct points meet the defined policy, including an independently restorable oldest required point. Record failures, alerting, and rollback procedure; only then claim independent fourteen-day recovery coverage.
+
+Production service activation and further restore testing require the authorized infrastructure and recovery operators. One database-level restore passed; authenticated application acceptance and the retention target remain open.

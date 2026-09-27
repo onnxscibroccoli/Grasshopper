@@ -36,6 +36,16 @@ The repository now has:
 
 Production mutation remains fail-closed.
 
+## Observed production boundary (2026-09-27)
+
+The authenticated Helix gateway -> PostgreSQL -> worker -> Kali path was previously accepted. This is acceptance of the observed runtime path, not proof that the whole host can be reconstructed from a clean Git checkout.
+
+A dedicated backup EC2 instance exists with its scheduler timer active. An encrypted, versioned S3 backup bucket exists, the age recovery secret has an `AWSCURRENT` version, and a public age recipient is installed on the runner host. Earlier failures included an absent `/usr/local/lib/independent-backup-policy.mjs` and a retry that exited 1 with zero S3 objects. The module was installed with its hash verified, a TLS fix and `create` wrapper argument were installed, and a dedicated `helix_backup` PostgreSQL role was provisioned with read-only grants. At **2026-09-27 02:42 UTC**, the service exited 0 and its first encrypted `.age` artifact (5,185 bytes) and JSON manifest (561 bytes) appeared in S3.
+
+That backup was subsequently age-decrypted, zstd-decompressed, and restored with `pg_restore --no-owner --no-acl --exit-on-error` (exit 0) into an isolated, Unix-socket-only PostgreSQL 17 cluster on the Kali host. Database checks found migrations `0001` through `0004`, two `COMPLETED` tasks, seven task events, zero orphan events, and zero leases without an owner. The temporary plaintext and cluster on tmpfs were removed, as were the temporary IAM grants. This is **database-level restore evidence for one recovery point**. An authenticated Helix gateway/worker task against the restored database and fourteen-day independent coverage remain unproven.
+
+The repository contains `lib/independent-backup-policy.mjs`, imported by `scripts/independent-postgres-backup.mjs` through a relative path. Source-to-host deployment must preserve that relationship or install a reviewed package with an equivalent verified import path; copying the runner script alone to `/usr/local` did not reproduce its dependency. The installed repairs and wrapper behavior still need clean-source reconciliation and repeatable installation before claiming a reproducible backup service. See [INDEPENDENT_POSTGRES_BACKUP_RUNNER.md](./INDEPENDENT_POSTGRES_BACKUP_RUNNER.md) for the staged recovery order.
+
 ## Source recovery result
 
 The authoritative application repository is onnxscibroccoli/helix, and the accepted gateway-startup worker fix is commit 38903b021cca75189a99e1ed88b508bae577f048.
@@ -96,6 +106,8 @@ Production currently still uses the existing protected host environment configur
 - executor-side idempotency/cancellation controls appropriate to command type;
 - controlled least-privilege reduction;
 - backup/PITR hardening.
+
+For the independent backup path, additionally establish a clean source package with all runtime imports and TLS behavior reconciled against the host; a reviewed installation and systemd definition; repeatable scheduled backups; independent verification of the uploaded artifact and manifest; authenticated application acceptance against the restored database; and the required retained recovery-point history. The first upload and database-level restore are observed; the remaining gates are open. Native RDS automated-backup retention remains 1 day; independent logical recovery does not change its PITR setting.
 
 A live privilege hardening finding is recorded: the helix database role is non-superuser but broader than the intended least-privilege boundary. This requires controlled compatibility testing, not an ad hoc production edit.
 
