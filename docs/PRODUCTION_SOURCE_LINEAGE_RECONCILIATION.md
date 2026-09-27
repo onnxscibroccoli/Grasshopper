@@ -93,13 +93,13 @@ The live production migration ledger contains the same four filenames in the sam
 
 ## Remaining reconstruction gates
 
-1. Preserve the exact bridge source in a clearly marked production-evidence boundary.
-2. Decide and document controlled canonical-source import.
-3. Establish deterministic build/deployment artifact hashes.
-4. Reconstruct on a clean target.
-5. Run readiness and full acceptance.
-6. Establish rollback/recovery evidence.
-7. Rotate the bridge credential and move runtime injection to the required secret-management boundary.
+The exact bridge has since been preserved at `reference/production/deployed/omni-agent.mjs` and designated canonical source at `src/production/omni-agent.mjs` (see `PRODUCTION_RECONSTRUCTION_STATUS.md`). These completed source steps do not close the full-stack release gate. Remaining steps are:
+
+1. Establish deterministic build/deployment artifact hashes for the full stack and reconcile the dirty checkout and differing live migration bytes.
+2. Reconstruct on a clean target, including host services and their dependencies.
+3. Run readiness and full acceptance.
+4. Establish rollback/recovery evidence.
+5. Rotate the bridge credential and move runtime injection to the required secret-management boundary.
 
 Until those gates pass, production mutation remains disabled by the reconstruction manifest.
 
