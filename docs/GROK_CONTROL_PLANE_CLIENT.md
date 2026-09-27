@@ -41,6 +41,10 @@ This client does not choose a database provider. The reference control plane con
 
 The client does not change the validated production task lifecycle, lease recovery, or the recovered QEMU execution primitive. Wiring it to the live Helix gateway still requires the existing authenticated gateway boundary and is not done here.
 
+## Live Helix gateway wiring
+
+The plan for Grok → ControlPlane-shaped boundary → Helix `taskDispatch` (`idempotency_key` from the grok operation key), without giving Grok an executor/adapter, is documented in [`docs/GROK_HELIX_GATEWAY_WIRING.md`](GROK_HELIX_GATEWAY_WIRING.md). That plan is **not claimed deployed** and does not authorize production mutate or live prod smoke.
+
 ## MCP tool surface
 
 A thin MCP facade in `src/mcp/grok-control-plane-tools.mjs` exposes exactly two tools, both of which forward to `GrokControlPlaneClient`:

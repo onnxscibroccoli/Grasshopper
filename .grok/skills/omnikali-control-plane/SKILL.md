@@ -32,4 +32,4 @@ PostgreSQL behind Helix remains production persistence. This skill does not sele
 
 ## Reference
 
-See [`docs/GROK_CONTROL_PLANE_CLIENT.md`](../../../docs/GROK_CONTROL_PLANE_CLIENT.md) for identity, audit, and persistence details. Live Helix gateway wiring is still required separately and is not claimed done by this skill.
+See [`docs/GROK_CONTROL_PLANE_CLIENT.md`](../../../docs/GROK_CONTROL_PLANE_CLIENT.md) for identity, audit, and persistence details. The live Helix gateway wiring **plan** (Grok → ControlPlane-shaped boundary → Helix `taskDispatch`, no executor for Grok) is in [`docs/GROK_HELIX_GATEWAY_WIRING.md`](../../../docs/GROK_HELIX_GATEWAY_WIRING.md) and is **not claimed deployed** by this skill.
