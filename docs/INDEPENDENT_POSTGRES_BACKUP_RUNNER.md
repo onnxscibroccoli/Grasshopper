@@ -8,8 +8,21 @@ The runner provides an independent logical recovery path for the verified produc
 
 The production target remains:
 - RDS native automated backup/PITR: currently 1 day
-- independent logical recovery: at least 14 retained recovery points
+- independent logical recovery: at least 14 retained recovery points (target, not yet accepted)
 - RDS native 14-day PITR: still pending authorized AWS change
+
+## Observed activation status (2026-09-27)
+
+| Boundary | Observation | Evidence still required |
+|---|---|---|
+| Dedicated runner EC2 and scheduler | Instance exists; timer active | Successful service invocation and documented clean installation |
+| Storage | Encrypted, versioned S3 bucket exists; zero backup objects observed | Artifact and manifest upload, checksum, storage controls, and independent download |
+| Recovery key and encryption input | Age recovery secret has `AWSCURRENT`; public age recipient installed | Verified separation and authorized isolated decryption using the recovery private key |
+| Database backup identity | No successful database secret retrieval or dump established by these observations | Scoped database secret access, TLS connection, and complete dump |
+| Runner service | Service failed on missing `/usr/local/lib/independent-backup-policy.mjs`; TLS patch applied on host | Reconcile source and host TLS behavior, install all imports, and prove repeatable execution |
+| Recovery objective | No observed successful backup or restore | Isolated restore and application acceptance, then qualifying retained history |
+
+These are dated observations, not a production activation claim. The pending inventory and TLS pull requests are separate work; neither is a merged release or evidence of successful backup. The currently checked-in script imports `../lib/independent-backup-policy.mjs` relative to its `scripts/` location and passes `--sslmode=require` to `pg_dump`. Treat the live TLS patch as runtime drift until its reviewed source and the deployed bytes agree. Do not infer a successful TLS connection from the source flag or host patch alone.
 
 ## Execution boundary
 
@@ -93,6 +106,12 @@ If the runner is hosted in a QEMU/libvirt VM, the hypervisor snapshot protects t
 
 ## Production activation gate
 
-Do not point this runner at production until the backup identity, Secrets Manager policy, S3 destination, encryption recipient, scheduler, and isolated restore environment have been provisioned and reviewed.
+Use this order for a controlled deployment or repair:
 
-No live production backup is claimed by this code-only change.
+1. Record the host unit, environment references, installed file paths and hashes, IAM/DB permissions, network boundary, and current failure without recording secret values. Reconcile the reviewed TLS fix and policy import with one clean source revision.
+2. Build a complete, versioned installation from that source. Deploy the runner and `lib/independent-backup-policy.mjs` together at paths that preserve their relative import (or use a tested package layout). Install the reviewed service and timer definitions; confirm the service invokes the intended revision. Verify the backup identity, scoped Secrets Manager access, S3 destination, public recipient, and separately held recovery private key.
+3. In a controlled run, verify a zero-exit service result, a fresh encrypted artifact and manifest in S3, and manifest checksum/size against the downloaded artifact. Do not treat timer activation or a local staging file as upload success.
+4. Decrypt and restore into an isolated database, verify schema and representative state, and run authenticated application acceptance against that isolated restore. Keep production traffic and production database writes away from the restore test.
+5. Observe scheduled runs and retention until at least 14 distinct points meet the defined policy, including an independently restorable oldest required point. Record failures, alerting, and rollback procedure; only then claim independent fourteen-day recovery coverage.
+
+Production service activation and restore testing require the authorized infrastructure and recovery operators. This documentation records the order and acceptance evidence; it does not report those gates as complete.
