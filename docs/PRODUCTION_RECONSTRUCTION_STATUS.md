@@ -90,17 +90,26 @@ The full control-plane and executor hardening contract remains command-type-spec
 
 ## Secret boundary
 
-The source references AGENT_TOKEN only through runtime environment configuration.
+Production agent bridge credentials use an AWS Secrets Manager reference, not a static `AGENT_TOKEN` in host environment files.
 
-Deployment automation may carry OMNIKALI_AGENT_SECRET_ID or OMNIKALI_AGENT_SECRET_ARN as a reference. It must never carry AGENT_TOKEN or another secret payload.
+- Secret id (reference only): `omnikali/production/agent-bridge-token`
+- Runtime loader: `src/production/agent-secret.mjs` via `HELIX_AGENT_TOKEN_SECRET_ID`
+- Recorded systemd drop-ins: `reference/production/deployed/*/20-agent-secret.conf`
+- Deployment automation must carry only secret references (`HELIX_AGENT_TOKEN_SECRET_ID` and/or `OMNIKALI_AGENT_SECRET_ID`), never `AGENT_TOKEN` payloads
 
-Production currently still uses the existing protected host environment configuration. Migration to secret-manager-backed injection remains a controlled production change requiring credential rotation and full acceptance.
+Repository contract evidence (loader, drop-ins, contract/migration docs, and unit tests) is present on this branch. PR #16 recorded the Secrets Manager migration path and production verification notes in [AGENT_SECRET_MIGRATION.md](./operations/AGENT_SECRET_MIGRATION.md); PR #18 added the artifact gate that rejects static `AGENT_TOKEN` and requires the Secrets Manager loader.
+
+**This status update does not rotate, delete, or recreate credentials, and it does not re-verify the live host in this change.** Distinguishing repository contract from live cutover:
+
+- **Repository secrets-injection contract** — closed from repo evidence (loader + drop-ins + docs + tests).
+- **Live production secrets cutover re-verification** — remains open until an authorized operator re-confirms the live host still loads `HELIX_AGENT_TOKEN_SECRET_ID` (or equivalent) from Secrets Manager. Do not treat this document edit as fresh live acceptance.
+- **Future controlled credential rotation** — still a separate production change requiring a recovery plan and human confirmation; it is not implied by closing the repository contract gate.
 
 ## Remaining reconstruction gates
 
 - clean source/release lineage for the full deployed Helix stack;
 - deterministic clean-host reconstruction;
-- secret-manager-backed agent credential injection and controlled rotation;
+- live production secrets cutover re-verification (host still loads Secrets Manager reference; not re-verified by this doc edit) and future controlled credential rotation;
 - readiness and acceptance automation;
 - rollback/recovery automation;
 - executor-side idempotency/cancellation controls appropriate to command type;

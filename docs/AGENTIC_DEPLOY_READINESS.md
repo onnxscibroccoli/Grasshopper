@@ -15,7 +15,8 @@ The gate makes deploy readiness machine-checkable from repository evidence. It i
 - A repository scan for known-complete reference artifacts (executor contract, durable executor, RDS infrastructure module, independent backup runner/policy, production reproducibility docs, and Grok control-plane client files when present).
 - A fail-closed evaluation of critical reconstruction gates:
   - clean source/release lineage
-  - secret-manager-backed credential injection
+  - repository Secrets Manager injection contract (loader, drop-ins, docs, tests)
+  - live production secrets cutover re-verification (distinct from the repository contract)
   - live readiness/acceptance automation
   - independent backup retention (>= 14 distinct restorable points)
   - deterministic clean-host reconstruction

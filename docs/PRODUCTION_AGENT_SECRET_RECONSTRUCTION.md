@@ -1,6 +1,6 @@
 # Production agent secret reconstruction gate
 
-Status: repository hardening stage, no production mutation.
+Status: repository Secrets Manager contract and reconstruction harness are present; this document does not re-verify live production cutover and does not authorize credential rotation or other production mutation.
 
 ## Established facts
 
@@ -19,7 +19,7 @@ The bridge does not require permission to list, create, rotate, or modify secret
 
 The current production instance role was tested for policy enumeration and returned `iam:ListRolePolicies` access denied. Therefore the repository must not infer the live role policy document from the instance itself.
 
-The remaining infrastructure gate is an authorized IAM-side inventory of `HelixKaliDesktopRole`, followed by a minimal policy addition for the dedicated agent secret. No production credential rotation is implied by this document.
+PR #16 recorded a dedicated Secrets Manager secret and instance-role read policy for the agent bridge token; see `docs/operations/AGENT_SECRET_MIGRATION.md`. This reconstruction document still describes the repository harness and contract only. Live host cutover re-verification and any future credential rotation remain separate controlled changes. No production credential rotation is implied by this document.
 
 ## Reconstruction sequence
 

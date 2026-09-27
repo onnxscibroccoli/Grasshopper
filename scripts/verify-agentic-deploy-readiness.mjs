@@ -128,25 +128,99 @@ function assessLineage(manifest, reconstructionStatus) {
   );
 }
 
-function assessSecretsInjection(reconstructionStatus, secretDoc) {
-  const text = `${reconstructionStatus || ""}\n${secretDoc || ""}`;
-  const stillHostEnv = /still uses the existing protected host environment/i.test(text);
-  const migrationOpen = /Migration to secret-manager-backed injection remains/i.test(text);
-  const remaining = /secret-manager-backed agent credential injection/i.test(text);
-  if (stillHostEnv || migrationOpen || remaining) {
+const SECRETS_INJECTION_CONTRACT_FILES = [
+  "src/production/agent-secret.mjs",
+  "reference/production/deployed/omni-agent.service.d/20-agent-secret.conf",
+  "reference/production/deployed/helix-gateway.service.d/20-agent-secret.conf",
+  "docs/operations/AGENT_SECRET_MIGRATION.md",
+  "docs/AGENT_SECRET_CONTRACT.md",
+  "test/agent-secret.test.mjs"
+];
+
+function assessSecretsInjectionContract(reconstructionStatus, migrationDoc, secretDoc) {
+  const missing = SECRETS_INJECTION_CONTRACT_FILES.filter((rel) => !exists(rel));
+  const statusText = reconstructionStatus || "";
+  const migrationText = migrationDoc || "";
+  const secretText = secretDoc || "";
+  const combined = `${statusText}\n${migrationText}\n${secretText}`;
+
+  // Stale language that still claims host-env injection is the current production path.
+  const hostEnvStillCurrent =
+    /still uses the existing protected host environment/i.test(statusText) ||
+    /Migration to secret-manager-backed injection remains/i.test(statusText) ||
+    /secret-manager-backed agent credential injection and controlled rotation/i.test(statusText);
+
+  const positiveSignals = [
+    /omnikali\/production\/agent-bridge-token/i,
+    /HELIX_AGENT_TOKEN_SECRET_ID/i,
+    /Secrets Manager/i,
+    /live process environments contain no [`']?AGENT_TOKEN/i,
+    /Repository secrets-injection contract/i,
+    /src\/production\/agent-secret\.mjs/i
+  ];
+  const matchedSignals = positiveSignals
+    .filter((re) => re.test(combined))
+    .map((re) => String(re));
+
+  if (missing.length > 0) {
     return gate(
-      "secrets_injection",
-      "Secret-manager-backed agent credential injection",
+      "secrets_injection_contract",
+      "Repository Secrets Manager injection contract",
       "OPEN",
-      "docs still require controlled secret-manager migration and full acceptance; host env injection remains current"
+      `missing required contract files: ${missing.join(", ")}`
     );
   }
-  // Fail closed if we cannot positively prove completion.
+  if (hostEnvStillCurrent) {
+    return gate(
+      "secrets_injection_contract",
+      "Repository Secrets Manager injection contract",
+      "OPEN",
+      "docs still claim host-env AGENT_TOKEN injection is current or list secret-manager injection as an open remaining gate"
+    );
+  }
+  if (matchedSignals.length === 0) {
+    return gate(
+      "secrets_injection_contract",
+      "Repository Secrets Manager injection contract",
+      "OPEN",
+      "required files present but no positive Secrets Manager contract evidence in docs"
+    );
+  }
   return gate(
-    "secrets_injection",
-    "Secret-manager-backed agent credential injection",
+    "secrets_injection_contract",
+    "Repository Secrets Manager injection contract",
+    "COMPLETE",
+    `required files present; status/migration docs affirm Secrets Manager path (HELIX_AGENT_TOKEN_SECRET_ID / omnikali/production/agent-bridge-token); host-env-still-current language absent; signals=${matchedSignals.length}`
+  );
+}
+
+function assessProductionSecretsCutover(reconstructionStatus, migrationDoc) {
+  // This PR does not re-verify the live host. Fail closed: keep cutover OPEN
+  // unless docs explicitly record a fresh live host re-verification (not claimed here).
+  const statusText = reconstructionStatus || "";
+  const migrationText = migrationDoc || "";
+  const combined = `${statusText}\n${migrationText}`;
+
+  const freshLiveReverify =
+    /live host re-verif(?:y|ied|ication).{0,80}(HELIX_AGENT_TOKEN_SECRET_ID|Secrets Manager)/i.test(
+      combined
+    ) &&
+    /dated live cutover re-verification complete/i.test(combined);
+
+  if (freshLiveReverify) {
+    return gate(
+      "production_secrets_cutover",
+      "Live production secrets cutover re-verification",
+      "COMPLETE",
+      "docs record dated live host re-verification of Secrets Manager injection"
+    );
+  }
+
+  return gate(
+    "production_secrets_cutover",
+    "Live production secrets cutover re-verification",
     "OPEN",
-    "no positive completion evidence for secret-manager injection"
+    "repository contract may be COMPLETE, but live host Secrets Manager cutover is not re-verified by this static gate; PR #16 migration notes are historical evidence only — do not treat as fresh live acceptance"
   );
 }
 
@@ -281,6 +355,7 @@ function buildReport() {
   const backupRunnerDoc = readText("docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md");
   const secretDoc = readText("docs/PRODUCTION_AGENT_SECRET_RECONSTRUCTION.md") ||
     readText("docs/AGENT_SECRET_CONTRACT.md");
+  const migrationDoc = readText("docs/operations/AGENT_SECRET_MIGRATION.md");
 
   const docBundle = {
     "docs/PRODUCTION_RECONSTRUCTION_STATUS.md": reconstructionStatus,
@@ -290,7 +365,8 @@ function buildReport() {
 
   const gates = [
     assessLineage(manifest, reconstructionStatus),
-    assessSecretsInjection(reconstructionStatus, secretDoc),
+    assessSecretsInjectionContract(reconstructionStatus, migrationDoc, secretDoc),
+    assessProductionSecretsCutover(reconstructionStatus, migrationDoc),
     assessLiveAcceptance(manifest, reconstructionStatus),
     assessBackupRetention(docBundle),
     assessCleanHost(manifest, reconstructionStatus),
