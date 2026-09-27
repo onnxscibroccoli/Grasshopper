@@ -40,3 +40,7 @@ No production credentials or live-machine assumptions are required.
 ## Production boundary
 
 The local JSON reference does not deploy the existing PostgreSQL production gateway. See [production contract inventory](docs/PRODUCTION_CONTRACT_INVENTORY.md) for observed host and IAM state, verification limits, and the reproducibility gate.
+
+## Read-only production lifecycle inventory
+
+On the authorized Kali host, run `node scripts/inventory-service-lifecycle.mjs` to capture allowlisted systemd service properties for the gateway, agent bridge, and MCP service. It reports configuration file *paths*, not their contents, and does not query command lines or environment values. A running unit is not proof that authenticated task execution is healthy. Review the output before sharing it.
