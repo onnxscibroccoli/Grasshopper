@@ -44,3 +44,11 @@ For the dated production and independent-backup observations, deployment order, 
 ## Independent backup runner
 
 The runner uses libpq `PGSSLMODE=require` with a protected passfile for `pg_dump`; `--sslmode` is not a `pg_dump` command-line option. Run `npm test` to exercise the isolated TLS invocation check. A passing test does not activate production backups: the dedicated identity, encryption recipient, S3 destination, scheduler, required binaries, and isolated restore acceptance still need deployment and verification. See [backup runner requirements](docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md).
+
+## Production boundary
+
+The local JSON reference does not deploy the existing PostgreSQL production gateway. See [production contract inventory](docs/PRODUCTION_CONTRACT_INVENTORY.md) for observed host and IAM state, verification limits, and the reproducibility gate.
+
+## Read-only production lifecycle inventory
+
+On the authorized Kali host, run `node scripts/inventory-service-lifecycle.mjs` to capture allowlisted systemd service properties for the gateway, agent bridge, and MCP service. It reports configuration file paths, not their contents, and does not query command lines or environment values. A running unit is not proof that authenticated task execution is healthy. Review the output before sharing it.
