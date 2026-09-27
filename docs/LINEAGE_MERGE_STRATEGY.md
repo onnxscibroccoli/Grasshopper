@@ -75,7 +75,7 @@ clean-reconstruction-38903b0  →  commit 38903b0…
 
 | Concern | Rule |
 | --- | --- |
-| **Tags** | Prefer reconstructing from tag `clean-reconstruction-38903b0`. Pin JSON still lists `tags_containing: []` (stale vs live tag) — refresh pin as docs/data honesty, **not** as unblock. |
+| **Tags** | Prefer reconstructing from tag `clean-reconstruction-38903b0`. Pin JSON `tags_containing` now includes that tag (PR #42 @ `3ddd9c4`) — honesty only, **not** an unblock. |
 | **Overlays** | LIVE overlays close **evidence** gap G1 when on tree with matching MANIFEST; they do **not** alone set `executor_lineage=unblocked`. |
 | **Migrations** | Triple compare: Helix pin hashes ↔ Grasshopper evidence ↔ live ledger. `0002`/`0003` aligned; `0001`/`0004` drift remains OPEN. Do not “fix” live by overwriting DB from Grasshopper copies without Ian-gated procedure. |
 | **Hardening delta** | Parallel track: keep labeled; validators that pin `ffd3d598…`/`d1ad94d9…` prove tree consistency only. |
@@ -114,7 +114,7 @@ clean-reconstruction-38903b0  →  commit 38903b0…
 
 ## 6. Recommended merge sequence (safe order)
 
-1. **Honesty refresh (docs/data):** update Grasshopper pin `tags_containing` to include `clean-reconstruction-38903b0` (and doc table) — fail-closed accuracy only.
+1. **Honesty refresh (docs/data):** ~~update Grasshopper pin `tags_containing`~~ **DONE** on main via PR #42 (`3ddd9c4`, VG ACCEPT post-land). Keep pin/docs aligned if tags change; not an unblock.
 2. **Land Atom 2 live-pin evidence** (PR #39 or successor) on Grasshopper `main` with verified LIVE digests + MANIFEST; keep `executor_lineage=blocked`.
 3. **Keep hardening delta labeled** separate; do not overwrite live-pin with delta or vice versa without Ian.
 4. **Migration reconcile plan** (read-only compare + Ian-gated apply procedure later): document `0001`/`0004` drift; do not mutate live DB here.
@@ -132,7 +132,7 @@ Do **not** run against production until Ian explicitly gates. Checkboxes are pro
 ### A. Lineage identity
 
 - [ ] Helix tag `clean-reconstruction-38903b0` still points at `38903b021cca75189a99e1ed88b508bae577f048`
-- [ ] Grasshopper pin `tags_containing` matches live Helix tags
+- [x] Grasshopper pin `tags_containing` matches live Helix tags (PR #42 @ `3ddd9c4`)
 - [ ] Helix `main` not used alone as reconstruction source
 - [ ] No host-only SHA cited as GitHub Helix history
 

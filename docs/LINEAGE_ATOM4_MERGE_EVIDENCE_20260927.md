@@ -44,7 +44,7 @@ Fail-closed rules applied: only observed facts; **UNKNOWN** where not re-verifie
 
 | Path | Observed |
 | --- | --- |
-| `reference/production/helix-lineage-pin.json` | `status=pinned-fail-closed`; `tags_containing: []` (stale vs live Helix tag — see §4) |
+| `reference/production/helix-lineage-pin.json` | `status=pinned-fail-closed`; `tags_containing` includes `clean-reconstruction-38903b0` (tag object `6ef4db85…` → `38903b0…`) via PR #42 merge `3ddd9c4` |
 | `reference/production/reconstruction-manifest.json` | `clean_release_lineage=blocked`; dirty deployed checkout |
 | `reference/production/observed-db-baseline.json` | Live migration SHA-256s; dirty checkout `46ba4b7…` |
 | `reference/production/helix-accepted/migrations/` | Evidence copies of `0001`–`0004` |
@@ -128,7 +128,7 @@ Branch `lineage/atom2-overlays-live-pin-20260927` / PR #39:
 | Tagger date | `2026-09-27T06:45:08Z` |
 | Source | `gh api` tag ref + annotated tag object; Atom 1 workspace note |
 
-**Stale pin fact:** `reference/production/helix-lineage-pin.json` still has `"tags_containing": []` and `docs/HELIX_RELEASE_LINEAGE_PIN.md` still says “Tags containing SHA | none” (verified_at ~`2026-09-27T06:40:00-04:00`, **before** tagger time). Live Helix now has the tag. Follow-up: refresh pin `tags_containing` (Atom 1 already noted; **not done in Atom 4** unless shipped as docs-only update — see MERGE_STRATEGY).
+**Pin honesty (post-#42):** `reference/production/helix-lineage-pin.json` `tags_containing` on main now lists `clean-reconstruction-38903b0` (tag object `6ef4db852a945d957b1e577327d6260bdd693197` → commit `38903b021cca75189a99e1ed88b508bae577f048`; tagger `2026-09-27T06:45:08Z`). Merged as PR #42 @ `3ddd9c4bc31ce1a6a176c33c8ebfcb93a7bc8801` (Verify Gate ACCEPT post-land). This is pin honesty only — it does **not** unblock `executor_lineage` / clean_host / clean_release.
 
 ### Dirty / host-only SHAs (documented; not in Helix GitHub per pin)
 
