@@ -1,0 +1,25 @@
+{
+  "id": "duplicate_fencing_stale_owner_fail_fenced",
+  "description": "While lease is valid, a non-owner cannot fail the task either.",
+  "nowMs": 1000000,
+  "leaseMs": 45000,
+  "steps": [
+    { "op": "create", "taskId": "task-dup-4" },
+    { "op": "claim", "ownerId": "worker-a", "taskId": "task-dup-4" },
+    {
+      "op": "fail",
+      "taskId": "task-dup-4",
+      "ownerId": "worker-stale",
+      "error": { "message": "spoofed fail" },
+      "expectError": "owner mismatch"
+    },
+    { "op": "assert", "taskId": "task-dup-4", "state": "RUNNING", "ownerId": "worker-a" },
+    { "op": "complete", "taskId": "task-dup-4", "ownerId": "worker-a", "result": { "ok": true } },
+    { "op": "assert", "taskId": "task-dup-4", "state": "COMPLETED", "ownerId": "worker-a" }
+  ],
+  "expect": {
+    "taskId": "task-dup-4",
+    "finalState": "COMPLETED",
+    "finalOwner": "worker-a"
+  }
+}

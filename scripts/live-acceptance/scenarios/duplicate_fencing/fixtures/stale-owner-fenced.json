@@ -1,0 +1,26 @@
+{
+  "id": "duplicate_fencing_stale_owner_fenced",
+  "description": "While lease is valid, a non-owner cannot complete (owner mismatch).",
+  "nowMs": 1000000,
+  "leaseMs": 45000,
+  "steps": [
+    { "op": "create", "taskId": "task-dup-2" },
+    { "op": "claim", "ownerId": "worker-a", "taskId": "task-dup-2" },
+    { "op": "assert", "taskId": "task-dup-2", "state": "RUNNING", "ownerId": "worker-a" },
+    {
+      "op": "complete",
+      "taskId": "task-dup-2",
+      "ownerId": "worker-stale",
+      "result": { "ok": true },
+      "expectError": "owner mismatch"
+    },
+    { "op": "assert", "taskId": "task-dup-2", "state": "RUNNING", "ownerId": "worker-a" },
+    { "op": "complete", "taskId": "task-dup-2", "ownerId": "worker-a", "result": { "ok": true } },
+    { "op": "assert", "taskId": "task-dup-2", "state": "COMPLETED", "ownerId": "worker-a" }
+  ],
+  "expect": {
+    "taskId": "task-dup-2",
+    "finalState": "COMPLETED",
+    "finalOwner": "worker-a"
+  }
+}
