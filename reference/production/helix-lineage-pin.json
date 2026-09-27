@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "status": "pinned-fail-closed",
+  "verified_at": "2026-09-27T06:40:00-04:00",
+  "verification_method": [
+    "GitHub API get_commit on onnxscibroccoli/helix",
+    "local git clone https://github.com/onnxscibroccoli/helix.git",
+    "git cat-file / rev-parse / merge-base / rev-list --left-right --count"
+  ],
+  "canonical_repository": "onnxscibroccoli/helix",
+  "accepted_production_fix": {
+    "sha": "38903b021cca75189a99e1ed88b508bae577f048",
+    "message": "fix(worker): initialize task worker on gateway startup",
+    "authored_at": "2026-09-26T06:56:47Z",
+    "html_url": "https://github.com/onnxscibroccoli/helix/commit/38903b021cca75189a99e1ed88b508bae577f048",
+    "tree": "a35aa48d60bfbc97f2826b807e8311d143199730",
+    "changed_files": ["production/gateway/helix-gateway.mjs"],
+    "branch_tips_at_verification": {
+      "omnikali/production-db-bootstrap-20260926": "38903b021cca75189a99e1ed88b508bae577f048"
+    },
+    "also_reachable_from": [
+      "hardening/postgres-executor-cancellation"
+    ],
+    "tags_containing": []
+  },
+  "helix_main_at_verification": {
+    "sha": "d632064004eee30297d084d4cce876398a0b7112",
+    "message": "docs(incident): record workspace outage and missing ws recovery",
+    "is_descendant_of_accepted_fix": false,
+    "merge_base_with_accepted_fix": "a7cb8dc98b1cc668c1e481a845a48af004c4f510",
+    "ahead_behind_vs_accepted_fix": {
+      "main_ahead": 4,
+      "main_behind": 28,
+      "note": "git rev-list --left-right --count origin/main...38903b0"
+    }
+  },
+  "deployed_checkout_evidence": {
+    "sha": "46ba4b71158a74db5ede97e300099370792ecff8",
+    "clean": false,
+    "present_in_helix_github_object_store": false,
+    "note": "Runtime evidence only; not a clean release identifier."
+  },
+  "acceptance_tree_gaps": {
+    "missing_paths_in_accepted_fix": [
+      "production/gateway/state/agent-executor.mjs",
+      "production/agent/omni-agent.mjs"
+    ],
+    "evidence": "git ls-tree -r --name-only 38903b0 found no agent-executor/omni-agent/guest-exec paths"
+  },
+  "accepted_migration_sha256_from_helix_checkout": {
+    "0001_auth.sql": "6f89964eddbf9c9e1d63ec69679f9962ee2278a7fe7ba17919f5aa5a33f6e78f",
+    "0002_workspaces.sql": "eb343cfe1df2a8e66a619b2210d65f0e18963533180054ad72b261b98c12f1a2",
+    "0003_stream.sql": "90d2ef6df1283449ba52cbc327e76d7d834abb13afb7f3a2473ad15726755a03",
+    "0004_omnikali_tasks.sql": "a20552b27b92008307a2ce0bb09cf1ba26ab99fb1b2519f4507df23706cd1ce9"
+  },
+  "grasshopper_reference_migration_notes": {
+    "path": "reference/production/helix-accepted/migrations/",
+    "byte_identical_to_helix_accepted_checkout": {
+      "0001_auth.sql": false,
+      "0002_workspaces.sql": true,
+      "0003_stream.sql": true,
+      "0004_omnikali_tasks.sql": false
+    },
+    "verified_differences": {
+      "0001_auth.sql": "Grasshopper evidence copy replaces the Helix Better Auth header comment block with a recovery banner; CREATE TABLE body matches.",
+      "0004_omnikali_tasks.sql": "Trailing newline only (Helix checkout lacks final newline; Grasshopper reference and observed live SHA both include it)."
+    },
+    "do_not_treat_as_authoritative_helix_source": true
+  },
+  "production_host_only_shas_not_in_helix_github": [
+    "46ba4b71158a74db5ede97e300099370792ecff8",
+    "8ad0a925362c491591bfd394b46b7dc4574a63dc",
+    "e3e4eef25591a98bc4b211a938cde27eef3ddad0",
+    "175bd7eed872f8b42a78485843ea829bf3175dc1",
+    "357121db9496c6782c945499eaf3c90ea5ed9660",
+    "0061e44fc1663dd03d5605d6778bcc3d7f8d59b8",
+    "d889632d7b1eebb15afa8a065772251192a94441",
+    "00b4b9f1aa45995b635fd719485ecac1495f44e0",
+    "4fbe832dfe3c535d666d96d1847f9a3c077976b0",
+    "e93bc0340509d5f203433b0924781af203ecdcd7",
+    "95966034f46f56f906e244f2ef42cc49253d99a8"
+  ],
+  "gates": {
+    "clean_release_lineage": "blocked",
+    "clean_host_reconstruction": "blocked",
+    "production_mutation": "blocked",
+    "executor_lineage": "blocked",
+    "rollback_recovery_evidence": "blocked",
+    "use_helix_main_alone_as_reconstruction_source": "blocked",
+    "blind_overwrite_of_live_production_checkout": "forbidden",
+    "iam_weakening": "forbidden"
+  },
+  "safety": {
+    "secrets_in_pin": false,
+    "credential_values_recorded": false,
+    "production_mutation_allowed": false
+  }
+}

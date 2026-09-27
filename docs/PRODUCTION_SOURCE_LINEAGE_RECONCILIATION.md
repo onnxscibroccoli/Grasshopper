@@ -6,17 +6,21 @@ Status: **partially resolved; reconstruction still gated**.
 
 - Application repository: `onnxscibroccoli/helix`
 - Accepted production-fix revision: `38903b021cca75189a99e1ed88b508bae577f048`
-- Current Helix `main`: `a7cb8dc98b1cc668c1e481a845a48af004c4f510`
+- Accepted fix branch tip (verified 2026-09-27): `omnikali/production-db-bootstrap-20260926` → `38903b0…`
+- Helix `main` at verification (2026-09-27): `d632064004eee30297d084d4cce876398a0b7112`
+- Merge-base of that `main` and the accepted fix: `a7cb8dc98b1cc668c1e481a845a48af004c4f510`
 - Observed deployed checkout: `46ba4b71158a74db5ede97e300099370792ecff8`
 - Deployed checkout state: dirty
 
 The accepted revision remains the source-of-truth reference for validated production behavior. The observed deployed checkout is runtime evidence, not a clean release artifact.
 
+Pinned machine-readable evidence: `reference/production/helix-lineage-pin.json` and `docs/HELIX_RELEASE_LINEAGE_PIN.md`.
+
 ## GitHub lineage finding
 
-GitHub comparison of the accepted production-fix revision against current Helix `main` reports `main` as 28 commits behind the accepted revision. Therefore current `main` is not a descendant of the accepted production-fix revision and cannot be used by itself as the clean reconstruction source for the accepted production state.
+Verified via GitHub API `get_commit` and a local clone of `onnxscibroccoli/helix` on 2026-09-27: accepted SHA `38903b0…` exists; Helix `main` (`d632064…`) is **not** a descendant of the accepted fix; `git rev-list --left-right --count origin/main...38903b0` reports **4 ahead / 28 behind**. Therefore current `main` cannot be used by itself as the clean reconstruction source for the accepted production state.
 
-The exact deployed checkout is not present as a visible GitHub commit.
+The exact deployed checkout SHA is not present in the Helix GitHub object store (`git cat-file` after clone failed). No Helix tags contained the accepted SHA at verification.
 
 ## Production-host Git lineage finding
 
