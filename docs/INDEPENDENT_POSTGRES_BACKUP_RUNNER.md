@@ -18,11 +18,15 @@ The production target remains:
 | Dedicated runner EC2 and scheduler | Instance exists; timer active | Successful service invocation and documented clean installation |
 | Storage | Encrypted, versioned S3 bucket exists; first encrypted `.age` artifact (5,185 bytes) and JSON manifest (561 bytes) uploaded at 2026-09-27 02:42 UTC | Independently download and verify artifact/manifest checksum and size; observe scheduled uploads |
 | Recovery key and encryption input | Age recovery secret has `AWSCURRENT`; public age recipient installed | Verified separation and authorized isolated decryption using the recovery private key |
-| Database backup identity | Dedicated `helix_backup` role provisioned with read-only grants; first backup service run exited 0 | Verify privilege scope and restored database contents in isolation |
+| Database backup identity | Dedicated `helix_backup` role provisioned with read-only grants; first backup service run exited 0 | Reconcile role grants and deployment policy with clean source |
 | Runner service | Earlier missing policy module installed with hash verified; TLS fix installed; wrapper patched to pass `create`; service subsequently exited 0 | Reconcile installed files and wrapper with clean source and prove repeatable scheduled execution |
-| Recovery objective | One uploaded backup observed; no isolated restore or fourteen-day history yet | Isolated restore and application acceptance, then qualifying retained history |
+| Recovery objective | One backup decrypted and restored into isolated PostgreSQL 17; database checks passed | Authenticated application acceptance, then qualifying retained history |
 
-These are dated observations, not a fourteen-day recovery claim. The pending inventory and TLS pull requests are separate work; neither is a merged release or restore evidence. The currently checked-in script imports `../lib/independent-backup-policy.mjs` relative to its `scripts/` location and passes `--sslmode=require` to `pg_dump`. The installed TLS fix and `create` wrapper are runtime changes until their reviewed source and deployed bytes agree. A zero-exit upload does not prove that the backup can be decrypted and restored.
+These are dated observations, not a fourteen-day recovery claim. The pending inventory and TLS pull requests are separate work; neither is a merged release. The currently checked-in script imports `../lib/independent-backup-policy.mjs` relative to its `scripts/` location and passes `--sslmode=require` to `pg_dump`. The installed TLS fix and `create` wrapper are runtime changes until their reviewed source and deployed bytes agree. The database restore proves this one artifact is restorable at the database level; it does not prove authenticated application operation against that restore.
+
+### Isolated restore evidence for the first point
+
+The encrypted S3 artifact and manifest from 2026-09-27 were taken to an isolated Unix-socket-only PostgreSQL 17 cluster on the Kali host. The artifact was age-decrypted and zstd-decompressed; `pg_restore --no-owner --no-acl --exit-on-error` exited 0. Checks found migrations `0001`–`0004`, two `COMPLETED` tasks, seven task events, zero orphan events, and zero leases without an owner. The temporary plaintext and database cluster on tmpfs were removed, and temporary IAM grants were removed. No row contents or credentials are recorded here. An isolated Helix gateway/worker authenticated task and the fourteen-day retention history remain outstanding.
 
 ## Execution boundary
 
@@ -114,4 +118,4 @@ Use this order for a controlled deployment or repair:
 4. Decrypt and restore into an isolated database, verify schema and representative state, and run authenticated application acceptance against that isolated restore. Keep production traffic and production database writes away from the restore test.
 5. Observe scheduled runs and retention until at least 14 distinct points meet the defined policy, including an independently restorable oldest required point. Record failures, alerting, and rollback procedure; only then claim independent fourteen-day recovery coverage.
 
-Production service activation and restore testing require the authorized infrastructure and recovery operators. This documentation records the order and acceptance evidence; it does not report those gates as complete.
+Production service activation and further restore testing require the authorized infrastructure and recovery operators. One database-level restore passed; authenticated application acceptance and the retention target remain open.
