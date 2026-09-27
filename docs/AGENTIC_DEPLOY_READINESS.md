@@ -64,7 +64,7 @@ Until Grok client files exist on the branch under check, the Grok artifact remai
 
 1. Run `npm run verify:agentic-deploy-readiness` (or `node scripts/verify-agentic-deploy-readiness.mjs --json`).
 2. Treat any critical `OPEN` gate as a hard blocker.
-3. Close gates only with dated evidence in docs/manifests that an authorized operator can reproduce.
+3. Close gates only with dated evidence in docs/manifests that an authorized operator can reproduce. For `production_secrets_cutover`, follow [operations/PRODUCTION_SECRETS_CUTOVER_REVERIFY.md](./operations/PRODUCTION_SECRETS_CUTOVER_REVERIFY.md); do not add gate-close language without live host evidence.
 4. Never claim live deploy success from this static report alone.
 
 ## Safety

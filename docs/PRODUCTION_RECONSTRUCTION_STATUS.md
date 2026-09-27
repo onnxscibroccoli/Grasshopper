@@ -102,7 +102,7 @@ Repository contract evidence (loader, drop-ins, contract/migration docs, and uni
 **This status update does not rotate, delete, or recreate credentials, and it does not re-verify the live host in this change.** Distinguishing repository contract from live cutover:
 
 - **Repository secrets-injection contract** — closed from repo evidence (loader + drop-ins + docs + tests).
-- **Live production secrets cutover re-verification** — remains open until an authorized operator re-confirms the live host still loads `HELIX_AGENT_TOKEN_SECRET_ID` (or equivalent) from Secrets Manager. Do not treat this document edit as fresh live acceptance.
+- **Live production secrets cutover re-verification** — remains open until an authorized operator re-confirms the live host still loads `HELIX_AGENT_TOKEN_SECRET_ID` (or equivalent) from Secrets Manager. Do not treat this document edit as fresh live acceptance. Operator checklist: [PRODUCTION_SECRETS_CUTOVER_REVERIFY.md](./operations/PRODUCTION_SECRETS_CUTOVER_REVERIFY.md).
 - **Future controlled credential rotation** — still a separate production change requiring a recovery plan and human confirmation; it is not implied by closing the repository contract gate.
 
 ## Remaining reconstruction gates

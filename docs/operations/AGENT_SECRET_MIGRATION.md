@@ -38,3 +38,7 @@ An attempted change to 14 days was rejected by AWS with:
 No RDS configuration was changed by the failed request.
 
 The 14-day PITR acceptance criterion therefore remains open and requires an account-level change that removes the Free Tier restriction. The existing Multi-AZ, encryption, deletion protection, and manual pre-hardening snapshot remain intact.
+
+## Live re-verification (open)
+
+Historical verification above is not a fresh live cutover acceptance. For the current host evidence checklist and static-gate close rules, see [PRODUCTION_SECRETS_CUTOVER_REVERIFY.md](./PRODUCTION_SECRETS_CUTOVER_REVERIFY.md).
