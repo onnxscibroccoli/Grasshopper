@@ -16,13 +16,13 @@ The production target remains:
 | Boundary | Observation | Evidence still required |
 |---|---|---|
 | Dedicated runner EC2 and scheduler | Instance exists; timer active | Successful service invocation and documented clean installation |
-| Storage | Encrypted, versioned S3 bucket exists; zero backup objects observed after retry | Artifact and manifest upload, checksum, storage controls, and independent download |
+| Storage | Encrypted, versioned S3 bucket exists; first encrypted `.age` artifact (5,185 bytes) and JSON manifest (561 bytes) uploaded at 2026-09-27 02:42 UTC | Independently download and verify artifact/manifest checksum and size; observe scheduled uploads |
 | Recovery key and encryption input | Age recovery secret has `AWSCURRENT`; public age recipient installed | Verified separation and authorized isolated decryption using the recovery private key |
-| Database backup identity | No successful database secret retrieval or dump established by these observations | Scoped database secret access, TLS connection, and complete dump |
-| Runner service | Earlier missing policy module installed with hash verified; TLS fix installed; wrapper patched to pass `create`; latest retry exited 1 | Diagnose remaining failure, reconcile installed files and wrapper with clean source, and prove repeatable execution |
-| Recovery objective | No observed successful backup or restore | Isolated restore and application acceptance, then qualifying retained history |
+| Database backup identity | Dedicated `helix_backup` role provisioned with read-only grants; first backup service run exited 0 | Verify privilege scope and restored database contents in isolation |
+| Runner service | Earlier missing policy module installed with hash verified; TLS fix installed; wrapper patched to pass `create`; service subsequently exited 0 | Reconcile installed files and wrapper with clean source and prove repeatable scheduled execution |
+| Recovery objective | One uploaded backup observed; no isolated restore or fourteen-day history yet | Isolated restore and application acceptance, then qualifying retained history |
 
-These are dated observations, not a production activation claim. The pending inventory and TLS pull requests are separate work; neither is a merged release or evidence of successful backup. The currently checked-in script imports `../lib/independent-backup-policy.mjs` relative to its `scripts/` location and passes `--sslmode=require` to `pg_dump`. The installed TLS fix and `create` wrapper are runtime changes until their reviewed source and deployed bytes agree. Do not infer a successful TLS connection or dump from installation alone.
+These are dated observations, not a fourteen-day recovery claim. The pending inventory and TLS pull requests are separate work; neither is a merged release or restore evidence. The currently checked-in script imports `../lib/independent-backup-policy.mjs` relative to its `scripts/` location and passes `--sslmode=require` to `pg_dump`. The installed TLS fix and `create` wrapper are runtime changes until their reviewed source and deployed bytes agree. A zero-exit upload does not prove that the backup can be decrypted and restored.
 
 ## Execution boundary
 
@@ -108,7 +108,7 @@ If the runner is hosted in a QEMU/libvirt VM, the hypervisor snapshot protects t
 
 Use this order for a controlled deployment or repair:
 
-1. Record the host unit, environment references, installed file paths and hashes, IAM/DB permissions, network boundary, and current exit-1 failure without recording secret values. Reconcile the reviewed TLS fix, policy import, and wrapper command with one clean source revision.
+1. Record the host unit, environment references, installed file paths and hashes, IAM/DB permissions, network boundary, earlier failures, and first successful run without recording secret values. Reconcile the reviewed TLS fix, policy import, and wrapper command with one clean source revision.
 2. Build a complete, versioned installation from that source. Deploy the runner and `lib/independent-backup-policy.mjs` together at paths that preserve their relative import (or use a tested package layout). Install the reviewed service and timer definitions; confirm the service invokes the intended revision. Verify the backup identity, scoped Secrets Manager access, S3 destination, public recipient, and separately held recovery private key.
 3. In a controlled run, verify a zero-exit service result, a fresh encrypted artifact and manifest in S3, and manifest checksum/size against the downloaded artifact. Do not treat timer activation or a local staging file as upload success.
 4. Decrypt and restore into an isolated database, verify schema and representative state, and run authenticated application acceptance against that isolated restore. Keep production traffic and production database writes away from the restore test.
