@@ -67,6 +67,14 @@ Until Grok client files exist on the branch under check, the Grok artifact remai
 3. Close gates only with dated evidence in docs/manifests that an authorized operator can reproduce. For `production_secrets_cutover`, follow [operations/PRODUCTION_SECRETS_CUTOVER_REVERIFY.md](./operations/PRODUCTION_SECRETS_CUTOVER_REVERIFY.md); do not add gate-close language without live host evidence.
 4. Never claim live deploy success from this static report alone.
 
+## Live acceptance harness (related)
+
+The critical gate `live_acceptance_automation` stays **OPEN** until dated evidence exists for all eight live scenarios under `reference/production/live-acceptance/`.
+
+Suite check: `npm run verify:live-acceptance`
+
+That harness validates **evidence artifacts** only. It does not run against production by itself and does not let this static gate claim live deploy success. See `docs/LIVE_ACCEPTANCE.md`.
+
 ## Safety
 
 No passwords, credential values, session cookies, bearer tokens, private keys, or production connection strings belong in gate output, fixtures, or commits.

@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "name": "live-acceptance",
+  "generated_at": null,
+  "notes": [
+    "Starter evidence artifact only. All scenarios are OPEN until a dated authorized live (or isolated restore) run is recorded.",
+    "This file does not claim production deploy success.",
+    "This harness checks evidence artifacts; it does not itself run against production unless an evidence file records a dated authorized run.",
+    "Do not store secrets, tokens, connection strings, or production hostnames here."
+  ],
+  "topology": "authenticated client -> Helix gateway -> PostgreSQL -> worker -> Kali",
+  "scenarios": {
+    "normal_exec": {
+      "status": "OPEN",
+      "label": "Normal authenticated task execution through gateway to worker/Kali",
+      "critical": true,
+      "evidence": "no dated live run yet",
+      "run_at": null,
+      "operator": null
+    },
+    "worker_termination": {
+      "status": "OPEN",
+      "label": "Worker termination preserves durable task state for reclaim",
+      "critical": true,
+      "evidence": "no dated live run yet",
+      "run_at": null,
+      "operator": null
+    },
+    "stale_lease_reclaim": {
+      "status": "OPEN",
+      "label": "Expired lease returns task to PENDING and allows reclaim",
+      "critical": true,
+      "evidence": "no dated live run yet",
+      "run_at": null,
+      "operator": null
+    },
+    "replacement_completion": {
+      "status": "OPEN",
+      "label": "Owner-fenced replacement completion after reclaim",
+      "critical": true,
+      "evidence": "no dated live run yet",
+      "run_at": null,
+      "operator": null
+    },
+    "duplicate_fencing": {
+      "status": "OPEN",
+      "label": "Duplicate/stale owner identity is fenced from completing",
+      "critical": true,
+      "evidence": "no dated live run yet",
+      "run_at": null,
+      "operator": null
+    },
+    "gateway_restart": {
+      "status": "OPEN",
+      "label": "Gateway restart preserves accepted work and resumes safely",
+      "critical": true,
+      "evidence": "no dated live run yet",
+      "run_at": null,
+      "operator": null
+    },
+    "db_failure": {
+      "status": "OPEN",
+      "label": "Database failure/outage surfaces safely without false COMPLETE",
+      "critical": true,
+      "evidence": "no dated live run yet",
+      "run_at": null,
+      "operator": null
+    },
+    "network_interrupt": {
+      "status": "OPEN",
+      "label": "Network interrupt between gateway/worker/DB does not corrupt task state",
+      "critical": true,
+      "evidence": "no dated live run yet",
+      "run_at": null,
+      "operator": null
+    }
+  }
+}
