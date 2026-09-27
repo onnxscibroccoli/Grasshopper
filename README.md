@@ -1,6 +1,6 @@
 # Grasshopper
 
-A clean, reproducible OmniKali implementation project continuing from the verified production acceptance gate. The deployed production system is the source of truth; this repository formalizes, hardens, and reproduces that validated architecture.
+A reference OmniKali implementation and production reconstruction project continuing from the verified production acceptance gate. The deployed production system supplies observed behavior; this repository formalizes the contracts and tracks the remaining source-to-host reconstruction work. Clean-host production reproduction is not yet established.
 
 ## Final implementation seed
 
@@ -36,3 +36,5 @@ The local environment implements agent registration, resource declaration, durab
     node bin/omnikali.mjs status
 
 No production credentials or live-machine assumptions are required.
+
+For the dated production and independent-backup observations, deployment order, and open reconstruction gates, see [`docs/PRODUCTION_RECONSTRUCTION_STATUS.md`](./docs/PRODUCTION_RECONSTRUCTION_STATUS.md) and [`docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md`](./docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md).
