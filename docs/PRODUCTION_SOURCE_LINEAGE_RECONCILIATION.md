@@ -95,6 +95,8 @@ Those files were recovered into `reference/production/helix-accepted/migrations/
 
 The live production migration ledger contains the same four filenames in the same order. The live migration SHA-256 evidence differs from the clean accepted-source artifacts. This remains a source/runtime drift gate.
 
+Atom 3 evidence (2026-09-27): three-way matrix and fail-closed validator are in `docs/LINEAGE_ATOM3_MIGRATION_BYTE_RECONCILIATION_20260927.md` and `reference/production/migration-byte-reconciliation.json` (`npm run validate:migration-byte-reconciliation`). `0002`/`0003` match all three; `0004` is trailing-newline drift vs Helix; live `0001` hash differs from both Helix and the Grasshopper evidence copy with **UNKNOWN** content-diff cause (live bytes not in repo). Gate `migration_byte_identity` stays **blocked**.
+
 ## Remaining reconstruction gates
 
 The exact bridge has since been preserved at `reference/production/deployed/omni-agent.mjs` and designated canonical source at `src/production/omni-agent.mjs` (see `PRODUCTION_RECONSTRUCTION_STATUS.md`). These completed source steps do not close the full-stack release gate. Remaining steps are:

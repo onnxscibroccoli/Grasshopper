@@ -27,6 +27,7 @@
     "verify:agentic-deploy-readiness": "node scripts/verify-agentic-deploy-readiness.mjs",
     "validate:helix-lineage-pin": "node scripts/validate-helix-lineage-pin.mjs",
     "verify:live-acceptance": "node scripts/verify-live-acceptance.mjs",
-    "live-acceptance:run": "node scripts/live-acceptance/run-scenario.mjs"
+    "live-acceptance:run": "node scripts/live-acceptance/run-scenario.mjs",
+    "validate:migration-byte-reconciliation": "node scripts/validate-migration-byte-reconciliation.mjs"
   }
 }

@@ -65,6 +65,8 @@ Grasshopper `reference/production/helix-accepted/migrations/` is an **evidence c
 
 Live migration SHA-256 values in `observed-db-baseline.json` still differ for some files; source/runtime drift remains a gate.
 
+Full three-way reconciliation (Helix checkout vs Grasshopper evidence vs live hashes), including the live `0001` **UNKNOWN** content-diff note, is recorded in Atom 3: `docs/LINEAGE_ATOM3_MIGRATION_BYTE_RECONCILIATION_20260927.md` and `reference/production/migration-byte-reconciliation.json`. Do not treat Grasshopper evidence copies as authoritative Helix source.
+
 ## Existing gates (unchanged; still blocked)
 
 From `reference/production/reconstruction-manifest.json` and executor/recovery docs:
