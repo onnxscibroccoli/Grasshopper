@@ -47,13 +47,36 @@ test("verifier fails closed today (exit 1) with critical OPEN gates", () => {
   assert.equal(report.summary.required_restore_points, 14);
   for (const id of [
     "lineage",
-    "secrets_injection",
+    "production_secrets_cutover",
     "live_acceptance_automation",
     "backup_retention",
     "clean_host_reconstruction"
   ]) {
     assert.ok(report.summary.critical_open.includes(id), `expected critical OPEN ${id}`);
   }
+  assert.equal(
+    report.summary.critical_open.includes("secrets_injection_contract"),
+    false,
+    "secrets_injection_contract must not be critical OPEN when repo evidence is present"
+  );
+  assert.ok(
+    report.summary.gates_complete.includes("secrets_injection_contract"),
+    "expected secrets_injection_contract COMPLETE"
+  );
+});
+
+test("secrets_injection_contract COMPLETE from repo evidence; production cutover remains OPEN", () => {
+  const result = runVerifier(["--json"]);
+  assert.equal(result.status, 1);
+  const report = JSON.parse(result.stdout);
+  const contract = report.gates.find((g) => g.id === "secrets_injection_contract");
+  const cutover = report.gates.find((g) => g.id === "production_secrets_cutover");
+  assert.ok(contract, "missing secrets_injection_contract gate");
+  assert.ok(cutover, "missing production_secrets_cutover gate");
+  assert.equal(contract.status, "COMPLETE");
+  assert.equal(cutover.status, "OPEN");
+  assert.match(contract.evidence, /Secrets Manager|HELIX_AGENT_TOKEN_SECRET_ID|agent-bridge-token/i);
+  assert.match(cutover.evidence, /not re-verified|historical evidence only/i);
 });
 
 test("verifier reports known-complete repository artifacts and OPEN Grok until present", () => {
