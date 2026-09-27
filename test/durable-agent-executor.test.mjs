@@ -160,6 +160,55 @@ test("acknowledged cancellation remains recorded after adapter completion", asyn
   }
 });
 
+test("acknowledged cancellation plus confirmed adapter result becomes indeterminate", async () => {
+  let release;
+  let started;
+  const pending = new Promise(resolve => { release = resolve; });
+  const dispatched = new Promise(resolve => { started = resolve; });
+  const { executor, dir } = await harness({
+    start() { started(); return pending; },
+    async cancel() { return { acknowledged: true }; }
+  });
+
+  try {
+    const startPromise = executor.start({
+      id: "task-cancel-confirmed-conflict",
+      operationKey: "op-cancel-confirmed-conflict",
+      commandDisposition: COMMAND_DISPOSITIONS.NON_IDEMPOTENT_MUTATION,
+      command: "charge"
+    });
+    await dispatched;
+
+    const executionId = (await executor.store.load()).executions["op-cancel-confirmed-conflict"].executionId;
+    assert.equal((await executor.cancel(executionId)).acknowledged, true);
+
+    release({
+      code: 0,
+      signal: null,
+      stdout: "",
+      stderr: "",
+      completion: "confirmed"
+    });
+
+    const completed = await startPromise;
+    assert.equal(completed.status, "indeterminate");
+    assert.equal(completed.result.completion, "indeterminate");
+    assert.equal(completed.result.reconciliation.source, "cancellation_acknowledged_after_dispatch");
+    assert.equal(completed.cancellation.acknowledged, true);
+
+    const duplicate = await executor.start({
+      id: "task-cancel-confirmed-conflict-duplicate",
+      operationKey: "op-cancel-confirmed-conflict",
+      commandDisposition: COMMAND_DISPOSITIONS.NON_IDEMPOTENT_MUTATION,
+      command: "charge"
+    });
+    assert.equal(duplicate.duplicate, true);
+    assert.equal(duplicate.status, "indeterminate");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("acknowledged cancellation remains recorded after adapter failure", async () => {
   let fail;
   let started;
