@@ -48,3 +48,27 @@ test("interactive interruption remains indeterminate", () => {
   );
   assert.equal(result.completion, "indeterminate");
 });
+
+test("rejects read-only indeterminate without reconciliation metadata", () => {
+  assert.throws(
+    () => assertCompletion(
+      { completion: COMPLETION_STATES.INDETERMINATE, interrupted: true, code: null },
+      COMMAND_DISPOSITIONS.READ_ONLY
+    ),
+    /read-only execution cannot report indeterminate without reconciliation metadata/
+  );
+});
+
+test("accepts read-only indeterminate when reconciliation metadata is present", () => {
+  const result = assertCompletion(
+    {
+      completion: COMPLETION_STATES.INDETERMINATE,
+      interrupted: true,
+      code: null,
+      reconciliation: { source: "external_inspection", outcome: "absent" }
+    },
+    COMMAND_DISPOSITIONS.READ_ONLY
+  );
+  assert.equal(result.completion, "indeterminate");
+  assert.equal(result.reconciliation.source, "external_inspection");
+});
