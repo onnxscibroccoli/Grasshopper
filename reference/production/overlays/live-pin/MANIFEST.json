@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "status": "live-bytes-imported-evidence",
+  "imported_at": "2026-09-27T02:53:07-04:00",
+  "source": "workspace capture /workspace/lineage-dept-evidence/live-overlay-bytes (SHA-matched to dated PRODUCTION_* live authority digests)",
+  "helix_acceptance_ref": {
+    "tag": "clean-reconstruction-38903b0",
+    "commit": "38903b021cca75189a99e1ed88b508bae577f048"
+  },
+  "artifacts": {
+    "omni-agent.mjs": {
+      "repo_path": "reference/production/overlays/live-pin/omni-agent.mjs",
+      "runtime_path": "/opt/helix/production/agent/omni-agent.mjs",
+      "sha256": "ee0a9898e706752098ef2dcce87b18cf577ff37e8726de3fb41721490078c46d",
+      "size_bytes": 4040,
+      "class": "LIVE_pin_authority",
+      "helix_import_dest": "production/agent/omni-agent.mjs"
+    },
+    "agent-executor.mjs": {
+      "repo_path": "reference/production/overlays/live-pin/agent-executor.mjs",
+      "runtime_path": "/opt/helix/production/gateway/state/agent-executor.mjs",
+      "sha256": "6c6346aee951eb139aa15fb7a5394bbd24bae5fab9a557a1f4f8d22d9ed3384e",
+      "size_bytes": 910,
+      "class": "LIVE_pin_authority",
+      "helix_import_dest": "production/gateway/state/agent-executor.mjs"
+    }
+  },
+  "non_goals": {
+    "executor_lineage_unblocked": false,
+    "production_mutation_allowed": false,
+    "grasshopper_hardening_delta_is_live": false,
+    "invented_helix_git_history": false
+  },
+  "notes": [
+    "Grasshopper hardening delta remains ffd3d598… / d1ad94d9… under deployed/ and src/ — not live.",
+    "Helix acceptance tree 38903b0 still lacks these paths until a separate Helix import PR off clean-reconstruction-38903b0.",
+    "BRIDGE_RECOVERY reconciliation language does not unblock executor_lineage."
+  ]
+}

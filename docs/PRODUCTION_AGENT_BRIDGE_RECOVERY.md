@@ -2,6 +2,8 @@
 
 Status: **source-authoring provenance resolved; exact artifact reconciliation resolved; canonical source designation remains gated**.
 
+> **G6 / gate honesty:** “exact artifact reconciliation resolved” here means the *live host* artifact and authoring event are identified (SHA `ee0a9898…`). It does **not** unblock `executor_lineage` while `docs/PRODUCTION_EXECUTOR_LINEAGE_GATE.md` and `reference/production/helix-lineage-pin.json` say blocked, while Grasshopper hardening delta bytes diverge from live, or before Verify Gate ACCEPT on the live-pin + Helix import package. See Lineage `reference/production/overlays/live-pin/`.
+
 ## Exact authoring event
 
 Production journal evidence shows the deployed bridge was authored directly through the authorized remote workstation control session on 2026-09-24.

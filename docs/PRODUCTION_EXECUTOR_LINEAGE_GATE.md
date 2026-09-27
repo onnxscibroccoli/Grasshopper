@@ -32,7 +32,7 @@ G1 is **not** closed by documenting the delta, labeling validators, or keeping h
 
 **Close condition (Lineage ownership, locked):** populate `reference/production/overlays/live-pin/` **only** with byte-identical LIVE blobs whose SHA-256 match the live pin digests above, plus `MANIFEST.json` recording those LIVE SHAs. Until that tree holds verified live bytes, G1 remains open.
 
-**Current tree state:** live blobs are **not** in Grasshopper today. Present evidence is the sidecar claim in `reference/production/deployed/omni-agent.sha256` (asserts live `ee0a9898…` / 4040 B) versus mismatched checked-in `.mjs` bytes (`ffd3d598…` / 4223 B). That sidecar-vs-bytes mismatch is evidence inconsistency, **not** an unblock. G1 is blocked on obtaining live bytes (read-only capture / Ian supply), not on relabeling the delta.
+**Current tree state (2026-09-27 update):** LIVE blobs are present under `reference/production/overlays/live-pin/` and SHA-match the LIVE pin digests (see `MANIFEST.json` and `docs/OVERLAYS_LIVE_PIN_IMPORT.md`). The sidecar-vs-`deployed/*.mjs` mismatch remains: `deployed/` / `src/` still hold the Grasshopper hardening delta (`ffd3d598…` / `d1ad94d9…`), which must not be renamed as live. G1 live-byte *presence* in the live-pin tree is satisfied for Grasshopper evidence; `executor_lineage` remains **blocked** until Verify Gate ACCEPT on the full provenance package (Helix import + remaining checklist). Do not treat live-pin alone as gate COMPLETE.
 
 SHA ledger (Lineage-owned, outside this PR tree): `/workspace/lineage-dept-evidence/atom2-sha-ledger-20260927.md`. Lineage Dept owns that ledger path and the live-pin import procedure.
 
