@@ -40,3 +40,16 @@ Accepted, duplicate, denied, and cancellation attempts append `grok.operation.ac
 This client does not choose a database provider. The reference control plane continues to use its existing state store. Production durability remains provider-neutral PostgreSQL behind Helix. Neon is not a production dependency.
 
 The client does not change the validated production task lifecycle, lease recovery, or the recovered QEMU execution primitive. Wiring it to the live Helix gateway still requires the existing authenticated gateway boundary and is not done here.
+
+## MCP tool surface
+
+A thin MCP facade in `src/mcp/grok-control-plane-tools.mjs` exposes exactly two tools, both of which forward to `GrokControlPlaneClient`:
+
+- `omnikali_submit_operation`
+- `omnikali_cancel_operation`
+
+The facade rejects `executor` and `adapter` options the same way the client does. It does not import or construct an executor. Unknown tool names return `{ accepted: false, reason: "unknown_tool" }`.
+
+## `.grok` skill
+
+The skill at `.grok/skills/omnikali-control-plane/SKILL.md` documents that Grok must use this authenticated path and must not bypass Helix. It points back to this document.
