@@ -28,6 +28,7 @@
     "validate:helix-lineage-pin": "node scripts/validate-helix-lineage-pin.mjs",
     "verify:live-acceptance": "node scripts/verify-live-acceptance.mjs",
     "verify:clean-host-dryrun": "node scripts/verify-clean-host-dryrun.mjs",
+    "verify:secrets-cutover-dryrun": "node scripts/verify-secrets-cutover-dryrun.mjs",
     "live-acceptance:run": "node scripts/live-acceptance/run-scenario.mjs",
     "validate:migration-byte-reconciliation": "node scripts/validate-migration-byte-reconciliation.mjs"
   }
