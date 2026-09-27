@@ -69,7 +69,7 @@ test("adapter failure is indeterminate and is not retried by duplicate dispatch"
   }
 });
 
-test("unsupported cancellation is never reported as acknowledged", async () => {
+test("cancel after confirmed reports already_finished and is not acknowledged", async () => {
   const { executor, dir } = await harness({
     async start() {
       return { code: 0, signal: null, stdout: "ok\n", stderr: "", completion: "confirmed" };
@@ -91,7 +91,7 @@ test("unsupported cancellation is never reported as acknowledged", async () => {
   }
 });
 
-test("live cancellation capability is required for cancellation acknowledgement", async () => {
+test("unsupported cancel while in-flight records request without acknowledgement", async () => {
   let release;
   const pending = new Promise(resolve => { release = resolve; });
   const { executor, dir } = await harness({
@@ -112,6 +112,11 @@ test("live cancellation capability is required for cancellation acknowledgement"
     const cancellation = await executor.cancel(executionId);
     assert.equal(cancellation.acknowledged, false);
     assert.equal(cancellation.reason, "executor_cancellation_unsupported");
+
+    const afterCancel = await executor.store.load();
+    assert.equal(afterCancel.executions["op-5"].cancellation.requested, true);
+    assert.equal(afterCancel.executions["op-5"].cancellation.acknowledged, false);
+    assert.notEqual(afterCancel.executions["op-5"].status, "cancelled");
 
     release({ code: 0, signal: null, stdout: "", stderr: "", completion: "confirmed" });
     await startPromise;
@@ -215,6 +220,203 @@ test("duplicate while first dispatch is still in flight is not dispatched twice"
     release({ code: 0, signal: null, stdout: "ok\n", stderr: "", completion: "confirmed" });
     const first = await firstPromise;
     assert.equal(first.status, "confirmed");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("cancel unknown execution is not acknowledged", async () => {
+  const { executor, dir } = await harness({
+    async start() {
+      return { code: 0, signal: null, stdout: "ok\n", stderr: "", completion: "confirmed" };
+    }
+  });
+
+  try {
+    const cancellation = await executor.cancel("missing-exec-id");
+    assert.equal(cancellation.acknowledged, false);
+    assert.equal(cancellation.reason, "unknown_execution");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("adapter cancel not-acknowledged does not flip store to cancelled", async () => {
+  let release;
+  let started;
+  const pending = new Promise(resolve => { release = resolve; });
+  const dispatched = new Promise(resolve => { started = resolve; });
+  const { executor, dir } = await harness({
+    start() { started(); return pending; },
+    async cancel() { return { acknowledged: false, reason: "bridge_refused" }; }
+  });
+
+  try {
+    const startPromise = executor.start({
+      id: "task-not-ack",
+      operationKey: "op-not-ack",
+      commandDisposition: COMMAND_DISPOSITIONS.INTERACTIVE,
+      command: "shell"
+    });
+    await dispatched;
+    const before = (await executor.store.load()).executions["op-not-ack"];
+    const cancellation = await executor.cancel(before.executionId);
+
+    assert.equal(cancellation.acknowledged, false);
+    assert.equal(cancellation.reason, "bridge_refused");
+
+    const after = (await executor.store.load()).executions["op-not-ack"];
+    assert.notEqual(after.status, "cancelled");
+    assert.equal(after.cancellation.acknowledged, false);
+
+    release({ code: 0, signal: null, stdout: "ok\n", stderr: "", completion: "confirmed" });
+    await startPromise;
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("adapter cancel omitted reason reports not_acknowledged without store cancel flip", async () => {
+  let release;
+  let started;
+  const pending = new Promise(resolve => { release = resolve; });
+  const dispatched = new Promise(resolve => { started = resolve; });
+  const { executor, dir } = await harness({
+    start() { started(); return pending; },
+    async cancel() { return { acknowledged: false }; }
+  });
+
+  try {
+    const startPromise = executor.start({
+      id: "task-not-ack-default",
+      operationKey: "op-not-ack-default",
+      commandDisposition: COMMAND_DISPOSITIONS.INTERACTIVE,
+      command: "shell"
+    });
+    await dispatched;
+    const executionId = (await executor.store.load()).executions["op-not-ack-default"].executionId;
+    const cancellation = await executor.cancel(executionId);
+
+    assert.equal(cancellation.acknowledged, false);
+    assert.equal(cancellation.reason, "not_acknowledged");
+
+    const after = (await executor.store.load()).executions["op-not-ack-default"];
+    assert.notEqual(after.status, "cancelled");
+    assert.equal(after.cancellation.acknowledged, false);
+
+    release({ code: 0, signal: null, stdout: "ok\n", stderr: "", completion: "confirmed" });
+    await startPromise;
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("duplicate start after cancel-ack does not re-dispatch", async () => {
+  let starts = 0;
+  let release;
+  let started;
+  const pending = new Promise(resolve => { release = resolve; });
+  const dispatched = new Promise(resolve => { started = resolve; });
+  const { executor, dir } = await harness({
+    start() {
+      starts++;
+      started();
+      return pending;
+    },
+    async cancel() { return { acknowledged: true }; }
+  });
+
+  try {
+    const task = {
+      id: "task-dup-cancel",
+      operationKey: "op-dup-cancel",
+      commandDisposition: COMMAND_DISPOSITIONS.IDEMPOTENT_MUTATION,
+      command: "write"
+    };
+    const startPromise = executor.start(task);
+    await dispatched;
+    const executionId = (await executor.store.load()).executions["op-dup-cancel"].executionId;
+    assert.equal((await executor.cancel(executionId)).acknowledged, true);
+
+    const recorded = (await executor.store.load()).executions["op-dup-cancel"];
+    assert.equal(recorded.status, "cancelled");
+
+    const duplicate = await executor.start({ ...task, id: "task-dup-cancel-2" });
+    assert.equal(duplicate.duplicate, true);
+    assert.equal(duplicate.status, "cancelled");
+    assert.equal(starts, 1);
+
+    release({ code: null, signal: "SIGTERM", stdout: "", stderr: "", canceled: true, completion: "cancelled" });
+    await startPromise;
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("cancel already-cancelled reports already_finished", async () => {
+  let release;
+  let started;
+  const pending = new Promise(resolve => { release = resolve; });
+  const dispatched = new Promise(resolve => { started = resolve; });
+  const { executor, dir } = await harness({
+    start() { started(); return pending; },
+    async cancel() { return { acknowledged: true }; }
+  });
+
+  try {
+    const startPromise = executor.start({
+      id: "task-already-cancel",
+      operationKey: "op-already-cancel",
+      commandDisposition: COMMAND_DISPOSITIONS.INTERACTIVE,
+      command: "shell"
+    });
+    await dispatched;
+    const executionId = (await executor.store.load()).executions["op-already-cancel"].executionId;
+    assert.equal((await executor.cancel(executionId)).acknowledged, true);
+    assert.equal((await executor.store.load()).executions["op-already-cancel"].status, "cancelled");
+
+    const second = await executor.cancel(executionId);
+    assert.equal(second.acknowledged, false);
+    assert.equal(second.reason, "already_finished");
+
+    release({ code: null, signal: "SIGTERM", stdout: "", stderr: "", canceled: true, completion: "cancelled" });
+    await startPromise;
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("start-only adapter shape yields executor_cancellation_unsupported while in-flight", async () => {
+  let release;
+  let started;
+  const pending = new Promise(resolve => { release = resolve; });
+  const dispatched = new Promise(resolve => { started = resolve; });
+  // Mirrors production createAgentExecutor shape: start-only function object with no cancel.
+  const adapter = {
+    start: async () => {
+      started();
+      return pending;
+    }
+  };
+  const { executor, dir } = await harness(adapter);
+
+  try {
+    const startPromise = executor.start({
+      id: "task-start-only",
+      operationKey: "op-start-only",
+      commandDisposition: COMMAND_DISPOSITIONS.INTERACTIVE,
+      command: "shell"
+    });
+    await dispatched;
+    const executionId = (await executor.store.load()).executions["op-start-only"].executionId;
+    const cancellation = await executor.cancel(executionId);
+    assert.equal(cancellation.acknowledged, false);
+    assert.equal(cancellation.reason, "executor_cancellation_unsupported");
+    assert.equal((await executor.store.load()).executions["op-start-only"].cancellation.requested, true);
+    assert.equal((await executor.store.load()).executions["op-start-only"].cancellation.acknowledged, false);
+
+    release({ code: 0, signal: null, stdout: "", stderr: "", completion: "confirmed" });
+    await startPromise;
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
