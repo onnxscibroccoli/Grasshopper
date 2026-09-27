@@ -36,3 +36,7 @@ The local environment implements agent registration, resource declaration, durab
     node bin/omnikali.mjs status
 
 No production credentials or live-machine assumptions are required.
+
+## Production boundary
+
+The local JSON reference does not deploy the existing PostgreSQL production gateway. See [production contract inventory](docs/PRODUCTION_CONTRACT_INVENTORY.md) for observed host and IAM state, verification limits, and the reproducibility gate.
