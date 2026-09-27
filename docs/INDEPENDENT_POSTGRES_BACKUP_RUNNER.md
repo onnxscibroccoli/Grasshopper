@@ -15,9 +15,9 @@ The production target remains:
 
 | Boundary | Observation | Evidence still required |
 |---|---|---|
-| Dedicated runner EC2 and scheduler | Instance exists; timer active | Successful service invocation and documented clean installation |
-| Storage | Encrypted, versioned S3 bucket exists; first encrypted `.age` artifact (5,185 bytes) and JSON manifest (561 bytes) uploaded at 2026-09-27 02:42 UTC | Independently download and verify artifact/manifest checksum and size; observe scheduled uploads |
-| Recovery key and encryption input | Age recovery secret has `AWSCURRENT`; public age recipient installed | Verified separation and authorized isolated decryption using the recovery private key |
+| Dedicated runner EC2 and scheduler | Instance exists; timer active; manual service invocation exited 0 | Documented clean installation and successful scheduled invocations |
+| Storage | Encrypted, versioned S3 bucket exists; first encrypted `.age` artifact (5,185 bytes) and JSON manifest (561 bytes) uploaded at 2026-09-27 02:42 UTC; downloaded encrypted artifact matched manifest checksum and size | Observe scheduled uploads and verify further recovery points |
+| Recovery key and encryption input | Age recovery secret has `AWSCURRENT`; public recipient installed; isolated decryption succeeded using the separately held recovery identity | Repeatable recovery-key procedure and authenticated application restore acceptance |
 | Database backup identity | Dedicated `helix_backup` role provisioned with read-only grants; first backup service run exited 0 | Reconcile role grants and deployment policy with clean source |
 | Runner service | Earlier missing policy module installed with hash verified; TLS fix installed; wrapper patched to pass `create`; service subsequently exited 0 | Reconcile installed files and wrapper with clean source and prove repeatable scheduled execution |
 | Recovery objective | One backup decrypted and restored into isolated PostgreSQL 17; database checks passed | Authenticated application acceptance, then qualifying retained history |
