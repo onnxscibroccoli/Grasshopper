@@ -35,8 +35,8 @@ Passing (or even improving) this gate does **not** mean:
 - live acceptance ran against production or an isolated restore;
 - fourteen independent restore points exist;
 - RDS PITR is fourteen days (it remains **1 day** until an authorized AWS change succeeds);
-- PR #22 (inventory) or PR #23 (backup TLS) were merged;
-- the Grok control-plane client from PR #27 is on `main`.
+- live production secrets cutover has been re-verified;
+- the executor-lineage, clean-host, rollback/recovery, and acceptance gates are closed.
 
 Do not fabricate restore-point counts. Current verified independent database-level restore evidence is **one** recovery point; **fourteen** are required before the backup-retention gate can close.
 
@@ -50,15 +50,20 @@ authenticated client -> Helix gateway -> PostgreSQL -> worker -> Kali
 
 Neon is not production. Do not introduce Neon as the production persistence layer.
 
-## Adjacent work (do not merge from this gate)
+## Current implementation state
 
-| PR | Topic | Notes |
-|----|-------|-------|
-| #22 | production contract inventory | draft; note only |
-| #23 | backup runner TLS | draft; note only |
-| #27 | Grok control-plane client | open/ready separately; tip `1bfd67e`; not modified by this gate |
+The following hardening/formalization work is already on `main`:
 
-Until Grok client files exist on the branch under check, the Grok artifact remains `OPEN`. That is expected on `main` before #27 merges.
+- production contract and read-only service lifecycle inventory (#55);
+- fail-closed clean-host reconstruction dry-run (#53);
+- fail-closed secrets cutover dry-run pack (#54);
+- replacement-completion dry-run fixtures (#44);
+- Grok control-plane client and MCP facade;
+- reference durable executor idempotency/cancellation fencing, including the cancellation/result race guard (#57);
+- current lineage evidence refresh (#56).
+
+These are implementation artifacts and repository evidence. They do not close the corresponding live gates.
+
 
 ## How agents should use the report
 
