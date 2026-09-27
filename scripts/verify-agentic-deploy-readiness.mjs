@@ -224,20 +224,71 @@ function assessProductionSecretsCutover(reconstructionStatus, migrationDoc) {
   );
 }
 
+function hasDatedLiveScenarioEvidence(entry) {
+  if (!entry || typeof entry !== "object") return false;
+  const evidence = typeof entry.evidence === "string" ? entry.evidence.trim() : "";
+  if (!evidence || /^no dated live run yet$/i.test(evidence)) return false;
+  const iso = /\b(20\d{2}-\d{2}-\d{2})(?:[T\s]\d{2}:\d{2})?/;
+  if (entry.run_at && iso.test(String(entry.run_at))) return true;
+  if (iso.test(evidence)) return true;
+  return false;
+}
+
+const LIVE_ACCEPTANCE_SCENARIO_IDS = [
+  "normal_exec",
+  "worker_termination",
+  "stale_lease_reclaim",
+  "replacement_completion",
+  "duplicate_fencing",
+  "gateway_restart",
+  "db_failure",
+  "network_interrupt"
+];
+
 function assessLiveAcceptance(manifest, reconstructionStatus) {
+  // Prefer the live-acceptance evidence harness manifest. Flip to COMPLETE only
+  // when every required scenario is COMPLETE with non-empty dated evidence.
+  // Keep fail-closed: starter OPEN artifacts leave this gate OPEN.
+  const liveManifest = readJson("reference/production/live-acceptance/manifest.json");
   const acceptance = manifest?.gates?.acceptance_automation;
-  const text = reconstructionStatus || "";
+  const statusText = reconstructionStatus || "";
+
+  if (liveManifest?.scenarios) {
+    const incomplete = [];
+    for (const id of LIVE_ACCEPTANCE_SCENARIO_IDS) {
+      const entry = liveManifest.scenarios[id];
+      const status = String(entry?.status || "").toUpperCase();
+      if (status !== "COMPLETE" || !hasDatedLiveScenarioEvidence(entry)) {
+        incomplete.push(id);
+      }
+    }
+    if (incomplete.length === 0) {
+      return gate(
+        "live_acceptance_automation",
+        "Live readiness and acceptance automation",
+        "COMPLETE",
+        `live-acceptance manifest reports all ${LIVE_ACCEPTANCE_SCENARIO_IDS.length} scenarios COMPLETE with dated evidence`
+      );
+    }
+    return gate(
+      "live_acceptance_automation",
+      "Live readiness and acceptance automation",
+      "OPEN",
+      `live-acceptance scenarios still OPEN or undated: ${incomplete.join(", ")}; reconstruction.acceptance_automation=${acceptance ?? "missing"}`
+    );
+  }
+
   const open =
     acceptance === "incomplete" ||
     acceptance === "blocked" ||
-    /readiness and acceptance automation/i.test(text) ||
-    /authenticated Helix gateway\/worker task against the restored database/i.test(text);
+    /readiness and acceptance automation/i.test(statusText) ||
+    /authenticated Helix gateway\/worker task against the restored database/i.test(statusText);
   if (open) {
     return gate(
       "live_acceptance_automation",
       "Live readiness and acceptance automation",
       "OPEN",
-      `manifest.acceptance_automation=${acceptance ?? "missing"}; live acceptance remains deployment-time/open`
+      `manifest.acceptance_automation=${acceptance ?? "missing"}; live acceptance remains deployment-time/open; no live-acceptance harness manifest yet`
     );
   }
   return gate(
