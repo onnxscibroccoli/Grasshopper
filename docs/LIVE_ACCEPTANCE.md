@@ -104,6 +104,23 @@ The static gate's `live_acceptance_automation` critical gate reads the live-acce
 - Not permission to mutate production.
 - Not a substitute for clean-host reconstruction, backup retention, or secrets cutover gates.
 
+## Scenario runner scaffold (shared)
+
+A shared fail-closed CLI lives under `scripts/live-acceptance/` so parallel scenario bots can plug into one runner:
+
+```bash
+npm run live-acceptance:run -- --scenario <id> [--mode dry-run|record] [--json]
+# or
+node scripts/live-acceptance/run-scenario.mjs --scenario <id>
+```
+
+- **Stubs are not evidence.** Each of the eight `scenarios/<id>/scenario.mjs` modules currently returns `ok: false` from `dryRun()` / `liveRun()`. Passing or failing a dry-run does **not** flip the manifest.
+- **Scenarios stay OPEN** until an authorized, dated `record` path (with `--evidence`, `--run-at`, `--operator`) and an implementing `liveRun` mark COMPLETE. Default stubs refuse record (fail-closed).
+- `dry-run` never writes COMPLETE. This scaffold does not call Helix or mutate production.
+- `npm run verify:live-acceptance` remains the evidence harness and still exits `1` while any scenario is OPEN.
+
+See `scripts/live-acceptance/README.md` for the module contract and fail-closed rules.
+
 ## Starter state (2026-09-27)
 
 All eight scenarios are **OPEN** with evidence `no dated live run yet`. No live deploy success is claimed.
