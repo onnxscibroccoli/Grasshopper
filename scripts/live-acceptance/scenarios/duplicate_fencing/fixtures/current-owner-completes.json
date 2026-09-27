@@ -1,0 +1,18 @@
+{
+  "id": "duplicate_fencing_current_owner_completes",
+  "description": "Current owner completes while lease is still valid.",
+  "nowMs": 1000000,
+  "leaseMs": 45000,
+  "steps": [
+    { "op": "create", "taskId": "task-dup-1" },
+    { "op": "claim", "ownerId": "worker-a", "taskId": "task-dup-1" },
+    { "op": "assert", "taskId": "task-dup-1", "state": "RUNNING", "ownerId": "worker-a" },
+    { "op": "complete", "taskId": "task-dup-1", "ownerId": "worker-a", "result": { "ok": true } },
+    { "op": "assert", "taskId": "task-dup-1", "state": "COMPLETED", "ownerId": "worker-a" }
+  ],
+  "expect": {
+    "taskId": "task-dup-1",
+    "finalState": "COMPLETED",
+    "finalOwner": "worker-a"
+  }
+}

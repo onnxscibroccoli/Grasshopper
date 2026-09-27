@@ -1,0 +1,25 @@
+{
+  "id": "duplicate_fencing_duplicate_claim_while_leased",
+  "description": "Second claim while RUNNING with valid lease does not steal ownership.",
+  "nowMs": 1000000,
+  "leaseMs": 45000,
+  "steps": [
+    { "op": "create", "taskId": "task-dup-3" },
+    { "op": "claim", "ownerId": "worker-a", "taskId": "task-dup-3" },
+    { "op": "assert", "taskId": "task-dup-3", "state": "RUNNING", "ownerId": "worker-a" },
+    {
+      "op": "claim",
+      "ownerId": "worker-b",
+      "taskId": "task-dup-3",
+      "expectClaim": null
+    },
+    { "op": "assert", "taskId": "task-dup-3", "state": "RUNNING", "ownerId": "worker-a" },
+    { "op": "complete", "taskId": "task-dup-3", "ownerId": "worker-a", "result": { "ok": true } },
+    { "op": "assert", "taskId": "task-dup-3", "state": "COMPLETED", "ownerId": "worker-a" }
+  ],
+  "expect": {
+    "taskId": "task-dup-3",
+    "finalState": "COMPLETED",
+    "finalOwner": "worker-a"
+  }
+}

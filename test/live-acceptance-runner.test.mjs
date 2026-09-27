@@ -159,14 +159,38 @@ test("record with flags still fails closed on stub liveRun (no COMPLETE)", () =>
   assert.equal(manifest.scenarios.gateway_restart.status, "OPEN");
 });
 
-test("all eight stub dryRuns fail closed", () => {
-  for (const id of REQUIRED_SCENARIO_IDS) {
+// Scenarios with filled dry-run fixtures may exit 0; remaining stubs stay fail-closed.
+const STILL_STUB_SCENARIO_IDS = REQUIRED_SCENARIO_IDS.filter(
+  (id) => id !== "duplicate_fencing"
+);
+
+test("remaining stub dryRuns fail closed", () => {
+  for (const id of STILL_STUB_SCENARIO_IDS) {
     const result = runRunner(["--scenario", id, "--json"]);
-    assert.equal(result.status, 1, `expected exit 1 for ${id}`);
+    assert.equal(result.status, 1, `expected exit 1 for stub ${id}`);
+    const payload = JSON.parse(result.stdout);
+    assert.equal(payload.ok, false);
+    assert.equal(payload.manifest_mutated, false);
+    assert.match(String(payload.evidence), /scaffold stub|not implemented/i);
+  }
+});
+
+test("duplicate_fencing dryRun may pass without mutating manifest", () => {
+  const before = readManifest();
+  const result = runRunner(["--scenario", "duplicate_fencing", "--json"]);
+  // Filled scenario: exit 0 when fixtures land; still never marks COMPLETE.
+  if (result.status === 0) {
+    const payload = JSON.parse(result.stdout);
+    assert.equal(payload.ok, true);
+    assert.equal(payload.manifest_mutated, false);
+  } else {
+    // Still a stub on this branch tip before fill lands — keep fail-closed.
     const payload = JSON.parse(result.stdout);
     assert.equal(payload.ok, false);
     assert.equal(payload.manifest_mutated, false);
   }
+  assert.equal(readManifest(), before);
+  assert.equal(JSON.parse(before).scenarios.duplicate_fencing.status, "OPEN");
 });
 
 test("docs mention runner scaffold; stubs are not evidence", () => {
