@@ -1,0 +1,14 @@
+{
+  "backup_id": "synthetic-backup-09",
+  "created_at": "2026-09-18T13:00:00.000Z",
+  "source_instance": "synthetic-fixture-db",
+  "postgres_version": "17",
+  "migration_revision": "synthetic-0001",
+  "artifact_sha256": "f83d249451aaf59fee88071477c3629d2294af3fc56fd3df37e5e46438ff2404",
+  "artifact_size": 1033,
+  "compression": "zstd",
+  "encryption_key_id": "synthetic-test-key",
+  "synthetic": true,
+  "fixture_kind": "synthetic",
+  "fixture_id": 9
+}
