@@ -36,6 +36,14 @@ The repository now has:
 
 Production mutation remains fail-closed.
 
+## Observed production boundary (2026-09-27)
+
+The authenticated Helix gateway -> PostgreSQL -> worker -> Kali path was previously accepted. This is acceptance of the observed runtime path, not proof that the whole host can be reconstructed from a clean Git checkout.
+
+A dedicated backup EC2 instance exists with its scheduler timer active. An encrypted, versioned S3 backup bucket exists, the age recovery secret has an `AWSCURRENT` version, and a public age recipient is installed on the runner host. At the time of observation the bucket held **zero backup objects**. The backup service failed because `/usr/local/lib/independent-backup-policy.mjs` was absent. A TLS-related runner patch had been applied on the host, but the checked-in runner and that host state have not been reconciled into a verified release. An active timer, provisioned bucket, current secret, or installed recipient does not establish a successful backup or restore.
+
+The repository contains `lib/independent-backup-policy.mjs`, imported by `scripts/independent-postgres-backup.mjs` through a relative path. Source-to-host deployment must preserve that relationship or install a reviewed package with an equivalent verified import path; copying the runner script alone to `/usr/local` does not reproduce its dependency. The exact host service and deployment packaging must be captured and tested before claiming a reproducible backup service. See [INDEPENDENT_POSTGRES_BACKUP_RUNNER.md](./INDEPENDENT_POSTGRES_BACKUP_RUNNER.md) for the staged recovery order.
+
 ## Source recovery result
 
 The authoritative application repository is onnxscibroccoli/helix, and the accepted gateway-startup worker fix is commit 38903b021cca75189a99e1ed88b508bae577f048.
@@ -96,6 +104,8 @@ Production currently still uses the existing protected host environment configur
 - executor-side idempotency/cancellation controls appropriate to command type;
 - controlled least-privilege reduction;
 - backup/PITR hardening.
+
+For the independent backup path, additionally establish a clean source package with all runtime imports and TLS behavior reconciled against the host; a reviewed installation and systemd definition; one successful scheduled backup with encrypted artifact and manifest in S3; an isolated decrypt/restore and application acceptance; and the required retained recovery-point history. These gates are open as of the observation above. Native RDS automated-backup retention remains 1 day; independent logical recovery does not change its PITR setting.
 
 A live privilege hardening finding is recorded: the helix database role is non-superuser but broader than the intended least-privilege boundary. This requires controlled compatibility testing, not an ad hoc production edit.
 
