@@ -16,6 +16,8 @@ Claim B evidence and **do not** constitute live 14-day retention proof.
 | `manifests-14.json` | JSON array of all 14 points (positive for `check-backup-retention.mjs`) |
 | `manifests-insufficient.json` | 13 points (negative: below minimum) |
 | `manifests-duplicate-ids.json` | ≥14 entries with duplicate `backup_id`s so unique count < 14 (negative) |
+| `points/15.json` … `points/21.json` | Extended synthetic points (`fixture_id` 15..21; Wave256 G13) |
+| `manifests-21.json` | JSON array of points 01–21 (synthetic extended pack; **not** live Claim B) |
 
 ## Timestamp formula
 
@@ -35,3 +37,12 @@ node scripts/check-backup-retention.mjs \
   test/fixtures/retention/synthetic/manifests-14.json \
   2026-09-26T12:00:00Z
 ```
+
+## Extended pack (15–21)
+
+Wave256 G13 owns `fixture_id` 15–21. Same timestamp formula and schema as 01–14.
+Points 16–21 fall **outside** the 14-day window when evaluated at the fixed NOW
+(by construction of the day-offset formula). Loading them proves synthetic
+markers and schema only — **never cite as live 14 / Claim B**.
+
+Depends on 01–14 from the base synthetic fixtures PR/branch.
