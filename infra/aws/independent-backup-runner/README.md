@@ -13,6 +13,10 @@ The role can:
 
 The role cannot read S3 backup objects, modify RDS, modify Secrets Manager, administer KMS, or access unrelated secrets.
 
+## Validator contract
+
+`scripts/validate-independent-backup-runner.mjs` asserts against Terraform IAM Action lists in `main.tf` (parsed `actions = [...]` blocks), not README prose alone. It fails closed if Allow actions include `s3:GetObject`, `s3:GetObjectVersion`, `s3:DeleteObject`, or any `rds:` action. README wording remains a secondary contract check; Action-list parsing is authoritative for deny asserts.
+
 ## Trust
 
 The reference module trusts EC2 because the runner may be hosted on a dedicated EC2 instance or an authorized VM environment that uses an equivalent AWS identity boundary. If the actual deployment uses a different AWS workload identity, adapt only the trust mechanism while preserving the permission boundary.
