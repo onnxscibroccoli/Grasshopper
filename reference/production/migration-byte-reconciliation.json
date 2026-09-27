@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "status": "evidence-fail-closed",
+  "atom": "lineage-atom-3-migration-byte-reconciliation",
+  "verified_at": "2026-09-27T03:05:42-04:00",
+  "verification_method": [
+    "sha256sum of Helix migrations at commit 38903b021cca75189a99e1ed88b508bae577f048 via GitHub Contents API",
+    "sha256sum of Grasshopper reference/production/helix-accepted/migrations/*",
+    "live hashes from reference/production/observed-db-baseline.json only (no live file bytes in repo)"
+  ],
+  "canonical_helix_repository": "onnxscibroccoli/helix",
+  "helix_accepted_sha": "38903b021cca75189a99e1ed88b508bae577f048",
+  "deployed_checkout_sha": "46ba4b71158a74db5ede97e300099370792ecff8",
+  "grasshopper_reference_path": "reference/production/helix-accepted/migrations/",
+  "live_hash_source": "reference/production/observed-db-baseline.json#migration_sha256",
+  "files": [
+    {
+      "name": "0001_auth.sql",
+      "helix_sha256": "6f89964eddbf9c9e1d63ec69679f9962ee2278a7fe7ba17919f5aa5a33f6e78f",
+      "grasshopper_reference_sha256": "6f1746e0d5d48d1a2d306fec36c033f312f45759dc6f7af065c3718169bf11f9",
+      "live_sha256": "f953cacc448c0c81ae4fe63e66b0e59569e840782ad279fdee201dff529363e9",
+      "helix_eq_grasshopper": false,
+      "grasshopper_eq_live": false,
+      "helix_eq_live": false,
+      "live_bytes_in_grasshopper_repo": false,
+      "notes": [
+        "Helix vs Grasshopper reference: comment-stripped DDL bodies identical; recovery banner replaced Better Auth header comments.",
+        "Live SHA-256 differs from Helix and Grasshopper reference; live file bytes absent from Grasshopper repo \u2014 content-diff cause UNKNOWN (hash-only)."
+      ],
+      "live_content_diff_cause": "UNKNOWN"
+    },
+    {
+      "name": "0002_workspaces.sql",
+      "helix_sha256": "eb343cfe1df2a8e66a619b2210d65f0e18963533180054ad72b261b98c12f1a2",
+      "grasshopper_reference_sha256": "eb343cfe1df2a8e66a619b2210d65f0e18963533180054ad72b261b98c12f1a2",
+      "live_sha256": "eb343cfe1df2a8e66a619b2210d65f0e18963533180054ad72b261b98c12f1a2",
+      "helix_eq_grasshopper": true,
+      "grasshopper_eq_live": true,
+      "helix_eq_live": true,
+      "live_bytes_in_grasshopper_repo": false,
+      "notes": [
+        "Byte-identical across Helix accepted checkout, Grasshopper evidence copy, and live recorded hash."
+      ],
+      "live_content_diff_cause": null
+    },
+    {
+      "name": "0003_stream.sql",
+      "helix_sha256": "90d2ef6df1283449ba52cbc327e76d7d834abb13afb7f3a2473ad15726755a03",
+      "grasshopper_reference_sha256": "90d2ef6df1283449ba52cbc327e76d7d834abb13afb7f3a2473ad15726755a03",
+      "live_sha256": "90d2ef6df1283449ba52cbc327e76d7d834abb13afb7f3a2473ad15726755a03",
+      "helix_eq_grasshopper": true,
+      "grasshopper_eq_live": true,
+      "helix_eq_live": true,
+      "live_bytes_in_grasshopper_repo": false,
+      "notes": [
+        "Byte-identical across Helix accepted checkout, Grasshopper evidence copy, and live recorded hash."
+      ],
+      "live_content_diff_cause": null
+    },
+    {
+      "name": "0004_omnikali_tasks.sql",
+      "helix_sha256": "a20552b27b92008307a2ce0bb09cf1ba26ab99fb1b2519f4507df23706cd1ce9",
+      "grasshopper_reference_sha256": "6fb6375a598ce4cc31a6e19150b7bdd187b21a6289e167dc136ce28508d8f75e",
+      "live_sha256": "6fb6375a598ce4cc31a6e19150b7bdd187b21a6289e167dc136ce28508d8f75e",
+      "helix_eq_grasshopper": false,
+      "grasshopper_eq_live": true,
+      "helix_eq_live": false,
+      "live_bytes_in_grasshopper_repo": false,
+      "notes": [
+        "Trailing newline only vs Helix (Helix lacks final newline); Grasshopper reference matches live recorded hash."
+      ],
+      "live_content_diff_cause": "trailing_newline_only"
+    }
+  ],
+  "summary": {
+    "identical_all_three": [
+      "0002_workspaces.sql",
+      "0003_stream.sql"
+    ],
+    "drift_helix_vs_live": [
+      "0001_auth.sql",
+      "0004_omnikali_tasks.sql"
+    ],
+    "drift_helix_vs_grasshopper_reference": [
+      "0001_auth.sql",
+      "0004_omnikali_tasks.sql"
+    ],
+    "drift_grasshopper_reference_vs_live": [
+      "0001_auth.sql"
+    ],
+    "gate": "source/runtime migration byte identity remains blocked"
+  },
+  "gates": {
+    "migration_byte_identity": "blocked",
+    "clean_release_lineage": "blocked",
+    "production_mutation": "blocked",
+    "blind_overwrite_of_live_production_checkout": "forbidden"
+  },
+  "safety": {
+    "secrets_in_artifact": false,
+    "credential_values_recorded": false,
+    "production_mutation_allowed": false,
+    "live_migration_bytes_invented": false
+  }
+}
