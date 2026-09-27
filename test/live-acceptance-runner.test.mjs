@@ -160,8 +160,9 @@ test("record with flags still fails closed on stub liveRun (no COMPLETE)", () =>
 });
 
 // Scenarios with filled dry-run fixtures may exit 0; remaining stubs stay fail-closed.
+const FILLED_SCENARIO_IDS = new Set(["duplicate_fencing", "replacement_completion"]);
 const STILL_STUB_SCENARIO_IDS = REQUIRED_SCENARIO_IDS.filter(
-  (id) => id !== "duplicate_fencing"
+  (id) => !FILLED_SCENARIO_IDS.has(id)
 );
 
 test("remaining stub dryRuns fail closed", () => {
@@ -173,6 +174,19 @@ test("remaining stub dryRuns fail closed", () => {
     assert.equal(payload.manifest_mutated, false);
     assert.match(String(payload.evidence), /scaffold stub|not implemented/i);
   }
+});
+
+test("filled replacement_completion dryRun passes without mutating manifest", () => {
+  const before = readManifest();
+  const result = runRunner(["--scenario", "replacement_completion", "--json"]);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.manifest_mutated, false);
+  assert.match(String(payload.evidence), /dry-run/i);
+  assert.match(String(payload.evidence), /not live COMPLETE/i);
+  assert.equal(readManifest(), before);
+  assert.equal(JSON.parse(before).scenarios.replacement_completion.status, "OPEN");
 });
 
 test("duplicate_fencing dryRun may pass without mutating manifest", () => {
