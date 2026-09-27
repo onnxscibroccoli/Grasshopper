@@ -120,6 +120,72 @@ test("live cancellation capability is required for cancellation acknowledgement"
   }
 });
 
+test("acknowledged cancellation remains recorded after adapter completion", async () => {
+  let release;
+  let started;
+  const pending = new Promise(resolve => { release = resolve; });
+  const dispatched = new Promise(resolve => { started = resolve; });
+  const { executor, dir } = await harness({
+    start() { started(); return pending; },
+    async cancel() { return { acknowledged: true }; }
+  });
+
+  try {
+    const startPromise = executor.start({
+      id: "task-cancel",
+      operationKey: "op-cancel",
+      commandDisposition: COMMAND_DISPOSITIONS.INTERACTIVE,
+      command: "shell"
+    });
+    await dispatched;
+    const executionId = (await executor.store.load()).executions["op-cancel"].executionId;
+    assert.equal((await executor.cancel(executionId)).acknowledged, true);
+
+    release({ code: null, signal: "SIGTERM", stdout: "", stderr: "", canceled: true, completion: "cancelled" });
+    const completed = await startPromise;
+    assert.equal(completed.status, "cancelled");
+    assert.equal(completed.cancellation.requested, true);
+    assert.equal(completed.cancellation.acknowledged, true);
+    assert.ok(completed.cancellation.acknowledgedAt);
+
+    const recorded = (await executor.store.load()).executions["op-cancel"];
+    assert.deepEqual(recorded.cancellation, completed.cancellation);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("acknowledged cancellation remains recorded after adapter failure", async () => {
+  let fail;
+  let started;
+  const pending = new Promise((resolve, reject) => { fail = reject; });
+  const dispatched = new Promise(resolve => { started = resolve; });
+  const { executor, dir } = await harness({
+    start() { started(); return pending; },
+    async cancel() { return { acknowledged: true }; }
+  });
+
+  try {
+    const startPromise = executor.start({
+      id: "task-cancel-failure",
+      operationKey: "op-cancel-failure",
+      commandDisposition: COMMAND_DISPOSITIONS.INTERACTIVE,
+      command: "shell"
+    });
+    await dispatched;
+    const executionId = (await executor.store.load()).executions["op-cancel-failure"].executionId;
+    assert.equal((await executor.cancel(executionId)).acknowledged, true);
+
+    fail(new Error("adapter connection lost"));
+    const completed = await startPromise;
+    assert.equal(completed.status, "indeterminate");
+    assert.equal(completed.cancellation.acknowledged, true);
+    assert.equal((await executor.store.load()).executions["op-cancel-failure"].cancellation.acknowledged, true);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("duplicate while first dispatch is still in flight is not dispatched twice", async () => {
   let starts = 0;
   let release;

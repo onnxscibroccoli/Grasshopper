@@ -106,12 +106,18 @@ export class DurableAgentExecutor {
         result,
         finishedAt: now()
       };
-      await this.store.update(s => { s.executions[operationKey] = completed; });
+      await this.store.update(s => {
+        completed.cancellation = s.executions[operationKey]?.cancellation || execution.cancellation;
+        s.executions[operationKey] = completed;
+      });
       return completed;
     } catch (error) {
       const result = resultForFailure(error);
       const indeterminate = { ...execution, status: "indeterminate", result, finishedAt: now() };
-      await this.store.update(s => { s.executions[operationKey] = indeterminate; });
+      await this.store.update(s => {
+        indeterminate.cancellation = s.executions[operationKey]?.cancellation || execution.cancellation;
+        s.executions[operationKey] = indeterminate;
+      });
       return indeterminate;
     }
   }
