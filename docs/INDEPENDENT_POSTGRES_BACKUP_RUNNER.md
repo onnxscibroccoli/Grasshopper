@@ -62,7 +62,7 @@ The backup identity must have only the privileges required to perform the chosen
 1. Scheduler starts node scripts/independent-postgres-backup.mjs create.
 2. The runner retrieves the database secret through Secrets Manager.
 3. It writes a mode-0600 temporary pgpass file inside a mode-0700 temporary directory.
-4. It runs pg_dump --format=custom --no-owner --no-acl.
+4. It runs pg_dump --format=custom --no-owner --no-acl with libpq PGSSLMODE=require and a protected passfile.
 5. It compresses the dump with zstd.
 6. It encrypts the compressed artifact with the public age recipient.
 7. It computes SHA-256 over the encrypted artifact.
@@ -119,3 +119,5 @@ Use this order for a controlled deployment or repair:
 5. Observe scheduled runs and retention until at least 14 distinct points meet the defined policy, including an independently restorable oldest required point. Record failures, alerting, and rollback procedure; only then claim independent fourteen-day recovery coverage.
 
 Production service activation and further restore testing require the authorized infrastructure and recovery operators. One database-level restore passed; authenticated application acceptance and the retention target remain open.
+
+No live production backup is claimed by this code-only change.

@@ -38,3 +38,7 @@ The local environment implements agent registration, resource declaration, durab
 No production credentials or live-machine assumptions are required.
 
 For the dated production and independent-backup observations, deployment order, and open reconstruction gates, see [`docs/PRODUCTION_RECONSTRUCTION_STATUS.md`](./docs/PRODUCTION_RECONSTRUCTION_STATUS.md) and [`docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md`](./docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md).
+
+## Independent backup runner
+
+The runner uses libpq `PGSSLMODE=require` with a protected passfile for `pg_dump`; `--sslmode` is not a `pg_dump` command-line option. Run `npm test` to exercise the isolated TLS invocation check. A passing test does not activate production backups: the dedicated identity, encryption recipient, S3 destination, scheduler, required binaries, and isolated restore acceptance still need deployment and verification. See [backup runner requirements](docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md).
