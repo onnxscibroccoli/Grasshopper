@@ -2,7 +2,7 @@
 
 **Inventory date:** 2026-09-27 (America/New_York / ET)  
 **Agent:** Lineage Merge Strategy (Atom 4)  
-**Grasshopper tip observed:** `cba6c4a7337c7db2ea77d22a4dfa9312aed4255a` (`origin/main` after pull)  
+**Grasshopper tip observed:** `c2927209daf856623bf2ff44ee44a3efd84cb2dc` (`origin/main` after pull)  
 **Auth observed:** `gh` as `onnxscibroccoli` (scopes: gist, read:org, repo); GitHub MCP `get_me` → `onnxscibroccoli`  
 **Status:** evidence only — **not COMPLETE**; Verify Gate required before any cutover claim
 
@@ -78,22 +78,15 @@ Gate note: live-pin evidence does **not** flip `executor_lineage` (stays blocked
 
 | # | State | Title | Head SHA | Head branch | Notes |
 | --- | --- | --- | --- | --- | --- |
-| 39 | OPEN | docs(lineage): live-pin overlay import (Atom 2 evidence; gate stays blocked) | `0c29e8bba571415dd2e43e07e3ed88040070608d` | `lineage/atom2-overlays-live-pin-20260927` | Live-pin bytes; gate stays blocked |
-| 38 | OPEN | test: pin durable executor cancel fencing paths | `cf86f64a2167bc2a6ab17c44f79ffff207f57ce9` | `hardening/executor-fencing-cancel-paths-20260927` | Tests; lineage untouched |
-| 40 | OPEN | feat(repro): fail-closed clean-host dry-run path | `b79cd77f489cb7a5fd9e5c451aee33582fb84b9e` | `repro/clean-host-dryrun-20260927` | Adjacent repro |
-| 37 | MERGED | test: require reconciliation metadata for read-only indeterminate completion | `08d3829a0bfe67e3e10ee330c57c93712a2c2dbd` | `hardening/executor-fencing-readonly-reconcile-20260927` | Merged 2026-09-27T06:53:10Z |
-| 36 | MERGED | feat(acceptance): fail-closed live acceptance evidence harness scaffold | (merged via main history) | `acceptance/live-harness-scaffold` | Acceptance harness |
-| 35 | MERGED | docs: executor lineage evidence gaps (G1/G6); keep gate blocked | `0794d755bf4b55f01146aa6089eaa9e33089b963` | `hardening/executor-lineage-evidence-gaps-20260927` | Merged 2026-09-27T06:49:55Z |
-| 34 | MERGED | (Grok Helix gateway wiring — from main log) | UNKNOWN head OID this run | `controlplane/grok-helix-gateway-wiring` | Seen in `git log` merge |
-| 33 | MERGED | docs: live secrets cutover re-verification checklist | UNKNOWN head this run | secrets cutover docs | Adjacent secrets |
-| 32 | MERGED | fix: split secrets injection into repo contract vs live cutover | UNKNOWN head this run | secrets readiness | Adjacent |
-| 31 | MERGED | docs(gate): pin verified Helix acceptance lineage fail-closed | `6e67538579dbd66685b3aaa9464b6a702e73073f` | `docs/helix-release-lineage-pin-20260927` | Merged 2026-09-27T06:41:35Z |
-| 29 | MERGED | Add fail-closed agentic deploy readiness gate | `30bb660f5734ffdffa65799cf0ad0273e1d78413` | `hardening/agentic-deploy-readiness-gate-20260927` | Lineage critical OPEN |
-| 25 | MERGED | docs: reconcile backup host state and reconstruction gates | `fb765463dcc703a9532ed7e0c547b8e3bf99bfe9` | `docs/reconstruction-backup-status-20260927` | Migrations `0001`–`0004` checks |
-| 23 | MERGED | Fix PostgreSQL backup runner TLS invocation | `dea8413e48b99d6f96d101a3ac41d5bd44eded15` | `fix/backup-runner-tls` | Adjacent |
-| 22 | OPEN (draft) | Inventory production contracts and service lifecycle | `74954dabfdaf8b2e9b692d03768b53445aa7b75c` | `docs/production-contract-inventory-20260927` | Draft inventory |
-| 16 | MERGED | feat: move agent bridge credentials to Secrets Manager | UNKNOWN head this run | — | Migration / secrets |
-| 7 | MERGED | Harden agent secret reconstruction boundary | UNKNOWN head this run | — | Reconstruction |
+| 39 | MERGED | docs(lineage): live-pin overlay import | `0c29e8bba571415dd2e43e07e3ed88040070608d` | `lineage/atom2-overlays-live-pin-20260927` | Merged `505113c…`; live-pin overlay present; gate stays blocked |
+| 44 | MERGED | test(acceptance): replacement completion dry-run fixtures | `6af7eac…` | `acceptance/sc-replace-replacement-completion` | Dry-run only; live acceptance remains OPEN |
+| 53 | MERGED | feat(repro): formalize fail-closed clean-host reconstruction dry-run | `be9fd2aa…` | `repro/clean-host-dryrun-20260927-v2` | Clean-host procedure landed; gate remains blocked |
+| 54 | MERGED | test(secrets): formalize fail-closed cutover dry-run pack | `add4c4a…` | `hardening/secrets-cutover-dryrun-v2` | Synthetic fixtures; live cutover remains OPEN |
+| 55 | MERGED | docs: inventory observed production contracts and service lifecycle | `e5b85ab…` | `docs/production-contract-inventory-v2` | Observed boundary inventory; no production mutation |
+| 40 | CLOSED | feat(repro): fail-closed clean-host dry-run path | `7bdcbcd…` | `repro/clean-host-dryrun-20260927` | Superseded by #53 after main advanced |
+| 45 | CLOSED | test(secrets): cutover dry-run doc fixtures | `67fe72d…` | `hardening/secrets-cutover-dryrun-doc-fixtures-20260927` | Superseded by #54 after main advanced |
+| 52 | CLOSED | docs(lineage): Atom 4 evidence table — PR #39 MERGED | `407e571…` | `lineage/atom4-evidence-pr-table-honesty` | Superseded by this current evidence refresh |
+| 22 | CLOSED | Inventory production contracts and service lifecycle | `74954dab…` | `docs/production-contract-inventory-20260927` | Superseded by #55 |
 
 ### Issues (search `lineage OR Helix OR overlay OR migration`)
 
@@ -116,7 +109,7 @@ Gate note: live-pin evidence does **not** flip `executor_lineage` (stays blocked
 | Message | `fix(worker): initialize task worker on gateway startup` | same |
 | Author time | `2026-09-26T06:56:47Z` | same |
 | Branch tip | `omnikali/production-db-bootstrap-20260926` → same SHA | `gh api …/commits?sha=…` |
-| Helix `main` tip | `d632064004eee30297d084d4cce876398a0b7112` | `gh api …/branches/main` |
+| Helix `main` tip | `26c6879ed37df42c9c52178a5c55a429d65efdc1` | `gh api …/branches/main` |
 | Merge-base (pin doc) | `a7cb8dc98b1cc668c1e481a845a48af004c4f510` | recorded in pin JSON / docs; **not re-computed** this run → treat as **documented**, not freshly re-listed |
 | Ahead/behind (pin) | main **4 ahead / 28 behind** vs `38903b0` | documented in pin; **not re-run** `rev-list` this run |
 
@@ -200,7 +193,8 @@ At `38903b0`, recursive tree paths matching agent-executor / omni-agent / guest-
 - Fresh `git rev-list --left-right --count` merge-base ahead/behind (rely on pin).
 - Fresh Helix full-clone `git cat-file` for every host-only SHA.
 - Live host re-read of `/opt/helix/...` bytes (constraints forbid live Helix smoke / prod mutate).
-- (Cleared) PR #39 merge status — **MERGED** `505113c…` before this honesty refresh.
+- PR #39 merge status is now current: **MERGED** `505113c…`.
+- Current Grasshopper main includes #44, #53, #54, and #55; superseded stale branches #40, #45, #52, and #22 are closed.
 - Exact head OIDs marked UNKNOWN in §3 PR table.
 
 ---
