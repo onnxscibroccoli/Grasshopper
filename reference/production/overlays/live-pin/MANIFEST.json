@@ -1,0 +1,48 @@
+{
+  "schema": "grasshopper.live-pin-overlays.v1",
+  "status": "populated-fail-closed",
+  "purpose": "Byte-identical LIVE production overlay evidence for G1; does not unblock executor_lineage alone",
+  "live_host_paths": {
+    "omni-agent.mjs": "/opt/helix/production/agent/omni-agent.mjs",
+    "agent-executor.mjs": "/opt/helix/production/gateway/state/agent-executor.mjs"
+  },
+  "artifacts": [
+    {
+      "path": "omni-agent.mjs",
+      "sha256": "ee0a9898e706752098ef2dcce87b18cf577ff37e8726de3fb41721490078c46d",
+      "size_bytes": 4040
+    },
+    {
+      "path": "agent-executor.mjs",
+      "sha256": "6c6346aee951eb139aa15fb7a5394bbd24bae5fab9a557a1f4f8d22d9ed3384e",
+      "size_bytes": 910
+    }
+  ],
+  "grasshopper_hardening_delta_not_live": {
+    "omni-agent.mjs": "ffd3d5981cb8cc749cb112d312018b119c95e5613376f1695c59e226aed9b349",
+    "agent-executor.mjs": "d1ad94d942ebfd0898c79a18d649b5628bb7a31ce10cdbaf01cf57e4353758c2",
+    "note": "deployed/ and src/production/ remain intentional local hardening; do not close G1"
+  },
+  "helix": {
+    "accepted_tag": "clean-reconstruction-38903b0",
+    "accepted_sha": "38903b021cca75189a99e1ed88b508bae577f048",
+    "artifacts_in_accepted_tree": false,
+    "do_not_invent_helix_history": true
+  },
+  "safety": {
+    "production_mutation_allowed": false,
+    "secrets_in_manifest": false,
+    "blind_overwrite_of_live_production_checkout": "forbidden"
+  },
+  "gates": {
+    "g1_live_pin_import": "satisfied-by-this-tree",
+    "executor_lineage": "blocked"
+  },
+  "provenance": {
+    "method": "historical-grasshopper-commits-matching-documented-live-digests",
+    "omni_source_commit": "709a107c52cf055e59d7e4038dac1562fe277ae5",
+    "executor_source_commit": "c1d428a29f999fd5b97087c1789feb6a1ba012bf",
+    "live_host_re_read_this_run": false,
+    "ledger": "reference/production/overlays/atom2-sha-ledger-20260927.md"
+  }
+}

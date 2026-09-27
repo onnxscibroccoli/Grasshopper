@@ -13,7 +13,7 @@ Secrets and credential values are intentionally omitted.
 
 | ID | Gap | Unblocks lineage? |
 |----|-----|-------------------|
-| G1 | Live deploy SHA ≠ Grasshopper tree SHA; live blobs absent from tree | **No** until byte-identical LIVE import into `reference/production/overlays/live-pin/` |
+| G1 | Live deploy SHA ≠ Grasshopper hardening-delta tree SHA; LIVE import into `reference/production/overlays/live-pin/` | **G1 live-pin import satisfied** by populated live-pin + MANIFEST; overall `executor_lineage` still **No** (G2–G6 / Verify Gate) |
 | G2 | Accepted Helix tip `38903b0…` / tag `clean-reconstruction-38903b0` missing both artifacts | No |
 | G3 | Host-only commits (`357121d…`, `46ba4b7…`) ≠ GitHub Helix clean release lineage | No |
 | G4 | `omni-agent.mjs` authored on host; `canonical_source: not_yet_designated` | No |
@@ -24,7 +24,7 @@ Secrets and credential values are intentionally omitted.
 
 | Class | Digest (omni-agent / agent-executor) | Where |
 |-------|--------------------------------------|-------|
-| LIVE pin (G1 close target) | `ee0a9898…` (4040 B) / `6c6346ae…` | Live host paths; intended Grasshopper home: `reference/production/overlays/live-pin/` + `MANIFEST.json` (**not populated this PR** — no fake blobs) |
+| LIVE pin (G1 close target) | `ee0a9898…` (4040 B) / `6c6346ae…` | Live host paths; Grasshopper home: `reference/production/overlays/live-pin/` + `MANIFEST.json` (**populated**; validate with `npm run validate:live-pin-overlays`) |
 | Grasshopper hardening delta | `ffd3d598…` (4223 B) / `d1ad94d9…` | `reference/production/deployed/` + `src/production/` — intentional local hardening; **does not close G1** |
 
 `omni-agent.sha256` sidecar asserts live while checked-in `.mjs` is delta — evidence inconsistency, not unblock. G1 is blocked on obtaining live bytes (read-only capture), not on labeling the delta.

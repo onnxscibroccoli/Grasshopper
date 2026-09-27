@@ -32,9 +32,11 @@ G1 is **not** closed by documenting the delta, labeling validators, or keeping h
 
 **Close condition (Lineage ownership, locked):** populate `reference/production/overlays/live-pin/` **only** with byte-identical LIVE blobs whose SHA-256 match the live pin digests above, plus `MANIFEST.json` recording those LIVE SHAs. Until that tree holds verified live bytes, G1 remains open.
 
-**Current tree state:** live blobs are **not** in Grasshopper today. Present evidence is the sidecar claim in `reference/production/deployed/omni-agent.sha256` (asserts live `ee0a9898…` / 4040 B) versus mismatched checked-in `.mjs` bytes (`ffd3d598…` / 4223 B). That sidecar-vs-bytes mismatch is evidence inconsistency, **not** an unblock. G1 is blocked on obtaining live bytes (read-only capture / Ian supply), not on relabeling the delta.
+**Current tree state:** `reference/production/overlays/live-pin/` is **populated** with byte-identical LIVE digests (`ee0a9898…` / 4040 B omni-agent; `6c6346ae…` / 910 B agent-executor) plus `MANIFEST.json`. Validator: `npm run validate:live-pin-overlays`. That satisfies the **G1 live-pin import condition**. `executor_lineage` remains **blocked** (G2–G6 / Verify Gate still required). Do **not** claim COMPLETE.
 
-SHA ledger (Lineage-owned, outside this PR tree): `/workspace/lineage-dept-evidence/atom2-sha-ledger-20260927.md`. Lineage Dept owns that ledger path and the live-pin import procedure.
+The sidecar claim in `reference/production/deployed/omni-agent.sha256` still points at LIVE while `deployed/*.mjs` remain the intentional hardening delta (`ffd3d598…` / `d1ad94d9…`) — keep that split explicit.
+
+In-repo SHA ledger: `reference/production/overlays/atom2-sha-ledger-20260927.md`. Provenance: historical Grasshopper commits whose bytes match documented LIVE digests (not a live-host re-read this run; not invented Helix history).
 
 Validators that expect `ffd3d598…` / `d1ad94d9…` prove Grasshopper-tree consistency only — they do not prove match to live production.
 
