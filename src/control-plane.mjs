@@ -1,4 +1,31 @@
 import { event, id, now } from "./model.mjs";
+import { commandDisposition } from "./executor-contract.mjs";
+
+const AUDIT_TYPE = /^[a-z][a-z0-9._-]{0,79}$/;
+const SENSITIVE_AUDIT_KEY = /token|secret|password|cookie|authorization|proof|api[-_]?key|bearer/i;
+const ORIGIN_FIELDS = ["kind", "principalId", "grokSessionId", "clientOperationId", "credentialRef"];
+
+function sanitizeAudit(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return {};
+  const out = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (key !== "credentialRef" && SENSITIVE_AUDIT_KEY.test(key)) continue;
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean" || value == null) out[key] = value;
+  }
+  return out;
+}
+
+function sanitizeOrigin(origin) {
+  if (origin == null) return undefined;
+  if (typeof origin !== "object" || Array.isArray(origin)) throw new Error("invalid origin");
+  const clean = {};
+  for (const key of ORIGIN_FIELDS) {
+    if (origin[key] == null) continue;
+    if (typeof origin[key] !== "string" || origin[key].length === 0 || origin[key].length > 512) throw new Error("invalid origin");
+    clean[key] = origin[key];
+  }
+  return Object.keys(clean).length ? clean : undefined;
+}
 
 function stateForResult(result) {
   if (result.completion === "cancelled" || result.canceled) return "stopped";
@@ -19,7 +46,9 @@ export class ControlPlane {
     if(existing)return existing;
 
     const taskId=input.id||id("task");
-    state.tasks[taskId]={id:taskId,operationKey,agentId:input.agentId,command:input.command,cwd:input.cwd,state:"queued",createdAt:now(),execution:null};
+    const disposition=input.commandDisposition==null?undefined:commandDisposition({commandDisposition:input.commandDisposition});
+    const origin=sanitizeOrigin(input.origin);
+    state.tasks[taskId]={id:taskId,operationKey,agentId:input.agentId,command:input.command,cwd:input.cwd,state:"queued",createdAt:now(),execution:null,...(disposition?{commandDisposition:disposition}:{}),...(origin?{origin}:{})};
     state.events.push(event("task.queued",state.tasks[taskId]));
     await this.store.save(state);
 
@@ -65,5 +94,10 @@ export class ControlPlane {
       for(const t of Object.values(s.tasks))if(t.state==="running"&&Date.parse(t.startedAt)<cutoff){t.state="orphaned";t.reconciledAt=now();s.events.push(event("task.orphaned",{taskId:t.id}));}
       for(const [name,l] of Object.entries(s.locks))if(l.expiresAt<=Date.now()){delete s.locks[name];s.events.push(event("lock.expired",{name,owner:l.owner}));}
     });
+  }
+
+  async recordAudit(type, data) {
+    if (typeof type !== "string" || !AUDIT_TYPE.test(type)) throw new Error("invalid audit type");
+    return this.store.update(s => { s.events.push(event(type, sanitizeAudit(data))); });
   }
 }
