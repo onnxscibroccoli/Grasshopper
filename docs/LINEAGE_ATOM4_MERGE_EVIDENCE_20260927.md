@@ -2,7 +2,7 @@
 
 **Inventory date:** 2026-09-27 (America/New_York / ET)  
 **Agent:** Lineage Merge Strategy (Atom 4)  
-**Grasshopper tip observed:** `cba6c4a7337c7db2ea77d22a4dfa9312aed4255a` (`origin/main` after pull)  
+**Grasshopper tip observed:** inventory originally at `cba6c4a…`; post-land honesty refresh after #39/#41 — §3 PR #39 row corrected to MERGED  
 **Auth observed:** `gh` as `onnxscibroccoli` (scopes: gist, read:org, repo); GitHub MCP `get_me` → `onnxscibroccoli`  
 **Status:** evidence only — **not COMPLETE**; Verify Gate required before any cutover claim
 
@@ -78,7 +78,7 @@ Gate note: live-pin evidence does **not** flip `executor_lineage` (stays blocked
 
 | # | State | Title | Head SHA | Head branch | Notes |
 | --- | --- | --- | --- | --- | --- |
-| 39 | OPEN | docs(lineage): live-pin overlay import (Atom 2 evidence; gate stays blocked) | `0c29e8bba571415dd2e43e07e3ed88040070608d` | `lineage/atom2-overlays-live-pin-20260927` | Live-pin bytes; gate stays blocked |
+| 39 | MERGED | docs(lineage): live-pin overlay import (Atom 2 evidence; gate stays blocked) | `0c29e8bba571415dd2e43e07e3ed88040070608d` | `lineage/atom2-overlays-live-pin-20260927` | Merged `505113c…` 2026-09-27T07:04:32Z; gate stays blocked |
 | 38 | OPEN | test: pin durable executor cancel fencing paths | `cf86f64a2167bc2a6ab17c44f79ffff207f57ce9` | `hardening/executor-fencing-cancel-paths-20260927` | Tests; lineage untouched |
 | 40 | OPEN | feat(repro): fail-closed clean-host dry-run path | `b79cd77f489cb7a5fd9e5c451aee33582fb84b9e` | `repro/clean-host-dryrun-20260927` | Adjacent repro |
 | 37 | MERGED | test: require reconciliation metadata for read-only indeterminate completion | `08d3829a0bfe67e3e10ee330c57c93712a2c2dbd` | `hardening/executor-fencing-readonly-reconcile-20260927` | Merged 2026-09-27T06:53:10Z |
