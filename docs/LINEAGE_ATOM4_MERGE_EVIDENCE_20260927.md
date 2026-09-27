@@ -49,7 +49,7 @@ Fail-closed rules applied: only observed facts; **UNKNOWN** where not re-verifie
 | `reference/production/observed-db-baseline.json` | Live migration SHA-256s; dirty checkout `46ba4b7…` |
 | `reference/production/helix-accepted/migrations/` | Evidence copies of `0001`–`0004` |
 | `reference/production/deployed/` | Hardening-delta `.mjs` + sidecar `omni-agent.sha256` |
-| `reference/production/overlays/live-pin/` | **ABSENT on `main`** at tip `cba6c4a…` |
+| `reference/production/overlays/live-pin/` | **PRESENT on tip** after merged PR #39 (`505113c…`) — LIVE digests + MANIFEST |
 
 ### Workspace Lineage evidence (outside repo tree)
 
@@ -59,14 +59,16 @@ Fail-closed rules applied: only observed facts; **UNKNOWN** where not re-verifie
 | `/workspace/lineage-dept-evidence/atom2-sha-ledger-20260927.md` | LOCKED LIVE vs delta digests |
 | `/workspace/lineage-dept-evidence/live-overlay-bytes/` | Present (directory listed; bytes used by Atom 2 PR) |
 
-### Open Atom 2 PR overlay paths (not on `main` yet)
+### Atom 2 live-pin overlay paths (landed)
 
-Branch `lineage/atom2-overlays-live-pin-20260927` / PR #39:
+PR #39 **MERGED** (`505113c1852e60f83b1f50143eca86add149c94a`, 2026-09-27T07:04:32Z). Paths on tip:
 
 - `docs/OVERLAYS_LIVE_PIN_IMPORT.md`
 - `reference/production/overlays/live-pin/MANIFEST.json`
 - `reference/production/overlays/live-pin/omni-agent.mjs`
 - `reference/production/overlays/live-pin/agent-executor.mjs`
+
+Gate note: live-pin evidence does **not** flip `executor_lineage` (stays blocked).
 
 ---
 
@@ -198,7 +200,7 @@ At `38903b0`, recursive tree paths matching agent-executor / omni-agent / guest-
 - Fresh `git rev-list --left-right --count` merge-base ahead/behind (rely on pin).
 - Fresh Helix full-clone `git cat-file` for every host-only SHA.
 - Live host re-read of `/opt/helix/...` bytes (constraints forbid live Helix smoke / prod mutate).
-- Whether PR #39 has been reviewed/merged after this inventory.
+- (Cleared) PR #39 merge status — **MERGED** `505113c…` before this honesty refresh.
 - Exact head OIDs marked UNKNOWN in §3 PR table.
 
 ---

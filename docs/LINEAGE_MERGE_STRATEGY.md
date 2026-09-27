@@ -18,7 +18,7 @@ Order is strict. A lower tier never overrides a higher tier without Ian + Verify
 | --- | --- | --- | --- |
 | 1 | **Clean Helix pin** | Commit `38903b021cca75189a99e1ed88b508bae577f048` on `onnxscibroccoli/helix`; annotated tag `clean-reconstruction-38903b0` (tag object `6ef4db85…`) | Not Helix `main` alone (`d632064…` is 4 ahead / 28 behind per pin; not a descendant of the pin) |
 | 2 | **LIVE production bytes** | Host paths `/opt/helix/production/agent/omni-agent.mjs`, `/opt/helix/production/gateway/state/agent-executor.mjs` with digests `ee0a9898…` / `6c6346ae…` | Not Grasshopper `deployed/` / `src/production/` delta digests |
-| 3 | **Grasshopper live-pin overlay** | `reference/production/overlays/live-pin/` + `MANIFEST.json` (Atom 2 / PR #39) — byte-identical LIVE import only | Not present on `main` until #39 merges; never invent stub blobs |
+| 3 | **Grasshopper live-pin overlay** | `reference/production/overlays/live-pin/` + `MANIFEST.json` (Atom 2 / PR #39 MERGED) — byte-identical LIVE import only | Never invent stub blobs; does not alone unblock `executor_lineage` |
 | 4 | **Grasshopper hardening delta** | `reference/production/deployed/*` + `src/production/*` digests `ffd3d598…` / `d1ad94d9…` | Not LIVE; does **not** close G1 |
 | 5 | **Dirty deployed checkout SHA** | `46ba4b71158a74db5ede97e300099370792ecff8` and other host-only SHAs | Not GitHub Helix clean release lineage; do not invent Helix history from them |
 | 6 | **Migration evidence copies** | Helix checkout hashes (pin) vs Grasshopper `helix-accepted/migrations/` vs live ledger (`observed-db-baseline.json`) | Grasshopper copies are **not** authoritative Helix source |
@@ -93,7 +93,7 @@ clean-reconstruction-38903b0  →  commit 38903b0…
 | Grasshopper migration copy vs Helix checkout hash | Helix checkout for accepted SOURCE | Silent replace of Helix with Grasshopper banner/newline variants without note |
 | Live migration ledger hash vs Helix checkout | Record drift; block clean_release / reconstruction | Assert identity without reconcile |
 | BRIDGE_RECOVERY “resolved” vs pin `executor_lineage=blocked` | Pin + LINEAGE_GATE win | Narrative unblock |
-| Atom 2 live-pin PR (#39) vs unmerged `main` | Strategy assumes #39 (or equivalent) lands before Helix import | Helix import before LIVE bytes exist in Grasshopper evidence tree |
+| Atom 2 live-pin vs Helix import | #39 **landed**; LIVE bytes in `overlays/live-pin/` — still require Verify Gate + Ian before Helix import | Helix import before LIVE bytes / before Ian gate |
 | Secrets cutover OPEN vs historical #16 success | Keep `production_secrets_cutover` OPEN until fresh Ian-gated re-verify | Claiming COMPLETE from old notes |
 
 ---
@@ -115,7 +115,7 @@ clean-reconstruction-38903b0  →  commit 38903b0…
 ## 6. Recommended merge sequence (safe order)
 
 1. **Honesty refresh (docs/data):** ~~update Grasshopper pin `tags_containing`~~ **DONE** on main via PR #42 (`3ddd9c4`, VG ACCEPT post-land). Keep pin/docs aligned if tags change; not an unblock.
-2. **Land Atom 2 live-pin evidence** (PR #39 or successor) on Grasshopper `main` with verified LIVE digests + MANIFEST; keep `executor_lineage=blocked`.
+2. **Land Atom 2 live-pin evidence** — **DONE** via PR #39 (`505113c…`) with LIVE digests + MANIFEST on tip; keep `executor_lineage=blocked`.
 3. **Keep hardening delta labeled** separate; do not overwrite live-pin with delta or vice versa without Ian.
 4. **Migration reconcile plan** (read-only compare + Ian-gated apply procedure later): document `0001`/`0004` drift; do not mutate live DB here.
 5. **Helix import PR** off `clean-reconstruction-38903b0` adding LIVE-matching `omni-agent.mjs` + `agent-executor.mjs` only.
