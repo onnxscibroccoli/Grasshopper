@@ -1,0 +1,23 @@
+{
+  "id": "replacement_completion_happy_path",
+  "description": "Expired lease reclaim then replacement owner completes (owner-fenced).",
+  "nowMs": 1000000,
+  "leaseMs": 45000,
+  "steps": [
+    { "op": "create", "taskId": "task-replace-1" },
+    { "op": "claim", "ownerId": "worker-a", "taskId": "task-replace-1" },
+    { "op": "assert", "taskId": "task-replace-1", "state": "RUNNING", "ownerId": "worker-a" },
+    { "op": "advance", "ms": 50000 },
+    { "op": "reconcile" },
+    { "op": "assert", "taskId": "task-replace-1", "state": "PENDING", "ownerId": null },
+    { "op": "claim", "ownerId": "worker-b", "taskId": "task-replace-1" },
+    { "op": "assert", "taskId": "task-replace-1", "state": "RUNNING", "ownerId": "worker-b" },
+    { "op": "complete", "taskId": "task-replace-1", "ownerId": "worker-b", "result": { "ok": true } },
+    { "op": "assert", "taskId": "task-replace-1", "state": "COMPLETED", "ownerId": "worker-b" }
+  ],
+  "expect": {
+    "taskId": "task-replace-1",
+    "finalState": "COMPLETED",
+    "finalOwner": "worker-b"
+  }
+}
