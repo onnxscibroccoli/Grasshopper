@@ -71,3 +71,5 @@ Required content shape (see `assessProductionSecretsCutover` in `scripts/verify-
 - [AGENT_SECRET_CONTRACT.md](../AGENT_SECRET_CONTRACT.md) — clean-host contract
 - [PRODUCTION_AGENT_SECRET_RECONSTRUCTION.md](../PRODUCTION_AGENT_SECRET_RECONSTRUCTION.md) — reconstruction harness (not live acceptance)
 - [AGENTIC_DEPLOY_READINESS.md](../AGENTIC_DEPLOY_READINESS.md) — static fail-closed gate overview
+- [`test/fixtures/secrets-cutover/`](../../test/fixtures/secrets-cutover/) + `npm run verify:secrets-cutover-dryrun` — synthetic dry-run doc fixtures for the cutover assessor (does **not** close the live gate)
+

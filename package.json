@@ -26,6 +26,7 @@
     "test:independent-backup-policy": "node --test test/independent-backup-policy.test.mjs",
     "verify:agentic-deploy-readiness": "node scripts/verify-agentic-deploy-readiness.mjs",
     "validate:helix-lineage-pin": "node scripts/validate-helix-lineage-pin.mjs",
-    "verify:live-acceptance": "node scripts/verify-live-acceptance.mjs"
+    "verify:live-acceptance": "node scripts/verify-live-acceptance.mjs",
+    "verify:secrets-cutover-dryrun": "node scripts/verify-secrets-cutover-dryrun.mjs"
   }
 }
