@@ -67,6 +67,8 @@ Required content shape (see `assessProductionSecretsCutover` in `scripts/verify-
 
 ## Related
 
+- [secrets-cutover dry-run fixtures](../../test/fixtures/secrets-cutover/) + `npm run verify:secrets-cutover-dryrun` — synthetic dry-run doc fixtures for the cutover assessor (does **not** close the live gate)
+
 - [AGENT_SECRET_MIGRATION.md](./AGENT_SECRET_MIGRATION.md) — historical #16 cutover notes
 - [AGENT_SECRET_CONTRACT.md](../AGENT_SECRET_CONTRACT.md) — clean-host contract
 - [PRODUCTION_AGENT_SECRET_RECONSTRUCTION.md](../PRODUCTION_AGENT_SECRET_RECONSTRUCTION.md) — reconstruction harness (not live acceptance)

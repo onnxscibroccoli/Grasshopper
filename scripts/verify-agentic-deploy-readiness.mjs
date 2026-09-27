@@ -9,6 +9,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { assessProductionSecretsCutover } from "../lib/assess-production-secrets-cutover.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REQUIRED_RECOVERY_POINTS = 14;
@@ -191,36 +192,6 @@ function assessSecretsInjectionContract(reconstructionStatus, migrationDoc, secr
     "Repository Secrets Manager injection contract",
     "COMPLETE",
     `required files present; status/migration docs affirm Secrets Manager path (HELIX_AGENT_TOKEN_SECRET_ID / omnikali/production/agent-bridge-token); host-env-still-current language absent; signals=${matchedSignals.length}`
-  );
-}
-
-function assessProductionSecretsCutover(reconstructionStatus, migrationDoc) {
-  // This PR does not re-verify the live host. Fail closed: keep cutover OPEN
-  // unless docs explicitly record a fresh live host re-verification (not claimed here).
-  const statusText = reconstructionStatus || "";
-  const migrationText = migrationDoc || "";
-  const combined = `${statusText}\n${migrationText}`;
-
-  const freshLiveReverify =
-    /live host re-verif(?:y|ied|ication).{0,80}(HELIX_AGENT_TOKEN_SECRET_ID|Secrets Manager)/i.test(
-      combined
-    ) &&
-    /dated live cutover re-verification complete/i.test(combined);
-
-  if (freshLiveReverify) {
-    return gate(
-      "production_secrets_cutover",
-      "Live production secrets cutover re-verification",
-      "COMPLETE",
-      "docs record dated live host re-verification of Secrets Manager injection"
-    );
-  }
-
-  return gate(
-    "production_secrets_cutover",
-    "Live production secrets cutover re-verification",
-    "OPEN",
-    "repository contract may be COMPLETE, but live host Secrets Manager cutover is not re-verified by this static gate; PR #16 migration notes are historical evidence only — do not treat as fresh live acceptance"
   );
 }
 
