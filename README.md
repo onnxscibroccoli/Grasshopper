@@ -22,6 +22,7 @@ The local environment implements agent registration, resource declaration, durab
 - src/store.mjs — atomic JSON state store
 - src/executor.mjs — execution-environment interface + local implementation
 - src/control-plane.mjs — agent/task/lock/resource lifecycle
+- src/clients/grok-control-plane-client.mjs — authenticated Grok client; no executor bypass
 - bin/omnikali.mjs — reproducible CLI
 - test/recovery.test.mjs — crash/restart recovery tests
 - environments/local.json — reference environment
