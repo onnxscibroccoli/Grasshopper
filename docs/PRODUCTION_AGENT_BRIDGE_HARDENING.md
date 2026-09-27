@@ -131,4 +131,6 @@ This is a contract layer, not a claim that the recovered production bridge alrea
 
 A non-idempotent or interactive operation interrupted after dispatch must remain indeterminate until executor-side or external reconciliation establishes the outcome. A cancellation result cannot simultaneously be reported as confirmed completion.
 
-Production adoption requires wiring these fields through the recovered gateway/bridge boundary and adding command-type-specific acceptance evidence. The recovered QEMU execution primitive remains unchanged.
+The reference durable executor now also fences a race where cancellation has been acknowledged but an in-flight adapter later reports `confirmed`: that result is downgraded to `indeterminate` with reconciliation metadata rather than allowing a false confirmation.
+
+Production adoption still requires wiring these fields through the recovered gateway/bridge boundary, implementing an executor-side cancellation boundary for supported command classes, and adding command-type-specific acceptance evidence. The recovered QEMU execution primitive remains unchanged by the reference-layer hardening.
