@@ -58,7 +58,7 @@ async function create() {
   const encrypted = join(outDir, backupId);
 
   try {
-    await run("pg_dump", ["--format=custom","--no-owner","--no-acl","--sslmode=require","--host",s.host,"--port",String(s.port ?? 5432),"--username",s.username,"--dbname",s.dbname ?? "postgres","--file",raw], {env:{PGPASSFILE:passFile}});
+    await run("pg_dump", ["--format=custom","--no-owner","--no-acl","--host",s.host,"--port",String(s.port ?? 5432),"--username",s.username,"--dbname",s.dbname ?? "postgres","--file",raw], {env:{PGPASSFILE:passFile,PGSSLMODE:"require"}});
     await run("zstd", ["--ultra","-19","--rm",raw,"-o",compressed]);
     await run("age", ["-R", requireEnv("BACKUP_RECIPIENT_FILE"), "-o", encrypted, compressed]);
 
