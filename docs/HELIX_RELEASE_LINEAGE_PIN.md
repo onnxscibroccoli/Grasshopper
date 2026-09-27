@@ -18,7 +18,7 @@ Validator: `npm run validate:helix-lineage-pin`.
 | Commit URL | https://github.com/onnxscibroccoli/helix/commit/38903b021cca75189a99e1ed88b508bae577f048 |
 | Branch tip at verification | `omnikali/production-db-bootstrap-20260926` → exact SHA above |
 | Also reachable from | `hardening/postgres-executor-cancellation` |
-| Tags containing SHA | none |
+| Tags containing SHA | `clean-reconstruction-38903b0` (tag object `6ef4db852a945d957b1e577327d6260bdd693197` → `38903b021cca75189a99e1ed88b508bae577f048`; https://github.com/onnxscibroccoli/helix/releases/tag/clean-reconstruction-38903b0) |
 | Diff of that commit | only `production/gateway/helix-gateway.mjs` (+1/−1) |
 
 `agent-executor.mjs` and `omni-agent.mjs` are **absent** from the accepted tree (`git ls-tree` over the commit).

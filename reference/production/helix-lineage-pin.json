@@ -1,11 +1,13 @@
 {
   "schema_version": 1,
   "status": "pinned-fail-closed",
-  "verified_at": "2026-09-27T06:40:00-04:00",
+  "verified_at": "2026-09-27T02:55:51-04:00",
   "verification_method": [
     "GitHub API get_commit on onnxscibroccoli/helix",
     "local git clone https://github.com/onnxscibroccoli/helix.git",
-    "git cat-file / rev-parse / merge-base / rev-list --left-right --count"
+    "git cat-file / rev-parse / merge-base / rev-list --left-right --count",
+    "git ls-remote --tags origin clean-reconstruction-38903b0",
+    "gh api repos/onnxscibroccoli/helix/git/tags/6ef4db852a945d957b1e577327d6260bdd693197"
   ],
   "canonical_repository": "onnxscibroccoli/helix",
   "accepted_production_fix": {
@@ -14,14 +16,24 @@
     "authored_at": "2026-09-26T06:56:47Z",
     "html_url": "https://github.com/onnxscibroccoli/helix/commit/38903b021cca75189a99e1ed88b508bae577f048",
     "tree": "a35aa48d60bfbc97f2826b807e8311d143199730",
-    "changed_files": ["production/gateway/helix-gateway.mjs"],
+    "changed_files": [
+      "production/gateway/helix-gateway.mjs"
+    ],
     "branch_tips_at_verification": {
       "omnikali/production-db-bootstrap-20260926": "38903b021cca75189a99e1ed88b508bae577f048"
     },
     "also_reachable_from": [
       "hardening/postgres-executor-cancellation"
     ],
-    "tags_containing": []
+    "tags_containing": [
+      {
+        "name": "clean-reconstruction-38903b0",
+        "tag_object_sha": "6ef4db852a945d957b1e577327d6260bdd693197",
+        "target_commit": "38903b021cca75189a99e1ed88b508bae577f048",
+        "html_url": "https://github.com/onnxscibroccoli/helix/releases/tag/clean-reconstruction-38903b0",
+        "tagger_date": "2026-09-27T06:45:08Z"
+      }
+    ]
   },
   "helix_main_at_verification": {
     "sha": "d632064004eee30297d084d4cce876398a0b7112",
