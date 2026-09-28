@@ -183,7 +183,7 @@ jobs:
             fi
             sleep 2
           done
-          test "$READY" = 1 || { cat /tmp/port-forward.log; cat /tmp/novnc.err; exit 1; }
+          test "$READY" = 1 || { kubectl -n omnikali-user-a get pods -o wide; kubectl -n omnikali-user-a describe pods; kubectl -n omnikali-user-a logs deployment/kali-desktop -c desktop --tail=200 || true; cat /tmp/port-forward.log; cat /tmp/novnc.err; exit 1; }
           curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
           install -m 0755 /tmp/cloudflared /usr/local/bin/cloudflared
           nohup cloudflared tunnel --url http://127.0.0.1:6080 --no-autoupdate >/tmp/cloudflared.log 2>&1 &
