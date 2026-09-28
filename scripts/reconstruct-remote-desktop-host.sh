@@ -73,7 +73,7 @@ build_kali_base() {
   rm -f "$staged"
   qemu-img convert -p -O qcow2 "$source_image" "$staged"
   qemu-img resize "$staged" 16G
-  virt-customize -a "$staged" \
+  virt-customize -a "$staged" --network \
     --install kali-desktop-xfce,firefox-esr,qemu-guest-agent,dbus-x11,x11vnc \
     --run-command 'update-alternatives --set x-session-manager /usr/bin/startxfce4 || true' \
     --mkdir /etc/lightdm/lightdm.conf.d \
