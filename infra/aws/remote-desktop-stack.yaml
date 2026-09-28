@@ -218,7 +218,7 @@ Resources:
                   - !Ref AgentBridgeToken
               - Effect: Allow
                 Action: [cognito-idp:DescribeUserPoolClient]
-                Resource: !GetAtt UserPoolClient.Arn
+                Resource: !GetAtt UserPool.Arn
         - PolicyName: WorkspaceEbsLifecycle
           PolicyDocument:
             Version: '2012-10-17'
@@ -372,6 +372,7 @@ Resources:
               export AGENT_TOKEN_SECRET_ID='${AgentBridgeToken}'
               export COGNITO_USER_POOL_ID='${UserPool}'
               export COGNITO_CLIENT_ID='${UserPoolClient}'
+              export COGNITO_DOMAIN_PREFIX='${CognitoDomainPrefix}'
               export PUBLIC_ORIGIN='https://${CloudFrontDistribution.DomainName}'
               bash /opt/grasshopper/scripts/reconstruct-remote-desktop-host.sh
 
