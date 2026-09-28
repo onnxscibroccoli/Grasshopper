@@ -175,8 +175,15 @@ jobs:
         run: |
           export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
           nohup kubectl -n omnikali-user-a port-forward svc/kali-desktop 6080:6080 --address 127.0.0.1 >/tmp/port-forward.log 2>&1 &
-          sleep 3
-          curl -fsS http://127.0.0.1:6080/ >/tmp/novnc.html
+          READY=0
+          for i in $(seq 1 60); do
+            if curl -sS --max-time 2 http://127.0.0.1:6080/ >/tmp/novnc.html 2>/tmp/novnc.err && grep -qi 'novnc' /tmp/novnc.html; then
+              READY=1
+              break
+            fi
+            sleep 2
+          done
+          test "$READY" = 1 || { cat /tmp/port-forward.log; cat /tmp/novnc.err; exit 1; }
           curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
           install -m 0755 /tmp/cloudflared /usr/local/bin/cloudflared
           nohup cloudflared tunnel --url http://127.0.0.1:6080 --no-autoupdate >/tmp/cloudflared.log 2>&1 &
