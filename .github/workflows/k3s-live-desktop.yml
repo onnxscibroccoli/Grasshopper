@@ -51,7 +51,7 @@ jobs:
               --namespace "$NS" --create-namespace \
               --set desktop.namespace="$NS" \
               --set desktop.storageClass=local-path \
-              --set desktop.accessMode=ReadWriteOnce \
+              --set persistence.accessMode=ReadWriteOnce \
               --set image.repository=omnikali/kali-desktop \
               --set image.tag=acceptance \
               --set image.pullPolicy=Never \
