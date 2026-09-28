@@ -86,4 +86,6 @@ spec:
     - name: novnc
       port: {{ .Values.desktop.servicePort }}
       targetPort: novnc
+{{- if eq .Values.desktop.serviceType "NodePort" }}
       nodePort: {{ .Values.desktop.nodePort }}
+{{- end }}
