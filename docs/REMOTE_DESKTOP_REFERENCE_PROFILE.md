@@ -13,7 +13,7 @@ Captured 2026-09-28 UTC from the authorized Helix/Kali host. This is a reference
 - host services use systemd
 - VNC/noVNC remain localhost-only
 
-AWS documents currently list C7i-flex as supporting EC2 nested virtualization, and AWS documents the launch-time `NestedVirtualization=enabled` CPU option. citeturn5search1turn5search4
+AWS currently documents C7i-flex as supporting nested virtualization and documents the launch-time `NestedVirtualization=enabled` CPU option.
 
 ## L2 persistent workspace
 
