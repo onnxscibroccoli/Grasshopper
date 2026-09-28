@@ -119,17 +119,17 @@ jobs:
           if ! gh api "repos/$GITHUB_REPOSITORY/branches/$DEMO_BRANCH" >/dev/null 2>&1; then
             gh api "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/heads/$DEMO_BRANCH" -f "sha=$GITHUB_SHA" >/dev/null
           fi
-          cat > /tmp/live-k3s.md <<EOF
-# Live OmniKali K3s Desktop
-
-Temporary acceptance endpoint for workflow run $GITHUB_RUN_ID.
-
-**Open the desktop:** $URL
-
-No VNC password is required for this ephemeral acceptance endpoint.
-
-The endpoint is backed by a GitHub-hosted K3s runner and is destroyed when the workflow ends.
-EOF
+          printf '%s\\n' \
+            '# Live OmniKali K3s Desktop' \
+            '' \
+            "Temporary acceptance endpoint for workflow run $GITHUB_RUN_ID." \
+            '' \
+            "**Open the desktop:** $URL" \
+            '' \
+            'No VNC password is required for this ephemeral acceptance endpoint.' \
+            '' \
+            'The endpoint is backed by a GitHub-hosted K3s runner and is destroyed when the workflow ends.' \
+            > /tmp/live-k3s.md
           CONTENT_B64=$(base64 -w0 /tmp/live-k3s.md)
           FILE_ENDPOINT="repos/$GITHUB_REPOSITORY/contents/docs/live-k3s/latest.md"
           EXISTING_SHA=$(gh api "$FILE_ENDPOINT?ref=$DEMO_BRANCH" --jq '.sha' 2>/dev/null || true)
