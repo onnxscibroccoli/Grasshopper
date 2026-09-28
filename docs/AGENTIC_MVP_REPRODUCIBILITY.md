@@ -27,3 +27,5 @@ Production readiness remains fail-closed under `npm run verify:agentic-deploy-re
 ## Design rule
 
 Grow the automation working surface outward from the proven core. Do not substitute or weaken the validated production architecture merely to satisfy this local reproducibility MVP.
+
+The next gate is reference control-plane reproduction: `npm run verify:agentic-control-plane`. See [AGENTIC_REFERENCE_CONTROL_PLANE.md](./AGENTIC_REFERENCE_CONTROL_PLANE.md). It is still not a production reconstruction claim.

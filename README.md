@@ -24,7 +24,7 @@ The local environment implements agent registration, resource declaration, durab
 - src/control-plane.mjs — agent/task/lock/resource lifecycle
 - src/clients/grok-control-plane-client.mjs — authenticated Grok client; no executor bypass
 - src/mcp/grok-control-plane-tools.mjs — MCP facade; submit/cancel through GrokControlPlaneClient only
-- bin/omnikali.mjs — reproducible CLI
+- bin/omnikali.mjs — reproducible CLI, including lock, export, and import
 - test/recovery.test.mjs — crash/restart recovery tests
 - environments/local.json — reference environment
 - scripts/bootstrap.sh — source-to-running-state bootstrap
@@ -38,6 +38,8 @@ The local environment implements agent registration, resource declaration, durab
     node bin/omnikali.mjs status
 
 No production credentials or live-machine assumptions are required.
+
+`npm run verify:agentic-reproducibility` proves a clean Git archive can bootstrap and pass the suite. `npm run verify:agentic-control-plane` then reproduces the reference control plane lifecycle (lock, task, restart, export/import) from that same archive. Neither command claims production reconstruction. See [docs/AGENTIC_REFERENCE_CONTROL_PLANE.md](docs/AGENTIC_REFERENCE_CONTROL_PLANE.md).
 
 For the dated production and independent-backup observations, deployment order, and open reconstruction gates, see [`docs/PRODUCTION_RECONSTRUCTION_STATUS.md`](./docs/PRODUCTION_RECONSTRUCTION_STATUS.md) and [`docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md`](./docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md).
 
