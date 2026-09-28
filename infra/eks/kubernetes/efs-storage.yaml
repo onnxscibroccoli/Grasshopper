@@ -1,0 +1,9 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: omnikali-efs
+provisioner: efs.csi.aws.com
+mountOptions:
+  - tls
+volumeBindingMode: Immediate
+reclaimPolicy: Retain
