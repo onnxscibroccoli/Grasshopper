@@ -1,0 +1,392 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: OmniKali full remote desktop reproducibility reference stack
+
+Parameters:
+  AvailabilityZoneA:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-east-1a
+  AvailabilityZoneB:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: us-east-1b
+  InstanceType:
+    Type: String
+    Default: c7i-flex.large
+    AllowedValues: [c7i-flex.large, c7i-flex.xlarge, c7i-flex.2xlarge]
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+  HelixCommit:
+    Type: String
+    Default: 38903b021cca75189a99e1ed88b508bae577f048
+  GrasshopperCommit:
+    Type: String
+  CognitoDomainPrefix:
+    Type: String
+    AllowedPattern: '^[a-z0-9-]{3,63}$'
+  DatabaseClass:
+    Type: String
+    Default: db.t3.micro
+  DatabaseBackupRetention:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 35
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.42.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  VpcGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZoneA
+      CidrBlock: 10.42.1.0/24
+      MapPublicIpOnLaunch: true
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZoneB
+      CidrBlock: 10.42.2.0/24
+      MapPublicIpOnLaunch: true
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZoneA
+      CidrBlock: 10.42.11.0/24
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZoneB
+      CidrBlock: 10.42.12.0/24
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: !Ref VPC}
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicRouteA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {RouteTableId: !Ref PublicRouteTable, SubnetId: !Ref PublicSubnetA}
+  PublicRouteB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {RouteTableId: !Ref PublicRouteTable, SubnetId: !Ref PublicSubnetB}
+
+  DesktopSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Public CloudFront origin, no SSH path
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PostgreSQL from desktop host
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref DesktopSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: OmniKali PostgreSQL private subnets
+      SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+
+  ControlPlaneDatabase:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: postgres
+      EngineVersion: '18.3'
+      DBInstanceClass: !Ref DatabaseClass
+      AllocatedStorage: 20
+      MaxAllocatedStorage: 100
+      StorageType: gp3
+      StorageEncrypted: true
+      MultiAZ: true
+      PubliclyAccessible: false
+      DBName: helix
+      MasterUsername: helixadmin
+      ManageMasterUserPassword: true
+      BackupRetentionPeriod: !Ref DatabaseBackupRetention
+      DeletionProtection: true
+      CopyTagsToSnapshot: true
+      EnableCloudwatchLogsExports: [postgresql]
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      VPCSecurityGroups: [!Ref DatabaseSecurityGroup]
+
+  SessionSigningSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub omnikali/${AWS::StackName}/session-signing
+      GenerateSecretString:
+        PasswordLength: 64
+        ExcludePunctuation: true
+  StorageAgentToken:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub omnikali/${AWS::StackName}/storage-agent
+      GenerateSecretString:
+        PasswordLength: 64
+        ExcludePunctuation: true
+  AgentBridgeToken:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub omnikali/${AWS::StackName}/agent-bridge
+      GenerateSecretString:
+        PasswordLength: 64
+        ExcludePunctuation: true
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-users
+      AutoVerifiedAttributes: [email]
+      UsernameAttributes: [email]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPool
+      Domain: !Ref CognitoDomainPrefix
+      ManagedLoginVersion: 2
+
+  DesktopRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: ec2.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: SecretsAndCognito
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [secretsmanager:GetSecretValue, secretsmanager:DescribeSecret]
+                Resource:
+                  - !GetAtt ControlPlaneDatabase.MasterUserSecret.SecretArn
+                  - !Ref SessionSigningSecret
+                  - !Ref StorageAgentToken
+                  - !Ref AgentBridgeToken
+              - Effect: Allow
+                Action: [cognito-idp:DescribeUserPoolClient]
+                Resource: !GetAtt UserPoolClient.Arn
+        - PolicyName: WorkspaceEbsLifecycle
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeVolumes
+                  - ec2:CreateVolume
+                  - ec2:CreateTags
+                  - ec2:AttachVolume
+                  - ec2:DetachVolume
+                  - ec2:DeleteVolume
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: !Ref AWS::Region
+
+  DesktopInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref DesktopRole]
+
+  DesktopLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${AWS::StackName}-desktop
+      LaunchTemplateData:
+        ImageId: !Ref AmiId
+        InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Name: !Ref DesktopInstanceProfile
+        SecurityGroupIds: [!Ref DesktopSecurityGroup]
+        CpuOptions:
+          NestedVirtualization: enabled
+        MetadataOptions:
+          HttpTokens: required
+          HttpEndpoint: enabled
+          HttpPutResponseHopLimit: 2
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 40
+              VolumeType: gp3
+              Encrypted: true
+              DeleteOnTermination: true
+        UserData:
+          Fn::Base64:
+            !Sub |
+              #!/bin/bash
+              set -eu
+              apt-get update
+              apt-get install -y git curl ca-certificates
+              mkdir -p /opt/grasshopper
+              if [ ! -d /opt/grasshopper/.git ]; then
+                git clone https://github.com/onnxscibroccoli/Grasshopper.git /opt/grasshopper
+              fi
+              git -C /opt/grasshopper fetch --prune origin
+              git -C /opt/grasshopper reset --hard ${GrasshopperCommit}
+              touch /var/lib/grasshopper-bootstrap-ready
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub ${AWS::StackName}-desktop
+              - Key: OmniKaliRole
+                Value: remote-desktop
+          - ResourceType: volume
+            Tags:
+              - Key: OmniKaliRole
+                Value: host-root
+
+  DesktopInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: VpcGatewayAttachment
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DesktopLaunchTemplate
+        Version: !GetAtt DesktopLaunchTemplate.LatestVersionNumber
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-desktop
+        - Key: OmniKaliRole
+          Value: remote-desktop
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn: DesktopInstance
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: HelixDesktopOrigin
+            DomainName: !GetAtt DesktopInstance.PublicDnsName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: HelixDesktopOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          CachedMethods: [GET, HEAD]
+          ForwardedValues:
+            QueryString: true
+            Cookies: {Forward: all}
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: CloudFrontDistribution
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub ${AWS::StackName}-web
+      GenerateSecret: true
+      SupportedIdentityProviders: [COGNITO]
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      CallbackURLs:
+        - !Sub https://${CloudFrontDistribution.DomainName}/auth/callback
+      LogoutURLs:
+        - !Sub https://${CloudFrontDistribution.DomainName}/
+      DefaultRedirectURI: !Sub https://${CloudFrontDistribution.DomainName}/auth/callback
+
+  HostReconstruction:
+    Type: AWS::SSM::Association
+    DependsOn: [DesktopInstance, CloudFrontDistribution, ControlPlaneDatabase, UserPoolClient]
+    Properties:
+      AssociationName: !Sub ${AWS::StackName}-host-reconstruction
+      Name: AWS-RunShellScript
+      Targets:
+        - Key: InstanceIds
+          Values: [!Ref DesktopInstance]
+      WaitForSuccessTimeoutSeconds: 7200
+      Parameters:
+        commands:
+          - !Sub |
+              set -euo pipefail
+              export AWS_REGION='${AWS::Region}'
+              export HELIX_COMMIT='${HelixCommit}'
+              export HELIX_REPO='https://github.com/onnxscibroccoli/helix.git'
+              export DB_SECRET_ARN='${ControlPlaneDatabase.MasterUserSecret.SecretArn}'
+              export SESSION_SECRET_ARN='${SessionSigningSecret}'
+              export STORAGE_TOKEN_SECRET_ID='${StorageAgentToken}'
+              export AGENT_TOKEN_SECRET_ID='${AgentBridgeToken}'
+              export COGNITO_USER_POOL_ID='${UserPool}'
+              export COGNITO_CLIENT_ID='${UserPoolClient}'
+              export PUBLIC_ORIGIN='https://${CloudFrontDistribution.DomainName}'
+              bash /opt/grasshopper/scripts/reconstruct-remote-desktop-host.sh
+
+Outputs:
+  DashboardURL:
+    Value: !Sub https://${CloudFrontDistribution.DomainName}/
+  CognitoManagedLogin:
+    Value: !Sub https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com/
+  DesktopInstanceId:
+    Value: !Ref DesktopInstance
+  DatabaseEndpoint:
+    Value: !GetAtt ControlPlaneDatabase.Endpoint.Address
+  DatabaseSecretArn:
+    Value: !GetAtt ControlPlaneDatabase.MasterUserSecret.SecretArn
+  HelixCommit:
+    Value: !Ref HelixCommit
+  GrasshopperCommit:
+    Value: !Ref GrasshopperCommit
