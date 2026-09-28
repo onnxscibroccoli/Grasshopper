@@ -1,21 +1,38 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: kali-desktop-default-deny
+  name: {{ .Release.Name }}-default-deny
   namespace: {{ .Values.desktop.namespace }}
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-kali-desktop
   policyTypes: [Ingress, Egress]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: kali-desktop-egress
+  name: {{ .Release.Name }}-desktop-access
   namespace: {{ .Values.desktop.namespace }}
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: kali-desktop
+      app.kubernetes.io/name: {{ .Release.Name }}-kali-desktop
+  policyTypes: [Ingress]
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 6080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-desktop-egress
+  namespace: {{ .Values.desktop.namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-kali-desktop
   policyTypes: [Egress]
   egress:
     - ports:
