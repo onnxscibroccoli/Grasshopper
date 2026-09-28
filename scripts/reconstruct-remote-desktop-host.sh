@@ -97,7 +97,7 @@ if [[ ! -s "$KALI_BASE_IMAGE" ]]; then
   build_kali_base
 fi
 
-install -d -m 0755 /etc/helix /var/lib/helix
+install -d -m 0755 /etc/helix /var/lib/helix /etc/systemd/system/helix-libvirt-hypervisor.service.d
 cat >/etc/systemd/system/helix-libvirt-hypervisor.service.d/kali-rolling.conf <<'EOF'
 [Service]
 Environment="HELIX_BASE_IMAGE=/var/lib/helix/disks/kali-rolling-base.qcow2"
@@ -105,8 +105,6 @@ Environment="HELIX_VM_MEMORY_MB=2048"
 Environment="HELIX_VM_VCPUS=2"
 Environment="HELIX_PERSISTENT_DISK_GB=40"
 EOF
-
-install -d -m 0755 /etc/systemd/system/helix-libvirt-hypervisor.service.d
 
 # Install the validated production service definitions when present.
 for unit in \
