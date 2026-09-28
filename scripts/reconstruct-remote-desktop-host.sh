@@ -235,10 +235,13 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
+IMDS_TOKEN=$(curl -fsS -X PUT -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600' http://169.254.169.254/latest/api/token)
+HELIX_INSTANCE_ID=$(curl -fsS -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+HELIX_AVAILABILITY_ZONE=$(curl -fsS -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/placement/availability-zone)
 cat >/etc/helix/ebs-agent.env <<EOF
 AWS_REGION=$AWS_REGION
-HELIX_INSTANCE_ID=$(curl -fsS -H 'X-aws-ec2-metadata-token: ' http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || true)
-HELIX_AVAILABILITY_ZONE=$(curl -fsS http://169.254.169.254/latest/meta-data/placement/availability-zone 2>/dev/null || true)
+HELIX_INSTANCE_ID=$HELIX_INSTANCE_ID
+HELIX_AVAILABILITY_ZONE=$HELIX_AVAILABILITY_ZONE
 STORAGE_TOKEN_SECRET_ID=$STORAGE_TOKEN_SECRET_ID
 EOF
 
