@@ -88,7 +88,7 @@ jobs:
           kubectl -n omnikali-user-a exec "$A" -- sh -c 'cat /home/kali/isolation.txt'
           kubectl -n omnikali-user-a delete pod "$A" --wait=true
           kubectl -n omnikali-user-a rollout status deployment/kali-desktop --timeout=180s
-          A2=$(kubectl -n omnikali-user-a get pod -l app.kubernetes.io/name=kali-desktop -o jsonpath='{.items[0].metadata.name}')
+          A2=$(kubectl -n omnikali-user-a get pods -l app.kubernetes.io/name=kali-desktop --no-headers -o custom-columns=NAME:.metadata.name,CREATED:.metadata.creationTimestamp | sort -k2 | tail -1 | awk '{print $1}')
           test "$A2" != "$A"
           kubectl -n omnikali-user-a wait --for=condition=Ready "pod/$A2" --timeout=180s
           kubectl -n omnikali-user-a exec "$A2" -c desktop -- sh -c 'test "$(cat /home/kali/isolation.txt)" = USER_A_MARKER'
