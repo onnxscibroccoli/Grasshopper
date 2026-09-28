@@ -56,7 +56,11 @@ jobs:
               --set image.repository=omnikali/kali-desktop \
               --set image.tag=acceptance \
               --set image.pullPolicy=Never \
-              --set persistence.enabled=true
+              --set persistence.enabled=true \
+              --set desktop.cpu=750m \
+              --set desktop.memory=1536Mi \
+              --set desktop.cpuLimit=1500m \
+              --set desktop.memoryLimit=3Gi
           done
           helm list --all-namespaces
           kubectl -n omnikali-user-a rollout status deployment/kali-desktop --timeout=300s
