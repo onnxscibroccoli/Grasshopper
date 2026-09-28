@@ -27,6 +27,27 @@ spec:
           ports:
             - name: novnc
               containerPort: 6080
+          startupProbe:
+            httpGet:
+              path: /vnc.html
+              port: novnc
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 40
+          readinessProbe:
+            httpGet:
+              path: /vnc.html
+              port: novnc
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /vnc.html
+              port: novnc
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
           resources:
             requests:
               cpu: {{ .Values.desktop.cpu | quote }}
