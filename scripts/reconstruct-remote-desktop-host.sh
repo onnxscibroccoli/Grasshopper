@@ -14,6 +14,24 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
+if [[ -n "${STACK_NAME:-}" ]]; then
+  for attempt in $(seq 1 60); do
+    stack_outputs="$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name "$STACK_NAME" --query 'Stacks[0].Outputs' --output json 2>/dev/null || true)"
+    if [[ -n "$stack_outputs" && "$stack_outputs" != "null" ]]; then
+      COGNITO_CLIENT_ID="$(printf '%s' "$stack_outputs" | python3 -c 'import json,sys; o={x["OutputKey"]:x["OutputValue"] for x in json.load(sys.stdin)}; print(o.get("UserPoolClientId",""))')"
+      PUBLIC_ORIGIN="$(printf '%s' "$stack_outputs" | python3 -c 'import json,sys; o={x["OutputKey"]:x["OutputValue"] for x in json.load(sys.stdin)}; print(o.get("DashboardURL",""))')"
+      if [[ -n "$COGNITO_CLIENT_ID" && -n "$PUBLIC_ORIGIN" ]]; then
+        export COGNITO_CLIENT_ID PUBLIC_ORIGIN
+        break
+      fi
+    fi
+    sleep 10
+  done
+fi
+
+: "${COGNITO_CLIENT_ID:?COGNITO_CLIENT_ID could not be resolved}"
+: "${PUBLIC_ORIGIN:?PUBLIC_ORIGIN could not be resolved}"
+
 apt-get update
 apt-get install -y \
   qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients virtinst \
