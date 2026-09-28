@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   live-k3s:
@@ -40,7 +40,7 @@ jobs:
       - name: Deploy two isolated desktops from portable Helm chart
         run: |
           export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-          export VNC_PASSWORD="OK${GITHUB_RUN_ID: -6}"
+          export VNC_PASSWORD=""
           for u in user-a user-b; do
             NS="omnikali-${u}"
             kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
@@ -110,9 +110,33 @@ jobs:
           done
           test -n "$URL"
           echo "LIVE_NOVNC_URL=$URL" >> "$GITHUB_ENV"
-          echo "VNC_PASSWORD=$VNC_PASSWORD" >> "$GITHUB_ENV"
           echo "## Live K3s desktop" >> "$GITHUB_STEP_SUMMARY"
           echo "URL: $URL" >> "$GITHUB_STEP_SUMMARY"
-          echo "VNC password: $VNC_PASSWORD" >> "$GITHUB_STEP_SUMMARY"
-          echo "Keep this workflow running while the manual browser test is performed."
+          echo "Authentication: none for this ephemeral demo tunnel." >> "$GITHUB_STEP_SUMMARY"
+          echo "This URL is temporary and exists only while this workflow run is alive." >> "$GITHUB_STEP_SUMMARY"
+
+          DEMO_BRANCH="live-k3s-demo"
+          if ! gh api "repos/$GITHUB_REPOSITORY/branches/$DEMO_BRANCH" >/dev/null 2>&1; then
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/heads/$DEMO_BRANCH" -f "sha=$GITHUB_SHA" >/dev/null
+          fi
+          cat > /tmp/live-k3s.md <<EOF
+# Live OmniKali K3s Desktop
+
+Temporary acceptance endpoint for workflow run $GITHUB_RUN_ID.
+
+**Open the desktop:** $URL
+
+No VNC password is required for this ephemeral acceptance endpoint.
+
+The endpoint is backed by a GitHub-hosted K3s runner and is destroyed when the workflow ends.
+EOF
+          CONTENT_B64=$(base64 -w0 /tmp/live-k3s.md)
+          FILE_ENDPOINT="repos/$GITHUB_REPOSITORY/contents/docs/live-k3s/latest.md"
+          EXISTING_SHA=$(gh api "$FILE_ENDPOINT?ref=$DEMO_BRANCH" --jq '.sha' 2>/dev/null || true)
+          if [ -n "$EXISTING_SHA" ]; then
+            gh api "$FILE_ENDPOINT" -X PUT -f message="ci: update live K3s demo endpoint" -f content="$CONTENT_B64" -f sha="$EXISTING_SHA" -f branch="$DEMO_BRANCH" >/dev/null
+          else
+            gh api "$FILE_ENDPOINT" -X PUT -f message="ci: publish live K3s demo endpoint" -f content="$CONTENT_B64" -f branch="$DEMO_BRANCH" >/dev/null
+          fi
+          echo "Published live endpoint to branch $DEMO_BRANCH."
           while true; do sleep 60; done
