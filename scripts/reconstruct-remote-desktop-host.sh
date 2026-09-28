@@ -42,6 +42,21 @@ git -C "$HELIX_ROOT" fetch --prune origin
 git -C "$HELIX_ROOT" reset --hard "$HELIX_COMMIT"
 git -C "$HELIX_ROOT" clean -fdx
 
+# Apply the captured production overlay from the verified Helix pin.
+OVERLAY_ROOT="/opt/grasshopper/vendor/helix-production-overlay"
+git -C "$HELIX_ROOT" apply --whitespace=nowarn "$OVERLAY_ROOT/omnikali-production-overlay.patch"
+install -d -m 0755 "$HELIX_ROOT/production/agent" "$HELIX_ROOT/production/gateway/state"
+install -m 0644 "$OVERLAY_ROOT/production/gateway/portal.html" "$HELIX_ROOT/production/gateway/portal.html"
+install -m 0644 "$OVERLAY_ROOT/production/gateway/acceptance.html" "$HELIX_ROOT/production/gateway/acceptance.html"
+install -m 0644 "$OVERLAY_ROOT/production/gateway/omni-mcp.mjs" "$HELIX_ROOT/production/gateway/omni-mcp.mjs"
+install -m 0644 "$OVERLAY_ROOT/production/gateway/omni-mcp-oauth.mjs" "$HELIX_ROOT/production/gateway/omni-mcp-oauth.mjs"
+install -m 0644 "$OVERLAY_ROOT/production/gateway/omnikali-handoff.mjs" "$HELIX_ROOT/production/gateway/omnikali-handoff.mjs"
+install -m 0644 "$OVERLAY_ROOT/production/gateway/state/agent-secret.mjs" "$HELIX_ROOT/production/gateway/state/agent-secret.mjs"
+install -m 0644 "$OVERLAY_ROOT/production/agent/agent-secret.mjs" "$HELIX_ROOT/production/agent/agent-secret.mjs"
+install -m 0644 "$OVERLAY_ROOT/production/agent/omni-agent.mjs" "$HELIX_ROOT/production/agent/omni-agent.mjs"
+install -m 0644 "$OVERLAY_ROOT/production/agent/openapi.yaml" "$HELIX_ROOT/production/agent/openapi.yaml"
+install -m 0644 "$OVERLAY_ROOT/production/OMNIKALI_GUI_ARBITRATION.md" "$HELIX_ROOT/production/OMNIKALI_GUI_ARBITRATION.md"
+
 build_kali_base() {
   local work="/var/tmp/helix-kali-base-$KALI_QEMU_DATE"
   local archive="kali-linux-$KALI_QEMU_DATE-qemu-amd64.7z"
@@ -156,7 +171,7 @@ Wants=network-online.target
 Type=simple
 User=root
 WorkingDirectory=/opt/helix
-Environment=AWS_REGION=us-east-1
+Environment=AWS_REGION=$AWS_REGION
 Environment=HELIX_MOUNT_ROOT=/var/lib/helix/ebs
 Environment=HELIX_DEFAULT_VOLUME_GB=40
 Environment=HELIX_MAX_VOLUME_GB=1000
@@ -262,7 +277,79 @@ STORAGE_TOKEN_SECRET_ID=$STORAGE_TOKEN_SECRET_ID
 AGENT_TOKEN_SECRET_ID=$AGENT_TOKEN_SECRET_ID
 COGNITO_USER_POOL_ID=$COGNITO_USER_POOL_ID
 EOF
-chmod 0600 /etc/helix/gateway.env /etc/helix/ebs-agent.env
+cat >/etc/helix/agent.env <<EOF
+AWS_REGION=$AWS_REGION
+AGENT_HOST=127.0.0.1
+AGENT_PORT=8093
+AGENT_VM=helix-omnikali
+HELIX_AGENT_TOKEN_SECRET_ID=$AGENT_TOKEN_SECRET_ID
+EOF
+
+cat >/etc/helix/mcp.env <<EOF
+AWS_REGION=$AWS_REGION
+MCP_HOST=127.0.0.1
+MCP_PORT=8094
+MCP_VM=helix-omnikali
+MCP_STATE_DIR=/var/lib/omnikali/mcp
+HELIX_PUBLIC_ORIGIN=$PUBLIC_ORIGIN
+OIDC_CLIENT_ID=$COGNITO_CLIENT_ID
+OIDC_MANAGED_DOMAIN=https://$COGNITO_DOMAIN_PREFIX.auth.$AWS_REGION.amazoncognito.com
+EOF
+
+cat >/usr/local/sbin/omni-mcp-launcher <<'EOF'
+#!/bin/sh
+set -eu
+set -a
+. /etc/helix/agent.env
+. /etc/helix/mcp.env
+set +a
+export MCP_AUTH_TOKEN="$(aws secretsmanager get-secret-value --region "$AWS_REGION" --secret-id "$HELIX_AGENT_TOKEN_SECRET_ID" --query SecretString --output text)"
+export OIDC_CLIENT_SECRET="$(aws cognito-idp describe-user-pool-client --region "$AWS_REGION" --user-pool-id "$COGNITO_USER_POOL_ID" --client-id "$OIDC_CLIENT_ID" --query UserPoolClient.ClientSecret --output text)"
+exec /usr/bin/node /opt/helix/production/gateway/omni-mcp.mjs
+EOF
+chmod 0750 /usr/local/sbin/omni-mcp-launcher
+
+cat >/etc/systemd/system/omni-agent.service <<'EOF'
+[Unit]
+Description=OmniKali authenticated remote agent bridge
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/helix/production/agent
+EnvironmentFile=/etc/helix/agent.env
+ExecStart=/usr/bin/node /opt/helix/production/agent/omni-agent.mjs
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/opt/helix/production/agent
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat >/etc/systemd/system/omni-mcp.service <<'EOF'
+[Unit]
+Description=OmniKali Model Context Protocol control plane
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/helix/production/gateway
+EnvironmentFile=/etc/helix/agent.env
+EnvironmentFile=/etc/helix/mcp.env
+Environment=COGNITO_USER_POOL_ID=$COGNITO_USER_POOL_ID
+ExecStart=/usr/local/sbin/omni-mcp-launcher
+Restart=always
+RestartSec=2
+[Install]
+WantedBy=multi-user.target
+EOF
+
+chmod 0600 /etc/helix/gateway.env /etc/helix/ebs-agent.env /etc/helix/agent.env /etc/helix/mcp.env
 
 sed -i 's#ExecStart=/bin/sh /opt/helix/production/gateway/start-helix-gateway.sh#ExecStart=/usr/local/sbin/helix-gateway-launcher#' /etc/systemd/system/helix-gateway.service 2>/dev/null || true
 
@@ -275,7 +362,7 @@ fi
 systemctl daemon-reload
 systemctl enable libvirtd.service helix-libvirt-hypervisor.service
 nginx -t
-systemctl enable nginx.service helix-ebs-volume-agent.service helix-desktop.service helix-xfce.service helix-vnc.service helix-novnc.service helix-gateway.service
+systemctl enable nginx.service helix-ebs-volume-agent.service helix-desktop.service helix-xfce.service helix-vnc.service helix-novnc.service helix-gateway.service omni-agent.service omni-mcp.service
 
 echo "Helix L1 desktop host reconstructed"
 echo "helix_commit=$HELIX_COMMIT"
