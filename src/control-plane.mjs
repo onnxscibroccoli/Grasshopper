@@ -4,6 +4,12 @@ import { commandDisposition } from "./executor-contract.mjs";
 const AUDIT_TYPE = /^[a-z][a-z0-9._-]{0,79}$/;
 const SENSITIVE_AUDIT_KEY = /token|secret|password|cookie|authorization|proof|api[-_]?key|bearer/i;
 const ORIGIN_FIELDS = ["kind", "principalId", "grokSessionId", "clientOperationId", "credentialRef"];
+const SNAPSHOT_FORMAT = "omnikali-reference-snapshot";
+const PRIVATE_KEY = /-----BEGIN [A-Z ]*PRIVATE KEY-----/;
+
+function isPlainObject(value) {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
 
 function sanitizeAudit(data) {
   if (!data || typeof data !== "object" || Array.isArray(data)) return {};
@@ -100,4 +106,60 @@ export class ControlPlane {
     if (typeof type !== "string" || !AUDIT_TYPE.test(type)) throw new Error("invalid audit type");
     return this.store.update(s => { s.events.push(event(type, sanitizeAudit(data))); });
   }
+
+  async exportSnapshot() {
+    return { format: SNAPSHOT_FORMAT, version: 1, state: await this.store.load() };
+  }
+
+  async importSnapshot(snapshot) {
+    if (!isPlainObject(snapshot) || snapshot.format !== SNAPSHOT_FORMAT || snapshot.version !== 1) throw new Error("invalid snapshot");
+    const raw = JSON.stringify(snapshot);
+    if (PRIVATE_KEY.test(raw)) throw new Error("snapshot contains private-key material");
+    const state = snapshot.state;
+    if (!isPlainObject(state) || state.version !== 1 || !Array.isArray(state.events)) throw new Error("invalid snapshot state");
+    for (const key of ["agents", "tasks", "locks", "resources"]) {
+      if (!isPlainObject(state[key])) throw new Error("invalid snapshot state");
+    }
+    const current = await this.store.load();
+    const occupied = ["agents", "tasks", "locks", "resources"].some(key => Object.keys(current[key] || {}).length > 0);
+    if (occupied) throw new Error("refusing to import over non-empty control plane state");
+    await this.store.save({
+      version: 1,
+      createdAt: state.createdAt,
+      updatedAt: state.updatedAt,
+      agents: state.agents,
+      tasks: state.tasks,
+      locks: state.locks,
+      resources: state.resources,
+      events: state.events
+    });
+    return this.store.load();
+  }
+}
+
+export function referenceFingerprint(state) {
+  const agents = Object.values(state.agents).map(agent => ({
+    name: agent.name,
+    environment: agent.environment,
+    state: agent.state
+  })).sort((a, b) => a.name.localeCompare(b.name));
+  const agentName = Object.fromEntries(Object.values(state.agents).map(agent => [agent.id, agent.name]));
+  const resources = Object.values(state.resources).map(resource => ({
+    kind: resource.kind,
+    state: resource.state,
+    agent: agentName[resource.agentId] ?? null
+  })).sort((a, b) => a.kind.localeCompare(b.kind));
+  const tasks = Object.values(state.tasks).map(task => ({
+    operationKey: task.operationKey ?? null,
+    command: task.command ?? null,
+    state: task.state,
+    code: task.execution?.result?.code ?? null,
+    agent: agentName[task.agentId] ?? null
+  })).sort((a, b) => String(a.operationKey).localeCompare(String(b.operationKey)));
+  const locks = Object.values(state.locks).map(lock => ({
+    name: lock.name,
+    owner: lock.owner,
+    state: lock.state
+  })).sort((a, b) => a.name.localeCompare(b.name));
+  return { version: state.version, agents, resources, tasks, locks, eventTypes: state.events.map(item => item.type) };
 }

@@ -31,6 +31,7 @@
     "verify:secrets-cutover-dryrun": "node scripts/verify-secrets-cutover-dryrun.mjs",
     "live-acceptance:run": "node scripts/live-acceptance/run-scenario.mjs",
     "validate:migration-byte-reconciliation": "node scripts/validate-migration-byte-reconciliation.mjs",
-    "verify:agentic-reproducibility": "sh ./scripts/verify-agentic-reproducibility.sh"
+    "verify:agentic-reproducibility": "sh ./scripts/verify-agentic-reproducibility.sh",
+    "verify:agentic-control-plane": "sh ./scripts/verify-agentic-control-plane.sh"
   }
 }

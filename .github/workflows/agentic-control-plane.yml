@@ -1,0 +1,27 @@
+name: Agentic Reference Control Plane
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - agentic-reference-control-plane
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    name: clean-source-control-plane
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout canonical source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify reference control plane reproduction
+        run: npm run verify:agentic-control-plane
