@@ -128,7 +128,7 @@ jobs:
           export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
           nohup kubectl -n omnikali-user-a port-forward svc/desktop 6080:6080 --address 127.0.0.1 >/tmp/port-forward.log 2>&1 &
           sleep 3
-          curl -fsS http://127.0.0.1:6080/ >/tmp/novnc.html
+          curl -fsS http://127.0.0.1:6080/ >/tmp/novnc.html\n          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared\n          install -m 0755 /tmp/cloudflared /usr/local/bin/cloudflared
           nohup cloudflared tunnel --url http://127.0.0.1:6080 --no-autoupdate >/tmp/cloudflared.log 2>&1 &
           for i in $(seq 1 30); do
             URL=$(grep -o 'https://[-a-z0-9]*\.trycloudflare\.com' /tmp/cloudflared.log | head -1 || true)
