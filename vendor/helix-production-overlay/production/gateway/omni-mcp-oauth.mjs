@@ -18,7 +18,7 @@ function envValue(name) {
   const m = envFile().match(new RegExp("^" + name + "=(.*)$", "m"));
   return m ? m[1].replace(/^"(.*)"$/, "$1") : "";
 }
-const COGNITO_DOMAIN = "https://helix-gateway-913427212571.auth.us-east-1.amazoncognito.com";
+const COGNITO_DOMAIN = envValue("OIDC_MANAGED_DOMAIN");
 const COGNITO_CLIENT_ID = envValue("OIDC_CLIENT_ID");
 const COGNITO_CLIENT_SECRET = envValue("OIDC_CLIENT_SECRET");
 
