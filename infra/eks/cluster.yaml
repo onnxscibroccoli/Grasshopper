@@ -1,0 +1,45 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: omnikali
+  region: us-east-1
+  version: "1.33"
+
+iam:
+  withOIDC: true
+
+addons:
+  - name: vpc-cni
+    resolveConflicts: overwrite
+  - name: coredns
+    resolveConflicts: overwrite
+  - name: kube-proxy
+    resolveConflicts: overwrite
+  - name: eks-pod-identity-agent
+    resolveConflicts: overwrite
+  - name: aws-ebs-csi-driver
+    resolveConflicts: overwrite
+
+managedNodeGroups:
+  - name: system
+    instanceType: m7i.large
+    minSize: 2
+    desiredCapacity: 2
+    maxSize: 6
+    privateNetworking: true
+    labels:
+      workload: system
+    tags:
+      OmniKaliRole: eks-system
+
+  - name: desktop
+    instanceType: m7i.2xlarge
+    minSize: 0
+    desiredCapacity: 0
+    maxSize: 50
+    privateNetworking: true
+    labels:
+      workload: desktop
+    tags:
+      OmniKaliRole: eks-desktop
