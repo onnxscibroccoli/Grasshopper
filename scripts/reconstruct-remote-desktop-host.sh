@@ -367,8 +367,20 @@ python3 -m venv "$HELIX_ROOT/.venv"
 DB_JSON=$(aws secretsmanager get-secret-value --region "$AWS_REGION" --secret-id "$DB_SECRET_ARN" --query SecretString --output text)
 export DATABASE_URL=$(printf '%s' "$DB_JSON" | python3 -c 'import json,sys; from urllib.parse import quote; s=json.load(sys.stdin); print("postgresql://"+quote(s["username"],safe="")+":"+quote(s["password"],safe="")+"@"+s["host"]+":"+str(s["port"])+"/"+s["dbname"]+"?sslmode=require")')
 cd "$HELIX_ROOT"
-npm run db:migrate
+migration_ok=false
+for attempt in $(seq 1 60); do
+  if npm run db:migrate; then
+    migration_ok=true
+    break
+  fi
+  echo "database migration attempt $attempt/60 failed; waiting for PostgreSQL readiness" >&2
+  sleep 10
+done
 unset DATABASE_URL DB_JSON
+if [[ "$migration_ok" != true ]]; then
+  echo "database migration did not succeed within the bounded readiness window" >&2
+  exit 1
+fi
 
 if [[ -f "$HELIX_ROOT/production/gateway/helix-gateway.nginx.conf" ]]; then
   install -m 0644 "$HELIX_ROOT/production/gateway/helix-gateway.nginx.conf" /etc/nginx/sites-available/helix-gateway
