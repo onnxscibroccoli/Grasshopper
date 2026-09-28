@@ -16,7 +16,8 @@ RUN useradd -m -s /bin/bash kali && \
 
 COPY supervisord.conf /etc/supervisor/conf.d/omnikali.conf
 COPY start-desktop.sh /usr/local/bin/start-desktop.sh
-RUN chmod 0755 /usr/local/bin/start-desktop.sh
+COPY vnc-start.sh /usr/local/bin/omnikali-vnc
+RUN chmod 0755 /usr/local/bin/start-desktop.sh /usr/local/bin/omnikali-vnc
 
 EXPOSE 6080
 USER root
