@@ -14,9 +14,11 @@ test("AWS stack provisions the complete infrastructure layers", () => {
     "AWS::Cognito::UserPool",
     "AWS::Cognito::UserPoolClient",
     "AWS::CloudFront::Distribution",
-    "AWS::SSM::Association",
-    "AWS::SecretsManager::Secret"
-  ]) assert.match(stack, new RegExp(token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\$&")));
+    "AWS::SecretsManager::Secret",
+    "UserData:",
+    "git -C /opt/grasshopper reset --hard ${GrasshopperCommit}"
+  ]) assert.match(stack, new RegExp(token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\    "AWS::SecretsManager::Secret"
+  ]) assert.match(stack, new RegExp(token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\$&")));")));
 });
 
 test("AWS stack has no SSH ingress and uses encrypted private PostgreSQL", () => {
