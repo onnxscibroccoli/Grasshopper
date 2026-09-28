@@ -87,10 +87,11 @@ jobs:
           ! kubectl -n omnikali-user-b exec "$B" -- test -f /home/kali/isolation.txt
           kubectl -n omnikali-user-a exec "$A" -- sh -c 'cat /home/kali/isolation.txt'
           kubectl -n omnikali-user-a delete pod "$A" --wait=true
-          kubectl -n omnikali-user-a rollout status deployment/kali-desktop --timeout=300s
+          kubectl -n omnikali-user-a rollout status deployment/kali-desktop --timeout=180s
           A2=$(kubectl -n omnikali-user-a get pod -l app.kubernetes.io/name=kali-desktop -o jsonpath='{.items[0].metadata.name}')
           test "$A2" != "$A"
-          kubectl -n omnikali-user-a exec "$A2" -- sh -c 'test "$(cat /home/kali/isolation.txt)" = USER_A_MARKER'
+          kubectl -n omnikali-user-a wait --for=condition=Ready "pod/$A2" --timeout=180s
+          kubectl -n omnikali-user-a exec "$A2" -c desktop -- sh -c 'test "$(cat /home/kali/isolation.txt)" = USER_A_MARKER'
           echo "K3S Helm deployment, desktop isolation and persistent workspace recovery: PASS"
 
       - name: Publish live noVNC tunnel
