@@ -1,0 +1,21 @@
+image:
+  repository: ghcr.io/onnxscibroccoli/omnikali-kali-desktop
+  tag: latest
+  pullPolicy: IfNotPresent
+desktop:
+  namespace: omnikali-desktop
+  cpu: "2"
+  memory: 4Gi
+  cpuLimit: "4"
+  memoryLimit: 8Gi
+  servicePort: 6080
+  storageClass: omnikali-shared
+  storageSize: 20Gi
+persistence:
+  enabled: true
+  accessMode: ReadWriteMany
+security:
+  serviceAccountToken: false
+  allowPrivilegeEscalation: false
+provider:
+  name: generic
