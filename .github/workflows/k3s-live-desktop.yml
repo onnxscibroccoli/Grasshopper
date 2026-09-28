@@ -63,8 +63,19 @@ jobs:
               --set desktop.memoryLimit=3Gi
           done
           helm list --all-namespaces
-          kubectl -n omnikali-user-a rollout status deployment/kali-desktop --timeout=300s
-          kubectl -n omnikali-user-b rollout status deployment/kali-desktop --timeout=300s
+          kubectl get pods -A -o wide
+          if ! kubectl -n omnikali-user-a rollout status deployment/kali-desktop --timeout=180s; then
+            kubectl -n omnikali-user-a get pods -o wide
+            kubectl -n omnikali-user-a describe pods
+            kubectl -n omnikali-user-a logs deployment/kali-desktop --all-containers=true --tail=200 || true
+            exit 1
+          fi
+          if ! kubectl -n omnikali-user-b rollout status deployment/kali-desktop --timeout=180s; then
+            kubectl -n omnikali-user-b get pods -o wide
+            kubectl -n omnikali-user-b describe pods
+            kubectl -n omnikali-user-b logs deployment/kali-desktop --all-containers=true --tail=200 || true
+            exit 1
+          fi
 
       - name: Verify desktop isolation and recovery
         run: |
