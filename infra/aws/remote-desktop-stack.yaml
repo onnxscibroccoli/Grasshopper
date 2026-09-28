@@ -36,6 +36,9 @@ Parameters:
     Default: 'false'
     AllowedValues: ['true', 'false']
 
+Conditions:
+  EnableDatabaseDeletionProtection: !Equals [!Ref DatabaseDeletionProtection, 'true']
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -148,7 +151,7 @@ Resources:
       MasterUsername: helixadmin
       ManageMasterUserPassword: true
       BackupRetentionPeriod: !Ref DatabaseBackupRetention
-      DeletionProtection: !Equals [!Ref DatabaseDeletionProtection, 'true']
+      DeletionProtection: !If [EnableDatabaseDeletionProtection, true, false]
       CopyTagsToSnapshot: true
       EnableCloudwatchLogsExports: [postgresql]
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
