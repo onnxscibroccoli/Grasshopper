@@ -353,6 +353,23 @@ chmod 0600 /etc/helix/gateway.env /etc/helix/ebs-agent.env /etc/helix/agent.env 
 
 sed -i 's#ExecStart=/bin/sh /opt/helix/production/gateway/start-helix-gateway.sh#ExecStart=/usr/local/sbin/helix-gateway-launcher#' /etc/systemd/system/helix-gateway.service 2>/dev/null || true
 
+cd "$HELIX_ROOT"
+npm ci --omit=dev
+
+if [[ -f "$HELIX_ROOT/production/gateway/package-lock.json" ]]; then
+  cd "$HELIX_ROOT/production/gateway"
+  npm ci --omit=dev
+fi
+
+python3 -m venv "$HELIX_ROOT/.venv"
+"$HELIX_ROOT/.venv/bin/pip" install --disable-pip-version-check -r "$HELIX_ROOT/production/storage/requirements.txt"
+
+DB_JSON=$(aws secretsmanager get-secret-value --region "$AWS_REGION" --secret-id "$DB_SECRET_ARN" --query SecretString --output text)
+export DATABASE_URL=$(printf '%s' "$DB_JSON" | python3 -c 'import json,sys; from urllib.parse import quote; s=json.load(sys.stdin); print("postgresql://"+quote(s["username"],safe="")+":"+quote(s["password"],safe="")+"@"+s["host"]+":"+str(s["port"])+"/"+s["dbname"]+"?sslmode=require")')
+cd "$HELIX_ROOT"
+npm run db:migrate
+unset DATABASE_URL DB_JSON
+
 if [[ -f "$HELIX_ROOT/production/gateway/helix-gateway.nginx.conf" ]]; then
   install -m 0644 "$HELIX_ROOT/production/gateway/helix-gateway.nginx.conf" /etc/nginx/sites-available/helix-gateway
   ln -sfn /etc/nginx/sites-available/helix-gateway /etc/nginx/sites-enabled/helix-gateway
