@@ -44,6 +44,7 @@ jobs:
           for u in user-a user-b; do
             NS="omnikali-${u}"
             kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+            kubectl label namespace "$NS" pod-security.kubernetes.io/enforce=baseline --overwrite
             kubectl -n "$NS" create secret generic desktop-secret \
               --from-literal=VNC_PASSWORD="$VNC_PASSWORD" \
               --dry-run=client -o yaml | kubectl apply -f -
