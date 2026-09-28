@@ -4,17 +4,19 @@ image:
   pullPolicy: IfNotPresent
 desktop:
   namespace: omnikali-desktop
-  cpu: "2"
-  memory: 4Gi
-  cpuLimit: "4"
-  memoryLimit: 8Gi
+  cpu: "750m"
+  memory: 768Mi
+  cpuLimit: "1500m"
+  memoryLimit: 1536Mi
+  serviceType: NodePort
   servicePort: 6080
-  storageClass: omnikali-shared
-  storageSize: 20Gi
+  nodePort: 30080
+  storageClass: local-path
+  storageSize: 10Gi
   vncSecret: desktop-secret
 persistence:
   enabled: true
-  accessMode: ReadWriteMany
+  accessMode: ReadWriteOnce
 security:
   serviceAccountToken: false
   allowPrivilegeEscalation: false
