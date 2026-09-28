@@ -17,8 +17,9 @@ test("AWS stack provisions the complete infrastructure layers", () => {
     "AWS::SecretsManager::Secret",
     "UserData:",
     "git -C /opt/grasshopper reset --hard ${GrasshopperCommit}"
-  ]) assert.match(stack, new RegExp(token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\    "AWS::SecretsManager::Secret"
-  ]) assert.match(stack, new RegExp(token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\$&")));")));
+  ]) {
+    assert.ok(stack.includes(token), `missing current reference-stack contract: ${token}`);
+  }
 });
 
 test("AWS stack has no SSH ingress and uses encrypted private PostgreSQL", () => {
