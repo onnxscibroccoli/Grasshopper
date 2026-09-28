@@ -1,0 +1,27 @@
+name: Agentic MVP Reproducibility
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - agentic-mvp-reproducibility
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    name: clean-source-reproduce
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout canonical source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify agentic MVP reproducibility
+        run: npm run verify:agentic-reproducibility
