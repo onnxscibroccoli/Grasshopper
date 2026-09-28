@@ -221,8 +221,13 @@ Resources:
                   - !Ref StorageAgentToken
                   - !Ref AgentBridgeToken
               - Effect: Allow
-                Action: [cognito-idp:DescribeUserPoolClient]
+                Action:
+                  - cognito-idp:DescribeUserPoolClient
                 Resource: !GetAtt UserPool.Arn
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*
         - PolicyName: WorkspaceEbsLifecycle
           PolicyDocument:
             Version: '2012-10-17'
@@ -292,9 +297,8 @@ Resources:
                 export STORAGE_TOKEN_SECRET_ID='${StorageAgentToken}'
                 export AGENT_TOKEN_SECRET_ID='${AgentBridgeToken}'
                 export COGNITO_USER_POOL_ID='${UserPool}'
-                export COGNITO_CLIENT_ID='${UserPoolClient}'
+                export STACK_NAME='${AWS::StackName}'
                 export COGNITO_DOMAIN_PREFIX='${CognitoDomainPrefix}'
-                export PUBLIC_ORIGIN='https://${CloudFrontDistribution.DomainName}'
                 export HELIX_ROOT='/opt/helix'
                 for attempt in $(seq 1 90); do
                   if aws secretsmanager get-secret-value --region "$AWS_REGION" --secret-id "$DB_SECRET_ARN" --query SecretString --output text >/dev/null 2>&1; then
@@ -390,3 +394,5 @@ Outputs:
     Value: !Ref HelixCommit
   GrasshopperCommit:
     Value: !Ref GrasshopperCommit
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
