@@ -11,6 +11,7 @@ desktop:
   servicePort: 6080
   storageClass: omnikali-shared
   storageSize: 20Gi
+  vncSecret: desktop-secret
 persistence:
   enabled: true
   accessMode: ReadWriteMany
