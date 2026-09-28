@@ -21,6 +21,9 @@ spec:
         - name: desktop
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.desktop.vncSecret }}
           ports:
             - name: novnc
               containerPort: 6080
