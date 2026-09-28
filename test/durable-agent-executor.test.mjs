@@ -404,6 +404,7 @@ test("duplicate start after cancel-ack does not re-dispatch", async () => {
 
 test("cancel already-cancelled reports already_finished", async () => {
   let release;
+  let startPromise;
   let started;
   const pending = new Promise(resolve => { release = resolve; });
   const dispatched = new Promise(resolve => { started = resolve; });
@@ -413,7 +414,7 @@ test("cancel already-cancelled reports already_finished", async () => {
   });
 
   try {
-    const startPromise = executor.start({
+    startPromise = executor.start({
       id: "task-already-cancel",
       operationKey: "op-already-cancel",
       commandDisposition: COMMAND_DISPOSITIONS.INTERACTIVE,
@@ -431,12 +432,17 @@ test("cancel already-cancelled reports already_finished", async () => {
     release({ code: null, signal: "SIGTERM", stdout: "", stderr: "", canceled: true, completion: "cancelled" });
     await startPromise;
   } finally {
+    // Always settle the in-flight adapter promise before the test can finish,
+    // including when an assertion above throws.
+    release?.({ code: null, signal: "SIGTERM", stdout: "", stderr: "", canceled: true, completion: "cancelled" });
+    if (startPromise) await startPromise;
     await rm(dir, { recursive: true, force: true });
   }
 });
 
 test("start-only adapter shape yields executor_cancellation_unsupported while in-flight", async () => {
   let release;
+  let startPromise;
   let started;
   const pending = new Promise(resolve => { release = resolve; });
   const dispatched = new Promise(resolve => { started = resolve; });
@@ -450,7 +456,7 @@ test("start-only adapter shape yields executor_cancellation_unsupported while in
   const { executor, dir } = await harness(adapter);
 
   try {
-    const startPromise = executor.start({
+    startPromise = executor.start({
       id: "task-start-only",
       operationKey: "op-start-only",
       commandDisposition: COMMAND_DISPOSITIONS.INTERACTIVE,
@@ -467,6 +473,10 @@ test("start-only adapter shape yields executor_cancellation_unsupported while in
     release({ code: 0, signal: null, stdout: "", stderr: "", completion: "confirmed" });
     await startPromise;
   } finally {
+    // Always settle the in-flight adapter promise before the test can finish,
+    // including when an assertion above throws.
+    release?.({ code: 0, signal: null, stdout: "", stderr: "", completion: "confirmed" });
+    if (startPromise) await startPromise;
     await rm(dir, { recursive: true, force: true });
   }
 });
