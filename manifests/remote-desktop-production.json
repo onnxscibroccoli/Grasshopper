@@ -1,0 +1,54 @@
+{
+  "schema": "omnikali.full-remote-desktop-reproducibility.v1",
+  "status": "incomplete_until_full_path_acceptance",
+  "source": {
+    "grasshopper": "main",
+    "helix": "38903b021cca75189a99e1ed88b508bae577f048"
+  },
+  "required_layers": [
+    "aws-network",
+    "iam",
+    "ec2-nested-kvm",
+    "encrypted-persistent-ebs",
+    "kali-guest-image",
+    "xfce",
+    "firefox",
+    "qemu-guest-agent",
+    "libvirt",
+    "postgresql",
+    "helix-gateway",
+    "oidc-session",
+    "cloudfront",
+    "dashboard",
+    "desktop-websocket",
+    "novnc-rfb"
+  ],
+  "acceptance": {
+    "dashboard_http": true,
+    "authenticated_login": true,
+    "workspace_owned_by_authenticated_subject": true,
+    "desktop_ticket_short_lived": true,
+    "wss_rfb_stream": true,
+    "firefox_inside_guest": true,
+    "terminal_inside_guest": true,
+    "persistent_reconnect": true,
+    "no_public_vnc": true,
+    "no_public_libvirt": true,
+    "no_plaintext_production_credentials": true,
+    "no_synthetic_acceptance_session": true
+  },
+  "human_boundary": {
+    "allowed": [
+      "provide authorized AWS credentials/context",
+      "complete normal end-user identity-provider sign-in when required"
+    ],
+    "forbidden_undocumented_intervention": [
+      "manual package installation",
+      "manual secret copying",
+      "manual service repair",
+      "manual guest image preparation",
+      "manual browser-cookie transfer",
+      "manual production checkout repair"
+    ]
+  }
+}
