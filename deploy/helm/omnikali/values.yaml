@@ -8,7 +8,7 @@ desktop:
   memory: 768Mi
   cpuLimit: "1500m"
   memoryLimit: 1536Mi
-  serviceType: NodePort
+  serviceType: ClusterIP
   servicePort: 6080
   nodePort: 30080
   storageClass: local-path
