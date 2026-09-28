@@ -30,6 +30,7 @@
     "verify:clean-host-dryrun": "node scripts/verify-clean-host-dryrun.mjs",
     "verify:secrets-cutover-dryrun": "node scripts/verify-secrets-cutover-dryrun.mjs",
     "live-acceptance:run": "node scripts/live-acceptance/run-scenario.mjs",
-    "validate:migration-byte-reconciliation": "node scripts/validate-migration-byte-reconciliation.mjs"
+    "validate:migration-byte-reconciliation": "node scripts/validate-migration-byte-reconciliation.mjs",
+    "verify:agentic-reproducibility": "sh ./scripts/verify-agentic-reproducibility.sh"
   }
 }
