@@ -1,0 +1,143 @@
+name: K3s live desktop acceptance
+
+on:
+  push:
+    branches:
+      - full-remote-desktop-reproducibility
+    paths:
+      - containers/kali-desktop/**
+      - deploy/helm/**
+      - .github/workflows/k3s-live-desktop.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-k3s:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install K3s
+        run: |
+          curl -sfL https://get.k3s.io | sh -
+          sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          kubectl wait --for=condition=Ready nodes --all --timeout=180s
+
+      - name: Build Kali desktop image
+        run: |
+          docker build -t omnikali/kali-desktop:acceptance containers/kali-desktop
+          docker save omnikali/kali-desktop:acceptance | sudo k3s ctr images import -
+
+      - name: Deploy two isolated desktops
+        env:
+          VNC_PASSWORD: ${{ secrets.K3S_DEMO_VNC_PASSWORD }}
+        run: |
+          test -n "$VNC_PASSWORD" || { echo "K3S_DEMO_VNC_PASSWORD repository secret is required"; exit 1; }
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          for u in user-a user-b; do
+            kubectl create namespace "omnikali-$u" --dry-run=client -o yaml | kubectl apply -f -
+            kubectl -n "omnikali-$u" create secret generic desktop-secret --from-literal=VNC_PASSWORD="$VNC_PASSWORD" --dry-run=client -o yaml | kubectl apply -f -
+            kubectl -n "omnikali-$u" apply -f - <<'YAML'
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: workspace
+          spec:
+            accessModes: [ReadWriteOnce]
+            storageClassName: local-path
+            resources:
+              requests:
+                storage: 2Gi
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: kali-desktop
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: kali-desktop
+            template:
+              metadata:
+                labels:
+                  app: kali-desktop
+              spec:
+                automountServiceAccountToken: false
+                containers:
+                  - name: desktop
+                    image: omnikali/kali-desktop:acceptance
+                    imagePullPolicy: Never
+                    envFrom:
+                      - secretRef:
+                          name: desktop-secret
+                    ports:
+                      - containerPort: 6080
+                    resources:
+                      requests: {cpu: "1", memory: "2Gi"}
+                      limits: {cpu: "2", memory: "3Gi"}
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      capabilities:
+                        drop: ["ALL"]
+                    volumeMounts:
+                      - name: workspace
+                        mountPath: /home/kali
+                volumes:
+                  - name: workspace
+                    persistentVolumeClaim:
+                      claimName: workspace
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: desktop
+          spec:
+            selector:
+              app: kali-desktop
+            ports:
+              - port: 6080
+                targetPort: 6080
+          YAML
+          done
+          kubectl -n omnikali-user-a rollout status deployment/kali-desktop --timeout=240s
+          kubectl -n omnikali-user-b rollout status deployment/kali-desktop --timeout=240s
+
+      - name: Verify desktop isolation and recovery
+        run: |
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          A=$(kubectl -n omnikali-user-a get pod -l app=kali-desktop -o jsonpath='{.items[0].metadata.name}')
+          B=$(kubectl -n omnikali-user-b get pod -l app=kali-desktop -o jsonpath='{.items[0].metadata.name}')
+          test "$A" != "$B"
+          kubectl -n omnikali-user-a exec "$A" -- sh -c 'printf "USER_A_MARKER\n" > /home/kali/isolation.txt'
+          ! kubectl -n omnikali-user-b exec "$B" -- test -f /home/kali/isolation.txt
+          kubectl -n omnikali-user-a exec "$A" -- sh -c 'cat /home/kali/isolation.txt'
+          kubectl -n omnikali-user-a delete pod "$A" --wait=true
+          kubectl -n omnikali-user-a rollout status deployment/kali-desktop --timeout=240s
+          A2=$(kubectl -n omnikali-user-a get pod -l app=kali-desktop -o jsonpath='{.items[0].metadata.name}')
+          test "$A2" != "$A"
+          kubectl -n omnikali-user-a exec "$A2" -- sh -c 'test "$(cat /home/kali/isolation.txt)" = USER_A_MARKER'
+          echo "K3S desktop isolation and persistent workspace recovery: PASS"
+
+      - name: Publish live noVNC tunnel
+        run: |
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          nohup kubectl -n omnikali-user-a port-forward svc/desktop 6080:6080 --address 127.0.0.1 >/tmp/port-forward.log 2>&1 &
+          sleep 3
+          curl -fsS http://127.0.0.1:6080/ >/tmp/novnc.html
+          nohup cloudflared tunnel --url http://127.0.0.1:6080 --no-autoupdate >/tmp/cloudflared.log 2>&1 &
+          for i in $(seq 1 30); do
+            URL=$(grep -o 'https://[-a-z0-9]*\.trycloudflare\.com' /tmp/cloudflared.log | head -1 || true)
+            test -n "$URL" && break
+            sleep 2
+          done
+          test -n "$URL"
+          echo "LIVE_NOVNC_URL=$URL" >> "$GITHUB_ENV"
+          echo "## Live K3s desktop" >> "$GITHUB_STEP_SUMMARY"
+          echo "$URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Keep this workflow running while the manual browser test is performed."
+          while true; do sleep 60; done
