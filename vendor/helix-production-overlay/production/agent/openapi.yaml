@@ -1,0 +1,35 @@
+[Reading 31 lines from start (total: 31 lines, 0 remaining)]
+
+openapi: 3.0.3
+info:
+  title: OmniKali Remote Agent
+  version: 1.0.0
+servers:
+  - url: https://omnikali-workstation.iancossette73.chatgpt.site/agent
+paths:
+  /execute:
+    post:
+      operationId: executeOnWorkstation
+      summary: Execute a shell command on the owner's Kali workstation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [command]
+              properties:
+                command: {type: string}
+                cwd: {type: string, default: /root}
+                timeout: {type: integer, default: 300, maximum: 900}
+      responses:
+        "200": {description: Command result}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+[executed on device: ip-172-31-8-59 (882f1036-235b-4669-acaf-1e1135b156bd)]
