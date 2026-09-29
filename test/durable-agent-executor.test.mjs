@@ -243,10 +243,13 @@ test("acknowledged cancellation remains recorded after adapter failure", async (
 test("duplicate while first dispatch is still in flight is not dispatched twice", async () => {
   let starts = 0;
   let release;
+  let started;
   const pending = new Promise(resolve => { release = resolve; });
+  const dispatched = new Promise(resolve => { started = resolve; });
   const { executor, dir } = await harness({
     start() {
       starts++;
+      started();
       return pending;
     }
   });
@@ -259,7 +262,7 @@ test("duplicate while first dispatch is still in flight is not dispatched twice"
       command: "update"
     };
     const firstPromise = executor.start(task);
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await dispatched;
     const duplicate = await executor.start({ ...task, id: "task-7" });
 
     assert.equal(starts, 1);
