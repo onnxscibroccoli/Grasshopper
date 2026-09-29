@@ -38,7 +38,10 @@ OMNIKALI_BIST_OUTPUT=evidence/bist-report.json npm run bist
 node scripts/validate-bist-schema.mjs report evidence/bist-report.json
 node scripts/validate-bist-schema.mjs evidence schemas/examples/bist-evidence.valid.json
 npm run test:bist-schema
+OMNIKALI_BIST_SKIP_LOCAL=1 npm run bist
 ```
+
+Local checks are opt-out for direct `runBist()` calls by default, but callers can set `includeLocal=false` or `OMNIKALI_BIST_SKIP_LOCAL=1` to skip them. When skipped, `local.unit-tests` and `local.reference-verification` are `NOT_APPLICABLE` and non-blocking. This prevents BIST contract tests from recursively launching `npm test`.
 
 Public health probe stays opt-in (`OMNIKALI_BIST_PUBLIC=1`) and is GET `/health` only. BIST never authenticates or creates production tasks.
 
