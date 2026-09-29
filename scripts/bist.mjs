@@ -82,13 +82,23 @@ export async function runBist({ includeLocal = true, evidencePath = process.env.
       { blocking: false });
   }
 
-  for (const [id, command, args] of [
-    ["local.unit-tests", "npm", ["test"]],
-    ["local.reference-verification", "npm", ["run", "verify:reference"]]
-  ]) {
-    const result = run(command, args);
-    add(id, result.ok ? "PASS" : "FAIL",
-      result.ok ? "command completed successfully" : `command failed\n${excerpt(result.stderr || result.stdout)}`);
+  const skipLocal = includeLocal === false || process.env.OMNIKALI_BIST_SKIP_LOCAL === "1";
+  if (skipLocal) {
+    add("local.unit-tests", "NOT_APPLICABLE",
+      "local unit tests skipped by BIST caller; set includeLocal=true and omit OMNIKALI_BIST_SKIP_LOCAL=1 to run",
+      { blocking: false });
+    add("local.reference-verification", "NOT_APPLICABLE",
+      "local reference verification skipped by BIST caller; set includeLocal=true and omit OMNIKALI_BIST_SKIP_LOCAL=1 to run",
+      { blocking: false });
+  } else {
+    for (const [id, command, args] of [
+      ["local.unit-tests", "npm", ["test"]],
+      ["local.reference-verification", "npm", ["run", "verify:reference"]]
+    ]) {
+      const result = run(command, args);
+      add(id, result.ok ? "PASS" : "FAIL",
+        result.ok ? "command completed successfully" : `command failed\n${excerpt(result.stderr || result.stdout)}`);
+    }
   }
 
   const reconstruction = run("npm", ["run", "verify:clean-host-dryrun"]);
