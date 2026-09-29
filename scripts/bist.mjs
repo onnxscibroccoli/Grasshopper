@@ -54,7 +54,7 @@ async function publicHealthProbe() {
   }
 }
 
-export async function runBist({ includeLocal = true } = {}) {
+export async function runBist({ includeLocal = true, evidencePath = process.env.OMNIKALI_BIST_EVIDENCE } = {}) {
   const major = Number(process.versions.node.split(".")[0]);
   add("runtime.node", major >= 20 ? "PASS" : "FAIL", `Node.js ${process.version}`);
 
@@ -98,8 +98,7 @@ export async function runBist({ includeLocal = true } = {}) {
       "public probe disabled; BIST never authenticates or mutates production");
   }
 
-  const evidencePath = process.env.OMNIKALI_BIST_EVIDENCE ?? "evidence/bist-production.json";
-  const evidence = loadEvidence(evidencePath);
+  const evidence = loadEvidence(evidencePath ?? "evidence/bist-production.json");
   const productionIds = [
     ["production.database", "authorized database acceptance evidence"],
     ["production.worker-recovery", "authorized failure-injection acceptance evidence"],
