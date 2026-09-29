@@ -95,9 +95,9 @@ export async function runBist({ includeLocal = true, evidencePath = process.env.
   if (reconstruction.ok) {
     add("reconstruction.dryrun", "PASS", "clean-host static dry-run passed");
   } else {
-    let parsed = null;
-    try { parsed = JSON.parse(reconstruction.stdout); } catch {}
-    if (parsed?.status === "FAIL_CLOSED") {
+    const isBlocked = reconstruction.stdout.includes('"status": "FAIL_CLOSED"') ||
+      reconstruction.stdout.includes('"clean_host_reconstruction": "blocked"');
+    if (isBlocked) {
       add("reconstruction.dryrun", "NOT_PROVEN", "clean-host reconstruction remains explicitly blocked; static dry-run is fail-closed", { blocking: false });
     } else {
       add("reconstruction.dryrun", "FAIL", "clean-host dry-run failed unexpectedly\n" + excerpt(reconstruction.stderr || reconstruction.stdout));
