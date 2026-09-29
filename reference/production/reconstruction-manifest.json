@@ -5,7 +5,10 @@
     "repository": "onnxscibroccoli/helix",
     "accepted_production_fix": "38903b021cca75189a99e1ed88b508bae577f048",
     "deployed_checkout": "46ba4b71158a74db5ede97e300099370792ecff8",
-    "deployed_checkout_clean": false
+    "deployed_checkout_clean": false,
+    "production_branch": "omnikali/production-db-bootstrap-20260926",
+    "validated_runtime_commit": "b5bc9b4d2323d6bb4cffb4893578ae22911999ca",
+    "runtime_hardening_pr": 23
   },
   "verified_topology": {
     "gateway": "Helix gateway",
@@ -68,9 +71,10 @@
   },
   "reconstruction_target": {
     "repository": "onnxscibroccoli/helix",
-    "commit": "ca3a13aa179db3e072f4def45b5d3829da2a4bdb",
+    "branch": "omnikali/production-db-bootstrap-20260926",
+    "commit": "b5bc9b4d2323d6bb4cffb4893578ae22911999ca",
     "immutable": true,
-    "status": "repository-validated-not-deployed",
-    "source_contract": "Helix infra/aws/user-data.sh now requires helix_source_ref as a 40-character commit SHA and verifies the reconstructed checkout matches it."
+    "status": "source-validated-not-deployed",
+    "notes": "Includes deterministic source checkout, PostgreSQL task cancellation fencing, authenticated guest executor bridge, and clean-host agent bootstrap. Live hypervisor reconstruction remains unproven."
   }
 }
