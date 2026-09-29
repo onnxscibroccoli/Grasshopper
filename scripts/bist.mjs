@@ -54,7 +54,7 @@ async function publicHealthProbe() {
   }
 }
 
-export async function runBist() {
+export async function runBist({ includeLocal = true } = {}) {
   const major = Number(process.versions.node.split(".")[0]);
   add("runtime.node", major >= 20 ? "PASS" : "FAIL", `Node.js ${process.version}`);
 
