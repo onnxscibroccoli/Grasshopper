@@ -15,7 +15,7 @@ test("BIST exposes the stable status vocabulary", async () => {
 
 test("production boundaries remain NOT_PROVEN without acceptance evidence", async () => {
   const dir = mkdtempSync(join(tmpdir(), "omnikali-bist-"));
-  const result = await runBist({ includeLocal: false });
+  const result = await runBist({ includeLocal: false, evidencePath: join(dir, "missing.json") });
   for (const id of [
     "production.database",
     "production.worker-recovery",
@@ -35,15 +35,8 @@ test("production evidence is accepted only with an acceptance id", async () => {
       "production.database": { status: "PASS", detail: "fixture evidence" }
     }
   }));
-  const previous = process.env.OMNIKALI_BIST_EVIDENCE;
-  process.env.OMNIKALI_BIST_EVIDENCE = evidence;
-  try {
-    const result = await runBist({ includeLocal: false });
+  const result = await runBist({ includeLocal: false, evidencePath: evidence });
     assert.equal(result.checks.find(c => c.id === "production.database")?.status, "PASS");
-  } finally {
-    if (previous === undefined) delete process.env.OMNIKALI_BIST_EVIDENCE;
-    else process.env.OMNIKALI_BIST_EVIDENCE = previous;
-  }
 });
 
 test("public probe is opt-in and never performs a task mutation", async () => {
