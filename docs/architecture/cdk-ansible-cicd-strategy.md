@@ -13,7 +13,7 @@ CDK owns AWS bootstrap, IAM trust, VPC, networking, CloudFront, ACM, DNS, RDS, S
 Use AWS CDK as the authoritative AWS IaC engine. Do not have CDK and Pulumi manage the same resources. Pulumi remains a future option for a genuinely multi-cloud boundary or a deliberate replacement of CDK for a defined scope.
 
 ## Two-stage fresh-account bootstrap
-Stage 0 is an account trust bootstrap performed by account vending, AWS Organizations/Control Tower, or a controlled one-time admin identity. It creates the GitHub Actions OIDC provider, narrowly scoped deployment role, permissions boundary, CDK bootstrap stack and bootstrap termination protection. Stage 1 is GitHub-controlled deployment using short-lived OIDC credentials. This ordering is required because GitHub cannot assume an AWS role before AWS trusts its OIDC issuer.
+Stage 0 is a provider-account trust bootstrap performed by a controlled one-time administrator or provider-native account/project setup. AWS Organizations/Control Tower may be used when available, but is not required. Stage 0 creates the provider federation trust, narrowly scoped deployment role, permissions boundary and IaC bootstrap state. Stage 1 is GitHub-controlled deployment using short-lived federation. The same ordering applies to every supported provider.
 
 ## CDK stacks
 OmniKaliBootstrapStack, OmniKaliNetworkStack, OmniKaliDataStack, OmniKaliEdgeStack, OmniKaliComputeStack, OmniKaliObservabilityStack and OmniKaliApplicationConfigStack. Keep stateful data resources isolated from frequently changed compute and edge constructs.
@@ -38,8 +38,8 @@ No long-lived AWS credentials in GitHub. Separate bootstrap, deployment, verific
 ## Drift
 CloudFormation/CDK owns AWS drift. Ansible owns OS drift. Helix owns workspace lifecycle. Kubernetes owns only its prototype. Periodic verification runs infrastructure drift detection, Ansible check mode, host/service health, guest reconciliation and prohibited-port checks.
 
-## Fresh-account launch gate
-A disposable AWS account must prove OIDC bootstrap, CDK bootstrap, deterministic synth, network, RDS, Secrets Manager, CloudFront/ACM/DNS, EC2 KVM, SSM, Ansible convergence, Helix health, libvirt/QEMU, Kali boot, authenticated guest RFB, task execution, persistent recovery, ephemeral TTL reclamation, no public management listeners, and later authorized-agent workspace rediscovery.
+## Provider-neutral sandbox launch gate
+At least one disposable provider sandbox must prove identity isolation, workload create/destroy, production credential denial, bounded cleanup, immutable source convergence, host/guest acceptance, persistent recovery, ephemeral TTL reclamation, no public management listeners, and later authorized-agent workspace rediscovery. AWS-specific acceptance additionally covers RDS, Secrets Manager, CloudFront/ACM/DNS, EC2 KVM and SSM. Provider-specific IaC is selected by the adapter rather than hard-coded into the control-plane contract.
 
 ## Production protection
 Do not replace the existing production Terraform deployment in place, automatically import production into CDK, move CloudFront/nginx, introduce Kubernetes ingress, expose VNC/websockify, reset the live Helix checkout, or merge a provider migration solely because synthesis succeeds.
