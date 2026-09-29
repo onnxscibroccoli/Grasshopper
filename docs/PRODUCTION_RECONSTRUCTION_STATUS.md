@@ -82,6 +82,24 @@ The canonical Helix AWS bootstrap was also corrected and merged at `ffe49979d37c
 
 **Remaining gate:** live production is still capacity-drifted from the canonical Terraform profile. The running host is 4 GiB, while the canonical Terraform default is `m8i.2xlarge` (32 GiB / 8 vCPU). A disposable source-faithful rebuild and a controlled production capacity migration are still required before claiming full clean-host equivalence. The live checkout is also dirty, so it is not a clean immutable reconstruction.
 
+## Coding-agent convergence evidence (2026-09-29)
+
+Helix PR #51 merged the secure coding-agent convergence boundary.
+
+- CDK mainline now wires the KVM compute and encrypted convergence stacks.
+- Host convergence defines a dedicated non-root helix-agent account with no sudo and no Docker socket access.
+- Claude Code and OpenHands CLI are converged as host tooling.
+- Containerized coding-agent image uses a digest-pinned Node 22 Bookworm slim base, UID 1000, read-only filesystem, no-new-privileges, all capabilities dropped, and no host Docker socket.
+- Independent disposable-host build completed successfully at image digest sha256:4911365fe2c58f694f3262db4153080f616a12414b24af0f0e431c7c81c41cbb.
+- Container smoke test passed: UID 1000, Claude Code 2.1.285, OpenHands CLI 1.16.0, GitHub CLI, exit 0.
+- CI passed validate, production-validation, cdk-validation, and ansible-validation on the final branch head.
+- Two real container build defects were found and corrected before merge: missing useradd path in the slim image and uv initially being installed under the wrong identity.
+- Claude self-correction workflow is bounded to main-branch production-validation failures, uses a full SHA-pinned Anthropic action, workload identity federation inputs, explicit tool restrictions, and no AWS deployment permissions.
+- The self-correction workflow does not merge main. It produces a reviewable repair path.
+- GitHub repository identity remains intended to be a GitHub App installation token for cross-repository server-side automation, while same-repository Actions use GITHUB_TOKEN and AWS uses OIDC.
+
+The fresh-account AWS rebuild, production host reconciliation, and authenticated guest-RFB acceptance remain separate launch gates. Agent installation on the protected production host is intentionally not claimed until the immutable convergence path is deployed and verified.
+
 ## Source recovery result
 
 The authoritative application repository is onnxscibroccoli/helix, and the accepted gateway-startup worker fix is commit 38903b021cca75189a99e1ed88b508bae577f048.
