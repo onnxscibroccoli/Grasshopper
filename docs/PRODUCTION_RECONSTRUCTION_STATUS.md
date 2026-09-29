@@ -63,6 +63,25 @@ The first clean runtime run deliberately failed at `npm test`: nine existing Nod
 
 This closes the **repository-side clean-checkout runtime test gate**. It does **not** close the live clean-host reconstruction gate, live secrets re-verification, or full AWS/hypervisor reconstruction. Those still require live evidence from an authorized disposable environment.
 
+## Live capacity recovery and runtime verification (2026-09-29)
+
+A live AWS recovery was performed after Desktop Commander and SSM lost contact with the Helix host.
+
+- Helix EC2 instance: `i-03b6a82d46271d9cd`, `c7i-flex.large`, 2 vCPU / 4 GiB.
+- EC2 instance and system reachability checks remained `passed`.
+- Console output showed sustained `systemd-journald: Under memory pressure` events.
+- An in-place EC2 reboot restored SSM connectivity. The public IP/DNS path was preserved.
+- Post-reboot: nginx, Helix gateway, Omni-agent, noVNC, Remote Desktop Commander, libvirt hypervisor, and Omni MCP were active; the Kali guest was running and QEMU guest-ping succeeded.
+- Local MCP health returned 200 and unauthenticated MCP returned 401 as expected.
+- Public acceptance from the host returned: `/health=200`, protected-resource metadata `200`, authorization-server metadata `200`, `/mcp=401`, `/auth/login=200`, and `/desktop/omnikali=302`.
+- Memory diagnosis showed the 2 GiB Kali VM consuming about 1.6 GiB, K3s about 436 MiB, and Paperclip about 407 MiB on the 4 GiB host.
+- K3s was confirmed as the separate prototype lane with its own `omnikali-desktop` workloads and was disabled on the production host. Helix production services remained active; available memory increased to about 888 MiB.
+- Paperclip was left running because it is a separate active control-plane workload and was not disabled without stronger dependency evidence.
+
+The canonical Helix AWS bootstrap was also corrected and merged at `ffe49979d37c7e57bf00a62e1b380a77f267c75c`: user-data now consumes the templated repository URL and immutable 40-character source SHA, checks out that exact SHA, and verifies HEAD. The Terraform default source ref now points at the current verified Helix release commit.
+
+**Remaining gate:** live production is still capacity-drifted from the canonical Terraform profile. The running host is 4 GiB, while the canonical Terraform default is `m8i.2xlarge` (32 GiB / 8 vCPU). A disposable source-faithful rebuild and a controlled production capacity migration are still required before claiming full clean-host equivalence. The live checkout is also dirty, so it is not a clean immutable reconstruction.
+
 ## Source recovery result
 
 The authoritative application repository is onnxscibroccoli/helix, and the accepted gateway-startup worker fix is commit 38903b021cca75189a99e1ed88b508bae577f048.
