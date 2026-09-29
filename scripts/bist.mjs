@@ -23,9 +23,11 @@ function run(command, args) {
   }
 }
 
-function tail(text, limit = 20000) {
+function excerpt(text, limit = 16000) {
   const value = String(text ?? "").trim();
-  return value.length > limit ? value.slice(-limit) : value;
+  if (value.length <= limit) return value;
+  const half = Math.floor(limit / 2);
+  return value.slice(0, half) + "\n... [middle omitted] ...\n" + value.slice(-half);
 }
 
 function loadEvidence(path) {
@@ -87,7 +89,7 @@ export async function runBist({ includeLocal = true, evidencePath = process.env.
   ]) {
     const result = run(command, args);
     add(id, result.ok ? "PASS" : "FAIL",
-      result.ok ? "command completed successfully" : `command failed\n${tail(result.stderr || result.stdout)}`);
+      result.ok ? "command completed successfully" : `command failed\n${excerpt(result.stderr || result.stdout)}`);
   }
 
   if (process.env.OMNIKALI_BIST_PUBLIC === "1") {
