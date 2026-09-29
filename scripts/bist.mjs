@@ -23,7 +23,7 @@ function run(command, args) {
   }
 }
 
-function tail(text, limit = 6000) {
+function tail(text, limit = 20000) {
   const value = String(text ?? "").trim();
   return value.length > limit ? value.slice(-limit) : value;
 }
