@@ -1,56 +1,107 @@
 # Grasshopper
 
-A reference OmniKali implementation and production reconstruction project continuing from the verified production acceptance gate. The deployed production system supplies observed behavior; this repository formalizes the contracts and tracks the remaining source-to-host reconstruction work. Clean-host production reproduction is not yet established.
+**Status:** Reference OmniKali implementation and production reconstruction control plane  
+**Repository:** `onnxscibroccoli/Grasshopper`  
+**Documentation snapshot:** 2026-09-28 23:12 EDT
 
-## Final implementation seed
+Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
-See [`IMPLEMENTATION_SEED.md`](./IMPLEMENTATION_SEED.md) for the canonical implementation constraints, verified production baseline, execution semantics, hardening priorities, security boundaries, acceptance coverage, and Definition of Done.
+Its governing idea is simple:
 
-The project begins with hardening, formalization, and reproducibility—not architectural discovery.
+> The deployed production system supplies observed behavior. Grasshopper turns that behavior into reproducible contracts, source lineage, tests, infrastructure definitions, and an agent-operable implementation.
+
+This repository is not supposed to rediscover the architecture by guesswork.
 
 ## North star
 
-An authorized agent can reproduce the platform from source with no undocumented operator steps.
+An authorized agent should eventually be able to reproduce the platform from source with **no undocumented operator steps**.
 
-## First vertical slice
+The repository therefore emphasizes provenance, reproducibility, durable execution, recovery, security boundaries, and explicit acceptance evidence.
 
-The local environment implements agent registration, resource declaration, durable state, exclusive locks, asynchronous task execution, task recovery/reconciliation, and deterministic export/import.
+## Current implementation
 
-## Layout
+The local reference control plane implements:
 
-- src/model.mjs — domain contracts and validation
-- src/store.mjs — atomic JSON state store
-- src/executor.mjs — execution-environment interface + local implementation
-- src/control-plane.mjs — agent/task/lock/resource lifecycle
-- src/clients/grok-control-plane-client.mjs — authenticated Grok client; no executor bypass
-- src/mcp/grok-control-plane-tools.mjs — MCP facade; submit/cancel through GrokControlPlaneClient only
-- bin/omnikali.mjs — reproducible CLI, including lock, export, and import
-- test/recovery.test.mjs — crash/restart recovery tests
-- environments/local.json — reference environment
-- scripts/bootstrap.sh — source-to-running-state bootstrap
-- docs/SERVICE_LIFECYCLE_CONTRACT.md — gateway/worker lifecycle boundary
-- scripts/validate-service-lifecycle.mjs — lifecycle manifest validator
+- agent registration;
+- resource declaration;
+- durable state;
+- exclusive locks;
+- asynchronous task execution;
+- task recovery/reconciliation;
+- deterministic export/import;
+- authenticated Grok control-plane client;
+- MCP facade;
+- executor boundaries.
 
-## Reproduce
+Key source files:
 
-    ./scripts/bootstrap.sh
-    npm test
-    node bin/omnikali.mjs status
+- `src/model.mjs` — domain contracts.
+- `src/store.mjs` — atomic state store.
+- `src/executor.mjs` — execution interface.
+- `src/control-plane.mjs` — lifecycle/control-plane logic.
+- `src/clients/grok-control-plane-client.mjs` — authenticated client.
+- `src/mcp/grok-control-plane-tools.mjs` — MCP interface.
+- `bin/omnikali.mjs` — reproducible CLI.
 
-No production credentials or live-machine assumptions are required.
+## Production evidence and recovery
 
-`npm run verify:agentic-reproducibility` proves a clean Git archive can bootstrap and pass the suite. `npm run verify:agentic-control-plane` then reproduces the reference control plane lifecycle (lock, task, restart, export/import) from that same archive. Neither command claims production reconstruction. See [docs/AGENTIC_REFERENCE_CONTROL_PLANE.md](docs/AGENTIC_REFERENCE_CONTROL_PLANE.md).
+The repository contains an unusually large documentation/evidence surface because it is intended to prevent future agents from destroying validated infrastructure while “improving” it.
 
-For the dated production and independent-backup observations, deployment order, and open reconstruction gates, see [`docs/PRODUCTION_RECONSTRUCTION_STATUS.md`](./docs/PRODUCTION_RECONSTRUCTION_STATUS.md) and [`docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md`](./docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md).
+Important documentation includes:
 
-## Independent backup runner
+- `IMPLEMENTATION_SEED.md`
+- `docs/PRODUCTION_LIVE_EVIDENCE.md`
+- `docs/PRODUCTION_CONTRACT_INVENTORY.md`
+- `docs/PRODUCTION_EXECUTOR_PROVENANCE.md`
+- `docs/PRODUCTION_SERVICE_LIFECYCLE_EVIDENCE.md`
+- `docs/PRODUCTION_STATE_AND_MIGRATION.md`
+- `docs/PRODUCTION_SECURITY_HARDENING.md`
+- `docs/ARCHITECTURE_VERIFICATION_2026-09-29.md`
+- `docs/incidents/`
+- `reference/production/`
+- `scripts/live-acceptance/`
 
-The runner uses libpq `PGSSLMODE=require` with a protected passfile for `pg_dump`; `--sslmode` is not a `pg_dump` command-line option. Run `npm test` to exercise the isolated TLS invocation check. A passing test does not activate production backups: the dedicated identity, encryption recipient, S3 destination, scheduler, required binaries, and isolated restore acceptance still need deployment and verification. See [backup runner requirements](docs/INDEPENDENT_POSTGRES_BACKUP_RUNNER.md).
+The live-acceptance suite contains explicit scenarios for normal execution, worker termination, stale lease reclamation, replacement completion, gateway restart, network interruption, database failure, and duplicate fencing.
 
-## Production boundary
+## Development cycle
 
-The local JSON reference does not deploy the existing PostgreSQL production gateway. See [production contract inventory](docs/PRODUCTION_CONTRACT_INVENTORY.md) for observed host and IAM state, verification limits, and the reproducibility gate.
+**REFERENCE CONTROL PLANE WORKING / PRODUCTION RECONSTRUCTION STILL BEING FORMALIZED.**
 
-## Read-only production lifecycle inventory
+The repository has crossed the clean-archive/reference-control-plane gates, while clean-host production reproduction remains a separate gate.
 
-On the authorized Kali host, run `node scripts/inventory-service-lifecycle.mjs` to capture allowlisted systemd service properties for the gateway, agent bridge, and MCP service. It reports configuration file paths, not their contents, and does not query command lines or environment values. A running unit is not proof that authenticated task execution is healthy. Review the output before sharing it.
+That distinction must remain explicit.
+
+## Reproduce locally
+
+The documented baseline is:
+
+```bash
+./scripts/bootstrap.sh
+npm test
+node bin/omnikali.mjs status
+```
+
+Agentic reproducibility can then be exercised with the repository's dedicated verification commands.
+
+Production acceptance requires the appropriate credentials and authorized infrastructure and must not be simulated by local fixture tests.
+
+## AI model instructions
+
+Grasshopper is the repository where an AI should be **most conservative about architecture changes**.
+
+Before a large change:
+
+1. read `IMPLEMENTATION_SEED.md`;
+2. read `BASE_SYSTEM_PROTECTION.md`;
+3. inspect the relevant production evidence;
+4. establish the restore point;
+5. make the smallest atomic change;
+6. run the narrow tests;
+7. run acceptance tests;
+8. document the resulting evidence.
+
+Never substitute a new architecture because it appears cleaner if the existing production contract has already been validated.
+
+The model should treat provenance files and production reference snapshots as evidence, not as permission to expose secrets.
+
+**Bottom line:** Grasshopper is the formal bridge between validated production behavior and an agent-reproducible OmniKali control plane.
