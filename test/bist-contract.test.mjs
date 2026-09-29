@@ -99,9 +99,9 @@ test("opt-in public GET /health FAILs on a non-ok body", async () => {
   assert.equal(result.overall, "FAIL");
 });
 
-test("BIST source never POSTs /api/v1/tasks", () => {
+test("BIST probe is GET-only", () => {
   const source = fs.readFileSync(path.join(ROOT, "scripts/bist.mjs"), "utf8");
-  assert.doesNotMatch(source, /POST\s+\/api\/v1\/tasks/i);
+  assert.match(source, /method: "GET"/);
   assert.doesNotMatch(source, /method\s*:\s*["']POST["']/);
 });
 

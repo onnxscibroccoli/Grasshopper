@@ -68,9 +68,9 @@ function readAcceptanceEvidence(cwd) {
   }
 }
 
-function assertNoTaskPost(source) {
-  if (/POST\s+\/api\/v1\/tasks/i.test(source) || /method\s*:\s*["']POST["']/.test(source)) {
-    throw new Error("BIST runner must not POST /api/v1/tasks");
+function assertGetOnlyProbe(source) {
+  if (/method\s*:\s*["']POST["']/.test(source)) {
+    throw new Error("BIST runner must not issue POST requests");
   }
 }
 
@@ -104,7 +104,7 @@ export async function runBist(options = {}) {
   const cwd = options.cwd ?? process.cwd();
   const checks = [];
   const sourceText = readFileSync(new URL(import.meta.url), "utf8");
-  assertNoTaskPost(sourceText);
+  assertGetOnlyProbe(sourceText);
 
   const major = Number(process.versions.node.split(".")[0]);
   add(checks, "runtime.node", major >= 20 ? "PASS" : "FAIL", `Node.js ${process.version}`);
@@ -177,36 +177,11 @@ export async function runBist(options = {}) {
     );
   }
 
-  add(
-    checks,
-    "production.database",
-    "NOT_PROVEN",
-    `requires authorized live verification; BIST does not open a database session.${historical}`
-  );
-  add(
-    checks,
-    "production.worker-recovery",
-    "NOT_PROVEN",
-    `requires authorized failure-injection acceptance.${historical}`
-  );
-  add(
-    checks,
-    "production.executor-side-effects",
-    "NOT_PROVEN",
-    `requires command-type-specific executor acceptance.${historical}`
-  );
-  add(
-    checks,
-    "production.remote-desktop",
-    "NOT_PROVEN",
-    `requires authenticated browser-to-intended-guest acceptance.${historical}`
-  );
-  add(
-    checks,
-    "production.k8s-public-ingress",
-    "NOT_APPLICABLE",
-    "Kubernetes is not the current public origin"
-  );
+  add(checks, "production.database", "NOT_PROVEN", `requires authorized live verification; BIST does not open a database session.${historical}`);
+  add(checks, "production.worker-recovery", "NOT_PROVEN", `requires authorized failure-injection acceptance.${historical}`);
+  add(checks, "production.executor-side-effects", "NOT_PROVEN", `requires command-type-specific executor acceptance.${historical}`);
+  add(checks, "production.remote-desktop", "NOT_PROVEN", `requires authenticated browser-to-intended-guest acceptance.${historical}`);
+  add(checks, "production.k8s-public-ingress", "NOT_APPLICABLE", "Kubernetes is not the current public origin");
 
   const failures = checks.filter((check) => check.status === "FAIL");
   return {
