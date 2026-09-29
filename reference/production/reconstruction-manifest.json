@@ -49,5 +49,19 @@
     "credential_values_in_manifest": false,
     "production_mutation_allowed": false,
     "guessed_infrastructure_identifiers": false
+  },
+  "bootstrap_contract": {
+    "host_bootstrap": "Helix Terraform aws_instance.user_data via infra/aws/user-data.sh",
+    "reference_bootstrap": "scripts/bootstrap.sh",
+    "required_runtime": "Node.js >=20",
+    "secret_values_in_source": false,
+    "secret_reference_contract": "docs/SECRET_REFERENCE_CONTRACT.md",
+    "clean_host_gate": "scripts/verify-clean-host-dryrun.mjs"
+  },
+  "secret_prerequisites": {
+    "provider": "external-secret-provider",
+    "runtime_reference": "external-reference-required",
+    "test_reference": "test/omnikali/database",
+    "values_in_repository": false
   }
 }
