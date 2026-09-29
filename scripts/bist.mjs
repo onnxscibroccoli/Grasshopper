@@ -3,12 +3,6 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const VALID = new Set(["PASS", "FAIL", "NOT_PROVEN", "NOT_APPLICABLE"]);
-const checks = [];
-
-function add(id, status, detail, { blocking = true } = {}) {
-  if (!VALID.has(status)) throw new Error(`invalid BIST status: ${status}`);
-  checks.push({ id, status, detail, blocking });
-}
 
 function run(command, args) {
   try {
@@ -57,6 +51,11 @@ async function publicHealthProbe() {
 }
 
 export async function runBist({ includeLocal = true, evidencePath = process.env.OMNIKALI_BIST_EVIDENCE } = {}) {
+  const checks = [];
+  const add = (id, status, detail, { blocking = true } = {}) => {
+    if (!VALID.has(status)) throw new Error(`invalid BIST status: ${status}`);
+    checks.push({ id, status, detail, blocking });
+  };
   const major = Number(process.versions.node.split(".")[0]);
   add("runtime.node", major >= 20 ? "PASS" : "FAIL", `Node.js ${process.version}`);
 
