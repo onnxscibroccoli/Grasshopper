@@ -82,6 +82,22 @@ The canonical Helix AWS bootstrap was also corrected and merged at `ffe49979d37c
 
 **Remaining gate:** live production is still capacity-drifted from the canonical Terraform profile. The running host is 4 GiB, while the canonical Terraform default is `m8i.2xlarge` (32 GiB / 8 vCPU). A disposable source-faithful rebuild and a controlled production capacity migration are still required before claiming full clean-host equivalence. The live checkout is also dirty, so it is not a clean immutable reconstruction.
 
+## CDK platform and SSM convergence gates (2026-09-29)
+
+Helix main now contains the executable platform ownership boundary and host convergence layer.
+
+- CDK platform merge: `d5f00a269b91ffa494a32ae3fd9c87bc226e48ba`.
+- CDK owns trust bootstrap, two-AZ VPC, isolated PostgreSQL, KVM/SSM EC2 launch configuration, nested virtualization, encrypted persistent storage, and convergence KMS/S3 resources.
+- Strict CDK CI passed TypeScript build, strict synth, bootstrap contract, and platform/compute contracts.
+- A fresh disposable clone of the current CDK branch was independently built and strictly synthesized offline with all four stacks: network, PostgreSQL, compute, and GitHub OIDC bootstrap. The compute contract also passed.
+- SSM/Ansible convergence merge: `f90014907bf43aee831fdc93551b5851539da634`.
+- Ansible uses `amazon.aws.aws_ssm` rather than SSH and is backed by a private KMS-encrypted S3 transfer bucket with one-day lifecycle.
+- Ansible CI passed collection installation, playbook syntax validation, and YAML parsing.
+
+Live regression after recovery remains healthy: gateway 200, public health 200, public MCP 401, Kali guest running, QEMU guest-ping successful, and local Omni-agent bridge 8093/health 200. The live checkout remains intentionally dirty with production-local patches and is therefore not evidence of a clean immutable reconstruction.
+
+**Remaining launch gates:** live AWS fresh-account authorization/rebuild, authenticated guest-RFB/browser acceptance, reconciliation of the live checkout to the immutable source lineage, and final edge/observability deployment proof. No claim of full fresh-account equivalence is made yet.
+
 ## Source recovery result
 
 The authoritative application repository is onnxscibroccoli/helix, and the accepted gateway-startup worker fix is commit 38903b021cca75189a99e1ed88b508bae577f048.
