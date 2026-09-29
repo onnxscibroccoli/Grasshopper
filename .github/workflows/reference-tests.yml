@@ -23,3 +23,12 @@ jobs:
       - run: node scripts/validate-independent-backup-storage.mjs
       - run: node --check scripts/validate-independent-backup-runner.mjs
       - run: node scripts/validate-independent-backup-runner.mjs
+      - run: node --check scripts/bist.mjs
+      - name: Run BIST contract
+        run: node scripts/bist.mjs --skip-local --allow-dirty --out bist-report.json
+      - name: Upload BIST report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bist-report
+          path: bist-report.json
