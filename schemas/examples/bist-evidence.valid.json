@@ -1,0 +1,12 @@
+{
+  "schema": "omnikali-bist-evidence/v1",
+  "acceptanceId": "TEST-ACCEPTANCE-001",
+  "timestamp": "2026-09-29T18:11:00.000Z",
+  "path": "CloudFront /auth/login -> ticketed WSS -> helix-omnikali",
+  "checks": {
+    "production.database": {
+      "status": "PASS",
+      "detail": "fixture evidence only; not live production proof"
+    }
+  }
+}
