@@ -13,6 +13,19 @@ test("BIST exposes the stable status vocabulary", async () => {
   assert.equal(result.schema, "omnikali-bist/v1");
 });
 
+test("environment skip-local control is honored", async () => {
+  const previous = process.env.OMNIKALI_BIST_SKIP_LOCAL;
+  process.env.OMNIKALI_BIST_SKIP_LOCAL = "1";
+  try {
+    const result = await runBist({ evidencePath: "/tmp/omnikali-bist-missing-evidence.json" });
+    assert.equal(result.checks.find(c => c.id === "local.unit-tests")?.status, "NOT_APPLICABLE");
+    assert.equal(result.checks.find(c => c.id === "local.reference-verification")?.status, "NOT_APPLICABLE");
+  } finally {
+    if (previous === undefined) delete process.env.OMNIKALI_BIST_SKIP_LOCAL;
+    else process.env.OMNIKALI_BIST_SKIP_LOCAL = previous;
+  }
+});
+
 test("production boundaries remain NOT_PROVEN without acceptance evidence", async () => {
   const dir = mkdtempSync(join(tmpdir(), "omnikali-bist-"));
   const result = await runBist({ includeLocal: false, evidencePath: join(dir, "missing.json") });
