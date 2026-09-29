@@ -56,12 +56,21 @@
     "required_runtime": "Node.js >=20",
     "secret_values_in_source": false,
     "secret_reference_contract": "docs/SECRET_REFERENCE_CONTRACT.md",
-    "clean_host_gate": "scripts/verify-clean-host-dryrun.mjs"
+    "clean_host_gate": "scripts/verify-clean-host-dryrun.mjs",
+    "helix_source_ref": "required immutable 40-character commit SHA",
+    "production_apply": "disallowed by this repository gate"
   },
   "secret_prerequisites": {
     "provider": "external-secret-provider",
     "runtime_reference": "external-reference-required",
     "test_reference": "test/omnikali/database",
     "values_in_repository": false
+  },
+  "reconstruction_target": {
+    "repository": "onnxscibroccoli/helix",
+    "commit": "ca3a13aa179db3e072f4def45b5d3829da2a4bdb",
+    "immutable": true,
+    "status": "repository-validated-not-deployed",
+    "source_contract": "Helix infra/aws/user-data.sh now requires helix_source_ref as a 40-character commit SHA and verifies the reconstructed checkout matches it."
   }
 }
