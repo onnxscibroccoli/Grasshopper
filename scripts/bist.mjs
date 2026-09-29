@@ -91,6 +91,19 @@ export async function runBist({ includeLocal = true, evidencePath = process.env.
       result.ok ? "command completed successfully" : `command failed\n${excerpt(result.stderr || result.stdout)}`);
   }
 
+  const reconstruction = run("npm", ["run", "verify:clean-host-dryrun"]);
+  if (reconstruction.ok) {
+    add("reconstruction.dryrun", "PASS", "clean-host static dry-run passed");
+  } else {
+    let parsed = null;
+    try { parsed = JSON.parse(reconstruction.stdout); } catch {}
+    if (parsed?.status === "FAIL_CLOSED") {
+      add("reconstruction.dryrun", "NOT_PROVEN", "clean-host reconstruction remains explicitly blocked; static dry-run is fail-closed", { blocking: false });
+    } else {
+      add("reconstruction.dryrun", "FAIL", "clean-host dry-run failed unexpectedly\n" + excerpt(reconstruction.stderr || reconstruction.stdout));
+    }
+  }
+
   if (process.env.OMNIKALI_BIST_PUBLIC === "1") {
     const probe = await publicHealthProbe();
     add("production.gateway.health", probe.status, probe.detail);
