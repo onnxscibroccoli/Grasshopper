@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/onnxscibroccoli/Grasshopper/blob/main/schemas/omnikali-bist-v1.schema.json",
+  "title": "OmniKali BIST report",
+  "description": "Machine-readable Built-in Self-Test report emitted by scripts/bist.mjs. Schema id omnikali-bist/v1. A process being alive is not sufficient for PASS.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "timestamp", "checks", "summary", "overall"],
+  "properties": {
+    "schema": {
+      "const": "omnikali-bist/v1",
+      "description": "Stable schema identifier. Do not emit a different string without a version bump."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC instant the report was produced."
+    },
+    "repo": {
+      "type": "string",
+      "description": "Optional owning repository full name."
+    },
+    "commit": {
+      "type": "string",
+      "description": "Optional git SHA of the tree under test."
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "overall": {
+      "type": "string",
+      "enum": ["PASS", "PASS_WITH_NOT_PROVEN", "FAIL"],
+      "description": "FAIL if any blocking check is FAIL. PASS only if every blocking check is PASS and none are NOT_PROVEN. Current emitter uses FAIL or PASS_WITH_NOT_PROVEN."
+    }
+  },
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "NOT_PROVEN", "NOT_APPLICABLE"]
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "detail"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+([._-][A-Za-z0-9._/-]+)*$",
+          "description": "Stable dotted identifier, e.g. production.remote-desktop."
+        },
+        "status": { "$ref": "#/$defs/status" },
+        "detail": {
+          "type": "string",
+          "description": "Human-readable evidence note. Must not contain secrets, cookies, or credentials."
+        },
+        "blocking": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, FAIL contributes to overall FAIL. NOT_PROVEN never forces FAIL."
+        },
+        "phase": {
+          "type": "string",
+          "enum": ["auth", "provisioning", "connectivity", "interactive", "recreation", "runtime", "source", "local", "reconstruction", "production"],
+          "description": "Optional lifecycle phase. Current emitter does not yet set this field."
+        },
+        "acceptanceId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional acceptance ID cited by this check."
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pass", "fail", "not_proven", "not_applicable"],
+      "properties": {
+        "pass": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 },
+        "not_proven": { "type": "integer", "minimum": 0 },
+        "not_applicable": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

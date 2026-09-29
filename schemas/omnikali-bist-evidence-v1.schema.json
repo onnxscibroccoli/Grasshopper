@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/onnxscibroccoli/Grasshopper/blob/main/schemas/omnikali-bist-evidence-v1.schema.json",
+  "title": "OmniKali BIST production evidence input",
+  "description": "Optional evidence file consumed by scripts/bist.mjs via OMNIKALI_BIST_EVIDENCE or evidence/bist-production.json. A check is ignored unless acceptanceId is a non-empty string and status is in the BIST vocabulary.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["acceptanceId", "checks"],
+  "properties": {
+    "schema": {
+      "const": "omnikali-bist-evidence/v1"
+    },
+    "acceptanceId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Authorized live-acceptance identifier. Historical IDs may be cited; they do not promote a gate to PROVEN by themselves."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "path": {
+      "type": "string",
+      "description": "Intended path under test, e.g. CloudFront /auth/login -> ticketed WSS -> guest."
+    },
+    "checks": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z0-9]+([._-][A-Za-z0-9._/-]+)*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "NOT_PROVEN", "NOT_APPLICABLE"]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

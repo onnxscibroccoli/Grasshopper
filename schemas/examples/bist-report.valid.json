@@ -1,0 +1,31 @@
+{
+  "schema": "omnikali-bist/v1",
+  "timestamp": "2026-09-29T18:11:00.000Z",
+  "checks": [
+    {
+      "id": "runtime.node",
+      "status": "PASS",
+      "detail": "Node.js v20.0.0",
+      "blocking": true
+    },
+    {
+      "id": "production.remote-desktop",
+      "status": "NOT_PROVEN",
+      "detail": "authenticated browser-to-intended-guest acceptance evidence; no valid acceptance evidence supplied",
+      "blocking": true
+    },
+    {
+      "id": "production.kubernetes",
+      "status": "NOT_APPLICABLE",
+      "detail": "Kubernetes is an isolated prototype, not the current public production path",
+      "blocking": false
+    }
+  ],
+  "summary": {
+    "pass": 1,
+    "fail": 0,
+    "not_proven": 1,
+    "not_applicable": 1
+  },
+  "overall": "PASS_WITH_NOT_PROVEN"
+}
