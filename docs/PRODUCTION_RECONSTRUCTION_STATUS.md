@@ -46,6 +46,23 @@ That backup was subsequently age-decrypted, zstd-decompressed, and restored with
 
 The repository contains `lib/independent-backup-policy.mjs`, imported by `scripts/independent-postgres-backup.mjs` through a relative path. Source-to-host deployment must preserve that relationship or install a reviewed package with an equivalent verified import path; copying the runner script alone to `/usr/local` did not reproduce its dependency. The installed repairs and wrapper behavior still need clean-source reconciliation and repeatable installation before claiming a reproducible backup service. See [INDEPENDENT_POSTGRES_BACKUP_RUNNER.md](./INDEPENDENT_POSTGRES_BACKUP_RUNNER.md) for the staged recovery order.
 
+## Clean-checkout runtime proof (2026-09-29)
+
+A fresh GitHub Actions checkout of Helix was used to close the repository-side runtime test gap without mutating production.
+
+- Helix merge commit: `08aa51797b0bf5a42cb41e3aa6f44e45ce82d514`.
+- Production-validation run: `36626665726` — completed successfully.
+- Validation harness run: `36626665460` — completed successfully.
+- Terraform formatting/init/validation passed.
+- Python validation suite passed.
+- `npm ci --ignore-scripts` passed from the clean checkout.
+- `npm test` passed from the clean checkout after correcting test isolation defects exposed by this gate.
+- ShellCheck passed for the production shell entrypoints.
+
+The first clean runtime run deliberately failed at `npm test`: nine existing Node tests inherited the repository's real `src/lib/og/site.json` and `public/og.jpg`, and one migration test incorrectly treated the entire migrations directory as empty. Those tests were corrected to isolate fixture behavior and to model the auth migration directory correctly. No production implementation was weakened or bypassed.
+
+This closes the **repository-side clean-checkout runtime test gate**. It does **not** close the live clean-host reconstruction gate, live secrets re-verification, or full AWS/hypervisor reconstruction. Those still require live evidence from an authorized disposable environment.
+
 ## Source recovery result
 
 The authoritative application repository is onnxscibroccoli/helix, and the accepted gateway-startup worker fix is commit 38903b021cca75189a99e1ed88b508bae577f048.
