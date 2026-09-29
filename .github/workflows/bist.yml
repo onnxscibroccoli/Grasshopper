@@ -1,0 +1,32 @@
+name: BIST
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run reference BIST
+        env:
+          OMNIKALI_BIST_OUTPUT: bist-result.json
+        run: npm run bist
+      - name: Upload BIST result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omnikali-bist
+          path: bist-result.json
+          if-no-files-found: error
