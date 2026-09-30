@@ -16,7 +16,7 @@ on:
         type: boolean
 
 concurrency:
-  group: agentic-development-${ github.ref }}
+  group: agentic-development-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -62,7 +62,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: verification-evidence-${ github.run_id }}
+          name: verification-evidence-${{ github.run_id }}
           path: .ci-evidence/
 
   agent:
@@ -91,9 +91,9 @@ jobs:
       - name: Run bounded coding agent
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_federation_rule_id: ${ vars.ANTHROPIC_FEDERATION_RULE_ID }}
-          anthropic_organization_id: ${ vars.ANTHROPIC_ORGANIZATION_ID }}
-          anthropic_service_account_id: ${ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          anthropic_organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          anthropic_service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
           claude_args: |
             --model claude-sonnet-4-5-20250929
             --max-turns 10
@@ -114,8 +114,31 @@ jobs:
 
             Run the narrowest relevant tests after each change, then npm test plus BIST/control-plane/reproducibility checks. Preserve failure cause and evidence in the PR. If there is no justified bounded improvement, make no change and report that clearly. Human remains final merge authority.
 
+      - name: Test agent-generated changes in the same workspace
+        run: |
+          npm install --ignore-scripts
+          npm test
+          npm run validate:bist-schema
+          npm run verify:agentic-control-plane
+          npm run verify:agentic-reproducibility
+
+      - name: Record agent-generated diff
+        if: always()
+        run: |
+          mkdir -p .ci-evidence
+          git status --short > .ci-evidence/agent-status.txt || true
+          git diff --check > .ci-evidence/agent-diff-check.txt || true
+          git diff --stat > .ci-evidence/agent-diff-stat.txt || true
+
+      - name: Upload agent evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-evidence-${{ github.run_id }}
+          path: .ci-evidence/
+
   agent-verify:
-    name: Verify agent-generated changes
+    name: Verify resulting repository state
     needs: agent
     if: needs.agent.result == 'success'
     runs-on: ubuntu-latest
@@ -123,7 +146,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout
+      - name: Checkout resulting main
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -135,11 +158,11 @@ jobs:
           cache: npm
       - name: Install
         run: npm install --ignore-scripts
-      - name: Test generated changes
+      - name: Test resulting state
         run: npm test
-      - name: Validate generated BIST
+      - name: Validate resulting BIST
         run: npm run validate:bist-schema
-      - name: Validate generated control plane
+      - name: Validate resulting control plane
         run: npm run verify:agentic-control-plane
-      - name: Validate generated reproducibility
+      - name: Validate resulting reproducibility
         run: npm run verify:agentic-reproducibility
