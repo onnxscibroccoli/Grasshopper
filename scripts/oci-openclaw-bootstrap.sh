@@ -56,19 +56,31 @@ curl -fsS http://127.0.0.1:18789/ >/dev/null 2>&1 || {
   die "OpenClaw Gateway did not become reachable"
 }
 openclaw gateway status || true
-log "Installing Ollama if needed..."
-if ! command -v ollama >/dev/null 2>&1; then curl -fsSL https://ollama.com/install.sh | sh; fi
-command -v ollama >/dev/null 2>&1 || die "Ollama installation failed"
-ollama --version
-log "Starting Ollama..."
-if ! curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-  nohup ollama serve >"$HOME/.openclaw/ollama.log" 2>&1 &
-  OLLAMA_PID=$!
-  for _ in $(seq 1 30); do curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1 && break; sleep 1; done
+log "Starting Ollama without root privileges..."
+if ! command -v podman >/dev/null 2>&1; then
+  die "Podman is required for rootless Ollama on this OCI host"
 fi
-curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1 || die "Ollama did not become reachable"
+OLLAMA_CONTAINER="grasshopper-ollama"
+OLLAMA_IMAGE="docker.io/ollama/ollama:latest"
+mkdir -p "$HOME/.ollama"
+if ! podman container exists "$OLLAMA_CONTAINER"; then
+  log "Pulling the ARM64 Ollama container..."
+  podman pull "$OLLAMA_IMAGE"
+  podman run -d --name "$OLLAMA_CONTAINER" --restart=unless-stopped     -p 127.0.0.1:11434:11434     -v "$HOME/.ollama:/root/.ollama:Z"     "$OLLAMA_IMAGE"
+elif ! podman container inspect "$OLLAMA_CONTAINER" --format '{{.State.Running}}' | grep -q true; then
+  podman start "$OLLAMA_CONTAINER" >/dev/null
+fi
+for _ in $(seq 1 60); do
+  curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1 && break
+  sleep 1
+done
+curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1 || {
+  podman logs --tail 80 "$OLLAMA_CONTAINER" 2>&1 || true
+  die "Rootless Ollama container did not become reachable"
+}
+log "Ollama container is reachable."
 log "Pulling qwen3:0.6b..."
-ollama pull qwen3:0.6b
+podman exec "$OLLAMA_CONTAINER" ollama pull qwen3:0.6b
 log "Configuring Ollama in OpenClaw..."
 openclaw config set models.providers.ollama.apiKey "ollama-local"
 openclaw config set models.providers.ollama.baseUrl "http://127.0.0.1:11434"
@@ -77,13 +89,13 @@ openclaw models list --provider ollama || true
 openclaw models set ollama/qwen3:0.6b
 log "Testing local inference..."
 if openclaw --help 2>&1 | grep -qE '(^|[[:space:]])infer([[:space:]]|$)'; then
-  openclaw infer model run --local --model ollama/qwen3:0.6b --prompt 'Reply with exactly: GRASSHOPPER_OCI_MODEL_OK' --json
+  openclaw infer model run --model ollama/qwen3:0.6b --prompt 'Reply with exactly: GRASSHOPPER_OCI_MODEL_OK' --json
 else
   curl -fsS http://127.0.0.1:11434/api/generate -H 'Content-Type: application/json' -d '{"model":"qwen3:0.6b","prompt":"Reply with exactly: GRASSHOPPER_OCI_MODEL_OK","stream":false}' | grep -q 'GRASSHOPPER_OCI_MODEL_OK' || die "Local Ollama inference smoke test failed"
 fi
 log "Final verification"
 printf 'OPENCLAW_VERSION=%s\n' "$OPENCLAW_VERSION"
-printf 'OLLAMA='; ollama --version
+printf 'OLLAMA='; podman exec "$OLLAMA_CONTAINER" ollama --version
 printf 'MODEL=qwen3:0.6b\n'
 printf 'GATEWAY_MODE='; openclaw config get gateway.mode 2>/dev/null || true
 printf 'MODEL_SMOKE_TEST=PASS\n'
