@@ -16,8 +16,8 @@ chmod 700 "${WORK}/ssh"
 # Cloud Shell is FIPS-enabled. Never reuse an older ED25519 key at this path.
 # OCI accepts RSA instance keys, and RSA >=2048 is supported in FIPS mode.
 if [ -f "${KEY}" ]; then
-  KEY_TYPE="$(ssh-keygen -lf "${KEY}" 2>/dev/null | awk '{print $2}' || true)"
-  if [ "${KEY_TYPE}" != "RSA3072" ] && [ "${KEY_TYPE}" != "RSA" ]; then
+  KEY_TYPE="$(ssh-keygen -y -f "${KEY}" >/dev/null 2>&1 && ssh-keygen -lf "${KEY}" -E SHA256 2>/dev/null | awk '{print $1}' || true)"
+  if [ "${KEY_TYPE}" != "3072" ] && [ "${KEY_TYPE}" != "4096" ] && [ "${KEY_TYPE}" != "2048" ]; then
     echo "Existing OCI key is ${KEY_TYPE:-unknown}; replacing it with a FIPS-compatible RSA key."
     mv -f "${KEY}" "${KEY}.nonfips-$(date +%Y%m%d%H%M%S)" || true
     mv -f "${KEY}.pub" "${KEY}.pub.nonfips-$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
@@ -26,11 +26,15 @@ fi
 if [ ! -f "${KEY}" ]; then
   ssh-keygen -t rsa -b 3072 -N "" -f "${KEY}" -C grasshopper-oci >/dev/null
 fi
-KEY_TYPE="$(ssh-keygen -lf "${KEY}" 2>/dev/null | awk '{print $2}' || true)"
-case "${KEY_TYPE}" in
-  RSA3072|RSA) ;;
-  *) echo "ERROR: OCI workstation key is not RSA after generation: ${KEY_TYPE:-unknown}"; exit 2 ;;
-esac
+
+# ssh-keygen -lf prints key size in field 1. Verify the private key is actually RSA
+# using ssh-keygen -y plus the OpenSSH public-key type.
+PUBLIC_KEY_TYPE="$(ssh-keygen -y -f "${KEY}" 2>/dev/null | awk '{print $1}' || true)"
+KEY_BITS="$(ssh-keygen -lf "${KEY}" 2>/dev/null | awk '{print $1}' || true)"
+if [ "${PUBLIC_KEY_TYPE}" != "ssh-rsa" ] || [ "${KEY_BITS}" -lt 2048 ] 2>/dev/null; then
+  echo "ERROR: OCI workstation key is not an RSA key >=2048 bits: type=${PUBLIC_KEY_TYPE:-unknown} bits=${KEY_BITS:-unknown}"
+  exit 2
+fi
 
 TENANCY_OCID="$(grep '^tenancy=' /etc/oci/config | head -1 | cut -d= -f2)"
 COMPARTMENT_OCID="$(awk -F= '/^COMPARTMENT_OCID=/{print $2}' "${WORK}/oci.env" 2>/dev/null || true)"
