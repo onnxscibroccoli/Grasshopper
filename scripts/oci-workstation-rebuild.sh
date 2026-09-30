@@ -43,7 +43,26 @@ echo "New workstation key: $(ssh-keygen -lf "${KEY}.pub" -E SHA256)"
 mapfile -t IDS < <(oci compute instance list --compartment-id "${COMPARTMENT_OCID}" --display-name "${NAME}" --all --output json | jq -r '.data[] | select(."lifecycle-state" != "TERMINATED") | .id')
 for id in "${IDS[@]}"; do
   echo "Terminating old workstation: ${id}"
-  oci compute instance terminate --instance-id "${id}" --preserve-boot-volume false --preserve-data-volumes-created-at-launch false --force --wait-for-state TERMINATED --max-wait-seconds 900 >/dev/null
+  # Terminate is asynchronous. OCI wait-for-state uses work-request states, not TERMINATED.
+  oci compute instance terminate \
+    --instance-id "${id}" \
+    --preserve-boot-volume false \
+    --preserve-data-volumes-created-at-launch false \
+    --force \
+    --output json >/dev/null
+
+  for attempt in $(seq 1 180); do
+    state="$(oci compute instance get --instance-id "${id}" --query 'data."lifecycle-state"' --raw-output 2>/dev/null || true)"
+    if [ "${state}" = "TERMINATED" ] || [ -z "${state}" ]; then
+      echo "Old workstation terminated."
+      break
+    fi
+    if [ "${attempt}" -eq 180 ]; then
+      echo "ERROR: old workstation did not reach TERMINATED after 15 minutes (state=${state})."
+      exit 3
+    fi
+    sleep 5
+  done
 done
 
 AD="$(oci iam availability-domain list --compartment-id "${TENANCY_OCID}" --query 'data[0].name' --raw-output)"
