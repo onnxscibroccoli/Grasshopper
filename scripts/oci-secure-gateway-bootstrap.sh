@@ -43,6 +43,8 @@ OAUTH_URL="https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v${OAU
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 curl -fsSL "$OAUTH_URL" -o "$TMP/oauth2-proxy.tgz"
+curl -fsSL "${OAUTH_URL}-sha256sum.txt" -o "$TMP/oauth2-proxy.sha256"
+( cd "$TMP" && grep "oauth2-proxy-v${OAUTH_VERSION}.linux-${OAUTH_ARCH}.tar.gz" oauth2-proxy.sha256 | sha256sum -c - )
 tar -xzf "$TMP/oauth2-proxy.tgz" -C "$TMP"
 sudo install -m 0755 "$TMP/oauth2-proxy-v${OAUTH_VERSION}.linux-${OAUTH_ARCH}/oauth2-proxy" /usr/local/bin/oauth2-proxy
 
@@ -69,7 +71,7 @@ upstreams = ["http://127.0.0.1:6080/"]
 CFG
 
 if [[ "$PROVIDER" == "github" ]]; then
-  printf 'github_user = ["%s"]\n' "$ALLOWED_GITHUB_USER" | sudo tee -a /etc/grasshopper/oauth2-proxy.cfg >/dev/null
+  printf 'github_users = ["%s"]\n' "$ALLOWED_GITHUB_USER" | sudo tee -a /etc/grasshopper/oauth2-proxy.cfg >/dev/null
 fi
 
 sudo chmod 0640 /etc/grasshopper/oauth2-proxy.cfg
@@ -107,7 +109,7 @@ UNIT
 # Obtain a normal public certificate. HTTP is used only for ACME and then
 # redirects permanently to HTTPS. The desktop itself is never served on HTTP.
 sudo systemctl enable --now nginx
-sudo certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email   --redirect --keep-until-expiring -d "$AUTH_DOMAIN"
+sudo certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email   --redirect --keep-until-expiring --email "${GRASSHOPPER_ACME_EMAIL:?Set GRASSHOPPER_ACME_EMAIL}" -d "$AUTH_DOMAIN"
 
 sudo tee /etc/nginx/nginx.conf >/dev/null <<NGINX
 user nginx;
