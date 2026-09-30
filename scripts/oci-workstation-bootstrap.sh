@@ -13,9 +13,24 @@ KEY="${WORK}/ssh/grasshopper_oci"
 mkdir -p "${WORK}/ssh" "${HOME}/src"
 chmod 700 "${WORK}/ssh"
 
+# Cloud Shell is FIPS-enabled. Never reuse an older ED25519 key at this path.
+# OCI accepts RSA instance keys, and RSA >=2048 is supported in FIPS mode.
+if [ -f "${KEY}" ]; then
+  KEY_TYPE="$(ssh-keygen -lf "${KEY}" 2>/dev/null | awk '{print $2}' || true)"
+  if [ "${KEY_TYPE}" != "RSA3072" ] && [ "${KEY_TYPE}" != "RSA" ]; then
+    echo "Existing OCI key is ${KEY_TYPE:-unknown}; replacing it with a FIPS-compatible RSA key."
+    mv -f "${KEY}" "${KEY}.nonfips-$(date +%Y%m%d%H%M%S)" || true
+    mv -f "${KEY}.pub" "${KEY}.pub.nonfips-$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+  fi
+fi
 if [ ! -f "${KEY}" ]; then
   ssh-keygen -t rsa -b 3072 -N "" -f "${KEY}" -C grasshopper-oci >/dev/null
 fi
+KEY_TYPE="$(ssh-keygen -lf "${KEY}" 2>/dev/null | awk '{print $2}' || true)"
+case "${KEY_TYPE}" in
+  RSA3072|RSA) ;;
+  *) echo "ERROR: OCI workstation key is not RSA after generation: ${KEY_TYPE:-unknown}"; exit 2 ;;
+esac
 
 TENANCY_OCID="$(grep '^tenancy=' /etc/oci/config | head -1 | cut -d= -f2)"
 COMPARTMENT_OCID="$(awk -F= '/^COMPARTMENT_OCID=/{print $2}' "${WORK}/oci.env" 2>/dev/null || true)"
