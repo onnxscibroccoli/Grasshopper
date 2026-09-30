@@ -143,16 +143,49 @@ echo "PRIVATE_IP=${PRIVATE_IP}"
 echo "SSH_KEY=${KEY}"
 echo "Waiting for SSH and cloud-init convergence..."
 
-for i in $(seq 1 60); do
-  if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o IdentitiesOnly=yes -i "${KEY}" "opc@${PUBLIC_IP}" 'echo OCI_SSH_OK' >/dev/null 2>&1; then
+SSH_OPTS=(
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+  -o IdentitiesOnly=yes
+  -i "${KEY}"
+  -o ConnectTimeout=5
+)
+
+for i in $(seq 1 90); do
+  if ssh "${SSH_OPTS[@]}" "opc@${PUBLIC_IP}" 'echo OCI_SSH_OK' >/dev/null 2>&1; then
+    echo "SSH_READY attempt=${i}"
     break
   fi
-  [ "${i}" -eq 60 ] && { echo "ERROR: SSH did not become ready."; exit 5; }
+  if [ "${i}" -eq 90 ]; then
+    echo "ERROR: SSH did not become ready after 15 minutes."
+    exit 5
+  fi
   sleep 10
 done
 
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i "${KEY}" "opc@${PUBLIC_IP}"   'for i in $(seq 1 90); do if [ -f /var/lib/grasshopper-bootstrap-complete ]; then echo GRASSHOPPER_BOOTSTRAP_COMPLETE; exit 0; fi; sleep 10; done; echo BOOTSTRAP_TIMEOUT; tail -100 /var/log/grasshopper-bootstrap.log; exit 6'
+echo "Waiting for bootstrap marker..."
+for i in $(seq 1 90); do
+  if ssh "${SSH_OPTS[@]}" "opc@${PUBLIC_IP}" 'test -f /var/lib/grasshopper-bootstrap-complete' >/dev/null 2>&1; then
+    echo "GRASSHOPPER_BOOTSTRAP_COMPLETE"
+    break
+  fi
+  if [ "${i}" -eq 90 ]; then
+    echo "ERROR: bootstrap did not converge after 15 minutes."
+    ssh "${SSH_OPTS[@]}" "opc@${PUBLIC_IP}" 'tail -100 /var/log/grasshopper-bootstrap.log 2>/dev/null || true' || true
+    exit 6
+  fi
+  sleep 10
+done
 
 echo
 echo "== OCI WORKSTATION READY =="
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i "${KEY}" "opc@${PUBLIC_IP}"   'echo "host=$(hostname)"; uname -a; node --version; git --version; python3 --version; cd ~/src/Grasshopper && git rev-parse HEAD && npm test'
+ssh "${SSH_OPTS[@]}" "opc@${PUBLIC_IP}" 'set -e
+  echo "host=$(hostname)"
+  uname -a
+  node --version
+  git --version
+  python3 --version
+  cd ~/src/Grasshopper
+  echo "commit=$(git rev-parse HEAD)"
+  echo "branch=$(git branch --show-current)"
+  npm test'
