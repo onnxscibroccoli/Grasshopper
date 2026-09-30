@@ -17,7 +17,10 @@ hostname
 id
 
 echo "--- package prerequisites ---"
-sudo dnf -y install git curl jq openssh-clients ca-certificates tar gzip unzip ripgrep
+sudo dnf -y install git curl jq openssh-clients ca-certificates tar gzip unzip
+if ! command -v rg >/dev/null 2>&1; then
+  echo "WARN: ripgrep package is unavailable in the configured Oracle Linux repositories; continuing with grep-compatible tooling."
+fi
 
 echo "--- user-local PATH ---"
 PROFILE="${HOME}/.bashrc"
