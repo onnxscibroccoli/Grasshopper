@@ -26,17 +26,17 @@ chmod 0750 "${ROOT}" "${VNC_DIR}"
 cat > "${CONTAINERFILE}" <<'CONTAINERFILE'
 FROM docker.io/kalilinux/kali-rolling:arm64
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update \\
- && apt-get install -y --no-install-recommends \\
-      xfce4 xfce4-terminal thunar xfce4-panel xfdesktop xfwm4 xfconf \\
-      xfce4-settings dbus-x11 xterm firefox-esr \\
-      tigervnc-standalone-server tigervnc-tools sudo ca-certificates \\
-      curl wget git vim tmux procps iproute2 iputils-ping \\
- && apt-get clean \\
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      xfce4 xfce4-terminal thunar xfce4-panel xfdesktop xfwm4 xfconf \
+      xfce4-settings dbus-x11 xterm firefox-esr \
+      tigervnc-standalone-server tigervnc-tools sudo ca-certificates \
+      curl wget git vim tmux procps iproute2 iputils-ping \
+ && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
-RUN useradd -m -s /bin/bash kali \\
- && usermod -aG sudo kali \\
- && printf 'kali ALL=(ALL) NOPASSWD:ALL\\n' > /etc/sudoers.d/kali \\
+RUN useradd -m -s /bin/bash kali \
+ && usermod -aG sudo kali \
+ && printf 'kali ALL=(ALL) NOPASSWD:ALL\\n' > /etc/sudoers.d/kali \
  && chmod 0440 /etc/sudoers.d/kali
 COPY kali-entrypoint.sh /usr/local/bin/kali-entrypoint.sh
 RUN chmod 0755 /usr/local/bin/kali-entrypoint.sh
@@ -74,17 +74,17 @@ if podman container exists "${NAME}"; then
   podman rm -f "${NAME}" >/dev/null 2>&1 || true
 fi
 
-podman create \\
-  --name "${NAME}" \\
-  --hostname kali-workstation \\
-  --publish "127.0.0.1:${HOST_VNC_PORT}:${CONTAINER_PORT}" \\
-  --volume "${HOME_DIR}:/home/kali:Z" \\
-  --volume "${VNC_PASS}:/run/grasshopper/vnc-passwd:ro,Z" \\
-  --cap-drop=ALL \\
-  --cap-add=SETUID \\
-  --cap-add=SETGID \\
-  --security-opt=no-new-privileges \\
-  --pids-limit=1024 \\
+podman create \
+  --name "${NAME}" \
+  --hostname kali-workstation \
+  --publish "127.0.0.1:${HOST_VNC_PORT}:${CONTAINER_PORT}" \
+  --volume "${HOME_DIR}:/home/kali:Z" \
+  --volume "${VNC_PASS}:/run/grasshopper/vnc-passwd:ro,Z" \
+  --cap-drop=ALL \
+  --cap-add=SETUID \
+  --cap-add=SETGID \
+  --security-opt=no-new-privileges \
+  --pids-limit=1024 \
   grasshopper/kali-rolling:desktop
 
 cat > /etc/systemd/system/grasshopper-kali.service <<UNIT
