@@ -34,3 +34,8 @@ test("agentic development workflow has a deterministic verification gate", async
   assert.match(source, /pull-requests: write/);
   assert.match(source, /id-token: write/);
 });
+
+test("control-plane verifier ignores untracked npm install artifacts", async () => {
+  const script = await readFile("scripts/verify-agentic-control-plane.sh", "utf8");
+  assert.match(script, /git status --porcelain --untracked-files=no/);
+});
