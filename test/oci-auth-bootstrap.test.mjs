@@ -11,6 +11,10 @@ test("OCI auth gateway is fail-closed and never contains credentials", () => {
   assert.match(source, /authenticated_emails_file/);
   assert.match(source, /GRASSHOPPER_OIDC_ISSUER_URL/);
   assert.match(source, /oidc_issuer_url/);
+  assert.match(source, /GRASSHOPPER_ALLOWED_EMAIL/);
+  assert.match(source, /authenticated_emails_file/);
+  assert.match(source, /GRASSHOPPER_OIDC_ISSUER_URL/);
+  assert.match(source, /oidc_issuer_url/);
   assert.match(source, /cookie_secure = true/);
   assert.match(source, /cookie_httponly = true/);
   assert.match(source, /trusted_proxy_ips/);
