@@ -16,8 +16,8 @@ on:
         type: boolean
 
 concurrency:
-  group: agentic-development-${{ github.ref }}
-  cancel-in-progress: true
+  group: agentic-development-${{ github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
