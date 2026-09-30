@@ -26,7 +26,7 @@ chmod 0750 "${ROOT}" "${VNC_DIR}"
 cat > "${CONTAINERFILE}" <<'CONTAINERFILE'
 FROM docker.io/kalilinux/kali-rolling:arm64
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends xfce4 xfce4-terminal thunar xfce4-panel xfdesktop xfwm4 xfconf xfce4-settings dbus-x11 xterm firefox-esr tigervnc-standalone-server tigervnc-tools sudo ca-certificates curl wget git vim tmux procps iproute2 iputils-ping && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends xfce4 xfce4-terminal thunar xfce4-panel xfdesktop4 xfwm4 xfconf xfce4-settings dbus-x11 xterm firefox-esr tigervnc-standalone-server tigervnc-tools sudo ca-certificates curl wget git vim tmux procps iproute2 iputils-ping && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -s /bin/bash kali \
  && usermod -aG sudo kali \
  && printf 'kali ALL=(ALL) NOPASSWD:ALL\\n' > /etc/sudoers.d/kali \
