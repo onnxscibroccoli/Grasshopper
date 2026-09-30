@@ -1,0 +1,50 @@
+name: Overnight test chain
+
+# GitHub Actions owns the schedule. Claude Code in a no-network sandbox
+# cannot dispatch this. Humans and Grok can, and cron will anyway.
+on:
+  schedule:
+    - cron: "0 4-12 * * *" # 00:00-08:00 America/New_York while EDT
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this chain is running"
+        required: false
+        default: "manual"
+        type: string
+
+concurrency:
+  group: overnight-chain
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+jobs:
+  chain:
+    name: Dispatch bounded follow-on tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Dispatch same-repo safe workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          echo "event=${GITHUB_EVENT_NAME} reason=${{ inputs.reason || 'schedule' }}"
+          # Same-repo only. Default GITHUB_TOKEN cannot dispatch other repos.
+          # Never dispatch k3s-live-desktop.yml or k3s-agentic-trigger.yml.
+          gh workflow run bist.yml --ref main
+          gh workflow run agentic-development-loop.yml --ref main -f autonomous=true
+          echo "dispatched bist.yml and agentic-development-loop.yml on main"
+
+      - name: Record chain on tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          gh issue comment 65 --body "Overnight chain (${GITHUB_EVENT_NAME}) dispatched BIST + Agentic Development Loop from run ${GITHUB_RUN_ID}. No k3s/live desktop. No other-repo dispatch (token cannot). KG refresh remains on omn-kali-knowledge-graph-master cron/workflow_dispatch."
