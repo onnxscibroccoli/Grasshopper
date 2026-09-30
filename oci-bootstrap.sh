@@ -124,13 +124,12 @@ Description=Grasshopper persistent VNC desktop
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 User=grasshopper
 Group=grasshopper
 WorkingDirectory=/home/grasshopper
-PIDFile=/home/grasshopper/.vnc/%H:1.pid
 ExecStartPre=/bin/sh -c '/usr/bin/vncserver -kill :1 >/dev/null 2>&1 || true'
-ExecStart=/usr/bin/vncserver :1 -geometry 1920x1080 -depth 24 -localhost yes -SecurityTypes VncAuth
+ExecStart=/usr/bin/vncserver :1 -geometry 1920x1080 -depth 24 -localhost yes -SecurityTypes VncAuth -fg
 ExecStop=/usr/bin/vncserver -kill :1
 Restart=always
 RestartSec=5
