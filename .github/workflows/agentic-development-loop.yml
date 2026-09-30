@@ -42,6 +42,10 @@ jobs:
         run: npm test
       - name: BIST schema
         run: npm run validate:bist-schema
+      - name: Restore clean tree for reproduction gates
+        run: |
+          git reset --hard HEAD
+          git clean -fd
       - name: Control-plane verification
         run: npm run verify:agentic-control-plane
       - name: Reproducibility verification
@@ -118,6 +122,8 @@ jobs:
           npm install --ignore-scripts
           npm test
           npm run validate:bist-schema
+          git reset --hard HEAD
+          git clean -fd
           npm run verify:agentic-control-plane
           npm run verify:agentic-reproducibility
 
@@ -160,6 +166,10 @@ jobs:
         run: npm test
       - name: Validate resulting BIST
         run: npm run validate:bist-schema
+      - name: Restore clean tree for reproduction gates
+        run: |
+          git reset --hard HEAD
+          git clean -fd
       - name: Validate resulting control plane
         run: npm run verify:agentic-control-plane
       - name: Validate resulting reproducibility
