@@ -18,6 +18,21 @@ mkdir -p "$HOME/.openclaw"
 chmod 700 "$HOME/.openclaw"
 if [[ -w /var/tmp ]]; then mkdir -p /var/tmp/openclaw-compile-cache; export NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache; fi
 export OPENCLAW_NO_RESPAWN=1
+
+# Make the user manager persistent before installing the gateway service.
+# On headless OCI hosts this allows the systemd user service to survive SSH
+# logout and host reboot without exposing the gateway to the network.
+if command -v loginctl >/dev/null 2>&1; then
+  if loginctl enable-linger "$USER" >/dev/null 2>&1; then
+    USER_UID="$(id -u)"
+    export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$USER_UID}"
+    for _ in $(seq 1 10); do
+      [[ -S "${XDG_RUNTIME_DIR}/bus" ]] && break
+      sleep 1
+    done
+  fi
+fi
+
 log "Configuring a local OpenClaw gateway..."
 openclaw_n config set gateway.mode local
 openclaw_n doctor --generate-gateway-token || true
