@@ -40,7 +40,7 @@ chmod 600 "${KEY}" "${KEY}.pub"
 echo "New workstation key: $(ssh-keygen -lf "${KEY}.pub" -E SHA256)"
 
 # Destroy every non-terminated instance with the exact workstation name in this compartment.
-mapfile -t IDS < <(oci compute instance list --compartment-id "${COMPARTMENT_OCID}" --display-name "${NAME}" --all --query 'data[?"lifecycle-state"!=\`TERMINATED\`].id' --raw-output | tr -d '[],"' | tr ' ' '\n' | sed '/^$/d')
+mapfile -t IDS < <(oci compute instance list --compartment-id "${COMPARTMENT_OCID}" --display-name "${NAME}" --all --output json | jq -r '.data[] | select(."lifecycle-state" != "TERMINATED") | .id')
 for id in "${IDS[@]}"; do
   echo "Terminating old workstation: ${id}"
   oci compute instance terminate --instance-id "${id}" --preserve-boot-volume false --preserve-data-volumes-created-at-launch false --force --wait-for-state TERMINATED --max-wait-seconds 900 >/dev/null
