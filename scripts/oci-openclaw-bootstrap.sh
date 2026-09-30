@@ -17,12 +17,45 @@ if [[ -w /var/tmp ]]; then mkdir -p /var/tmp/openclaw-compile-cache; export NODE
 export OPENCLAW_NO_RESPAWN=1
 log "Configuring a local OpenClaw gateway..."
 openclaw config set gateway.mode local
-openclaw doctor --fix --generate-gateway-token </dev/null || true
-log "Installing the OpenClaw user service..."
-openclaw gateway install --force
-openclaw gateway start || true
-sleep 3
-openclaw gateway status --deep || true
+openclaw doctor --generate-gateway-token </dev/null || true
+
+# A headless OCI shell may not have a systemd user bus. Prefer the native
+# systemd user service when the bus is usable, otherwise fall back to a
+# user-owned foreground supervisor that survives SSH logout.
+GATEWAY_SUPERVISOR="foreground"
+if [[ -n "${XDG_RUNTIME_DIR:-}" && -S "${XDG_RUNTIME_DIR}/bus" ]] &&    systemctl --user is-system-running >/dev/null 2>&1; then
+  log "Installing the OpenClaw systemd user service..."
+  if openclaw gateway install </dev/null; then
+    systemctl --user enable --now openclaw-gateway.service
+    GATEWAY_SUPERVISOR="systemd-user"
+  else
+    log "Systemd user service install was unavailable; using foreground supervisor."
+  fi
+else
+  log "No usable systemd user bus detected; using foreground supervisor."
+fi
+
+if [[ "$GATEWAY_SUPERVISOR" == "foreground" ]]; then
+  mkdir -p "$HOME/.openclaw"
+  if [[ -f "$HOME/.openclaw/gateway.pid" ]] && kill -0 "$(cat "$HOME/.openclaw/gateway.pid")" 2>/dev/null; then
+    log "Existing OpenClaw Gateway is already running."
+  else
+    log "Starting OpenClaw Gateway under the user-owned supervisor..."
+    nohup openclaw gateway run --port 18789 >"$HOME/.openclaw/gateway.log" 2>&1 &
+    GATEWAY_PID=$!
+    printf '%s\n' "$GATEWAY_PID" >"$HOME/.openclaw/gateway.pid"
+  fi
+fi
+
+for _ in $(seq 1 30); do
+  if curl -fsS http://127.0.0.1:18789/ >/dev/null 2>&1; then break; fi
+  sleep 1
+done
+curl -fsS http://127.0.0.1:18789/ >/dev/null 2>&1 || {
+  tail -n 80 "$HOME/.openclaw/gateway.log" 2>/dev/null || true
+  die "OpenClaw Gateway did not become reachable"
+}
+openclaw gateway status || true
 log "Installing Ollama if needed..."
 if ! command -v ollama >/dev/null 2>&1; then curl -fsSL https://ollama.com/install.sh | sh; fi
 command -v ollama >/dev/null 2>&1 || die "Ollama installation failed"
@@ -37,7 +70,9 @@ curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1 || die "Ollama did not
 log "Pulling qwen3:0.6b..."
 ollama pull qwen3:0.6b
 log "Configuring Ollama in OpenClaw..."
-export OLLAMA_API_KEY=ollama-local
+openclaw config set models.providers.ollama.apiKey "ollama-local"
+openclaw config set models.providers.ollama.baseUrl "http://127.0.0.1:11434"
+openclaw config set models.providers.ollama.api "ollama"
 openclaw models list --provider ollama || true
 openclaw models set ollama/qwen3:0.6b
 log "Testing local inference..."
