@@ -19,7 +19,7 @@ command -v ssh-keygen >/dev/null || { echo "ERROR: ssh-keygen is required."; exi
 TENANCY_OCID="$(awk -F= '/^tenancy=/{print $2; exit}' /etc/oci/config)"
 [ -n "${TENANCY_OCID}" ] || { echo "ERROR: tenancy OCID not found in /etc/oci/config."; exit 2; }
 
-COMPARTMENT_OCID="$(oci iam compartment list --compartment-id "${TENANCY_OCID}" --access-level ACCESSIBLE --compartment-id-in-subtree true --all --query 'data[?name==\`Grasshopper\` && "lifecycle-state"==\`ACTIVE\`].id | [0]' --raw-output)"
+COMPARTMENT_OCID="$(oci iam compartment list --compartment-id "${TENANCY_OCID}" --access-level ACCESSIBLE --compartment-id-in-subtree true --all --output json | jq -r '.data[] | select(.name == "Grasshopper" and ."lifecycle-state" == "ACTIVE") | .id' | head -1)"
 [ -n "${COMPARTMENT_OCID}" ] && [ "${COMPARTMENT_OCID}" != "null" ] || {
   echo "ERROR: Grasshopper compartment not found."
   exit 2
