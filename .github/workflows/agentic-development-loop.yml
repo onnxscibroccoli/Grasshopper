@@ -6,7 +6,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "17 3 * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
       autonomous:
@@ -16,7 +16,7 @@ on:
         type: boolean
 
 concurrency:
-  group: agentic-development-${{ github.ref }}
+  group: agentic-development-${ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -32,26 +32,38 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-
       - name: Node
         uses: actions/setup-node@v6
         with:
           node-version: "22"
-
+          cache: npm
       - name: Install
         run: npm install --ignore-scripts
-
       - name: Test
         run: npm test
-
       - name: BIST schema
         run: npm run validate:bist-schema
-
       - name: Control-plane verification
         run: npm run verify:agentic-control-plane
-
       - name: Reproducibility verification
         run: npm run verify:agentic-reproducibility
+      - name: Capture verification evidence
+        if: always()
+        run: |
+          mkdir -p .ci-evidence
+          {
+            echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "sha=$GITHUB_SHA"
+            echo "event=$GITHUB_EVENT_NAME"
+            echo "ref=$GITHUB_REF"
+          } > .ci-evidence/run.txt
+          npm test > .ci-evidence/npm-test-rerun.txt 2>&1 || true
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-evidence-${ github.run_id }}
+          path: .ci-evidence/
 
   agent:
     name: Autonomous bounded improvement
@@ -64,58 +76,70 @@ jobs:
       vars.ANTHROPIC_ORGANIZATION_ID != '' &&
       vars.ANTHROPIC_SERVICE_ACCOUNT_ID != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     permissions:
       contents: write
       pull-requests: write
       issues: write
       actions: read
       id-token: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
       - name: Run bounded coding agent
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
-          anthropic_organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
-          anthropic_service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          anthropic_federation_rule_id: ${ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          anthropic_organization_id: ${ vars.ANTHROPIC_ORGANIZATION_ID }}
+          anthropic_service_account_id: ${ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
           claude_args: |
             --model claude-sonnet-4-5-20250929
-            --max-turns 8
-            --allowedTools "Read,Glob,Grep,Edit,Replace,Bash(npm install),Bash(npm test),Bash(npm run bist),Bash(npm run validate:bist-schema),Bash(npm run verify:agentic-control-plane),Bash(npm run verify:agentic-reproducibility),Bash(git status),Bash(git diff:*),Bash(git log:*)"
+            --max-turns 10
+            --allowedTools "Read,Glob,Grep,Edit,Replace,Bash(npm install),Bash(npm test),Bash(npm run bist),Bash(npm run validate:bist-schema),Bash(npm run verify:agentic-control-plane),Bash(npm run verify:agentic-reproducibility),Bash(git status),Bash(git diff:*),Bash(git log:*),Bash(gh pr list:*)"
           prompt: |
-            You are the bounded Grasshopper maintenance agent.
+            You are the bounded Grasshopper maintenance agent operating in a recurring development loop.
+            Follow AGENTS.md exactly: observe -> classify -> isolate -> repair -> test -> record -> continue.
 
-            Follow AGENTS.md exactly. Use:
-            observe -> classify -> isolate -> repair -> test -> record -> continue.
+            First inspect current source and tests, recent CI evidence and failures, all open relevant issues, open PRs, and existing workflows.
 
-            First inspect the current repository, recent CI evidence, open issues/PRs, and existing workflows.
-            If verification is failing, diagnose the first real failure and repair the smallest root cause.
-            If verification is green, identify exactly one high-value, bounded reproducibility, testing, portability, security, or documentation improvement.
+            Treat test results as evidence that determines the next test. If a test exposes a boundary or missing invariant, add the smallest regression test that captures it. If a regression test reveals a code defect, repair the defect and rerun relevant tests. If the repair reveals a missing automation capability, add bounded automation and test that automation too.
 
-            You may edit application code, tests, scripts, documentation, and GitHub Actions workflows.
-            You may create a new workflow only when it has a concrete tested purpose and least-privilege permissions.
-            New automation must call existing deterministic verification scripts rather than duplicating them.
-            Prefer reusable workflows over copy/paste.
-            Every code change must add or update tests where appropriate.
+            Work one coherent improvement at a time. Prioritize the first real blocker over cosmetic work. Every behavior change should have a regression test.
 
-            Never:
-            - deploy to AWS production
-            - modify the live Helix/Kali system
-            - touch production credentials or secrets
-            - introduce long-lived cloud credentials
-            - weaken existing verification
-            - claim health from process existence alone
-            - bypass a failing test
-            - make destructive infrastructure changes
-            - merge directly to main
+            Before creating a PR, inspect open PRs and avoid duplicate work. Create a PR for a coherent change. Never merge it.
 
-            Run the narrowest relevant tests after each repair, then the full npm test suite.
-            Preserve the failure cause and verification evidence in the PR description.
-            Create a pull request with the smallest coherent change. Do not create a PR if no justified change exists.
-            The human remains the final merge authority.
+            Never deploy to AWS production, modify live Helix/Kali, touch production credentials, introduce long-lived cloud credentials, weaken verification, bypass tests, claim health from process existence, make destructive infrastructure changes, modify protected ingress, or merge directly to main.
+
+            Run the narrowest relevant tests after each change, then npm test plus BIST/control-plane/reproducibility checks. Preserve failure cause and evidence in the PR. If there is no justified bounded improvement, make no change and report that clearly. Human remains final merge authority.
+
+  agent-verify:
+    name: Verify agent-generated changes
+    needs: agent
+    if: needs.agent.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install
+        run: npm install --ignore-scripts
+      - name: Test generated changes
+        run: npm test
+      - name: Validate generated BIST
+        run: npm run validate:bist-schema
+      - name: Validate generated control plane
+        run: npm run verify:agentic-control-plane
+      - name: Validate generated reproducibility
+        run: npm run verify:agentic-reproducibility
