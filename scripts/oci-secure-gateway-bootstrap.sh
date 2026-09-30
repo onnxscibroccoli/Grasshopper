@@ -9,8 +9,17 @@ set -Eeuo pipefail
 : "${GRASSHOPPER_OAUTH_CLIENT_ID:?Set the OAuth client ID}"
 : "${GRASSHOPPER_OAUTH_CLIENT_SECRET:?Set the OAuth client secret}"
 
+if [[ "${GRASSHOPPER_AUTH_PROVIDER:-github}" == "google" || "${GRASSHOPPER_AUTH_PROVIDER:-github}" == "oidc" ]]; then
+  : "${GRASSHOPPER_ALLOWED_EMAIL:?Set GRASSHOPPER_ALLOWED_EMAIL for google/oidc access control}"
+fi
+if [[ "${GRASSHOPPER_AUTH_PROVIDER:-github}" == "oidc" ]]; then
+  : "${GRASSHOPPER_OIDC_ISSUER_URL:?Set GRASSHOPPER_OIDC_ISSUER_URL for oidc}"
+fi
+
 PROVIDER="${GRASSHOPPER_AUTH_PROVIDER:-github}"
 ALLOWED_GITHUB_USER="${GRASSHOPPER_GITHUB_USER:-onnxscibroccoli}"
+ALLOWED_EMAIL="${GRASSHOPPER_ALLOWED_EMAIL:-}"
+OIDC_ISSUER_URL="${GRASSHOPPER_OIDC_ISSUER_URL:-}"
 COOKIE_SECRET="${GRASSHOPPER_COOKIE_SECRET:-}"
 AUTH_DOMAIN="$GRASSHOPPER_AUTH_DOMAIN"
 CALLBACK="https://$AUTH_DOMAIN/oauth2/callback"
@@ -72,6 +81,15 @@ CFG
 
 if [[ "$PROVIDER" == "github" ]]; then
   printf 'github_users = ["%s"]\n' "$ALLOWED_GITHUB_USER" | sudo tee -a /etc/grasshopper/oauth2-proxy.cfg >/dev/null
+elif [[ "$PROVIDER" == "google" ]]; then
+  sudo install -m 0640 -o root -g nginx /dev/null /etc/grasshopper/allowed-emails
+  printf "%s\n" "$ALLOWED_EMAIL" | sudo tee /etc/grasshopper/allowed-emails >/dev/null
+  printf 'authenticated_emails_file = "/etc/grasshopper/allowed-emails"\n' | sudo tee -a /etc/grasshopper/oauth2-proxy.cfg >/dev/null
+elif [[ "$PROVIDER" == "oidc" ]]; then
+  printf 'oidc_issuer_url = "%s"\n' "$OIDC_ISSUER_URL" | sudo tee -a /etc/grasshopper/oauth2-proxy.cfg >/dev/null
+  sudo install -m 0640 -o root -g nginx /dev/null /etc/grasshopper/allowed-emails
+  printf "%s\n" "$ALLOWED_EMAIL" | sudo tee /etc/grasshopper/allowed-emails >/dev/null
+  printf 'authenticated_emails_file = "/etc/grasshopper/allowed-emails"\n' | sudo tee -a /etc/grasshopper/oauth2-proxy.cfg >/dev/null
 fi
 
 sudo chmod 0640 /etc/grasshopper/oauth2-proxy.cfg
