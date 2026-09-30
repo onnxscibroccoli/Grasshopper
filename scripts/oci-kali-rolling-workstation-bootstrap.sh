@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Grasshopper OCI Kali Rolling browser workstation.
-# Runs Kali Rolling ARM64 as a persistent rootful Podman system container.
-# The Oracle Linux host remains the management layer.
-# This never touches AWS/Helix/Kali production resources.
-
 NAME="grasshopper-kali"
 ROOT="/var/lib/grasshopper/kali"
 HOME_DIR="${ROOT}/home"
@@ -19,7 +14,7 @@ CONTAINERFILE="${BASE}/kali-rolling.Containerfile"
 ENTRYPOINT="${BASE}/kali-entrypoint.sh"
 VNC_PASS="${VNC_DIR}/passwd"
 
-if [[ \$(id -u) -ne 0 ]]; then
+if [[ $(id -u) -ne 0 ]]; then
   echo "This bootstrap needs root privileges. Re-run it with sudo."
   exit 2
 fi
@@ -68,13 +63,12 @@ chmod 0755 "${ENTRYPOINT}"
 
 if [[ ! -s "${VNC_PASS}" ]]; then
   umask 077
-  printf '%s\n' "\$(openssl rand -hex 16)" | podman run --rm -i "${IMAGE}" vncpasswd -f > "${VNC_PASS}"
+  printf '%s\n' "$(openssl rand -hex 16)" | podman run --rm -i "${IMAGE}" vncpasswd -f > "${VNC_PASS}"
 fi
 chmod 0600 "${VNC_PASS}"
 
 echo "Pulling official Kali Rolling ARM64 image..."
 podman pull "${IMAGE}"
-
 echo "Building Grasshopper Kali desktop image..."
 podman build --pull=never -t grasshopper/kali-rolling:desktop -f "${CONTAINERFILE}" "${BASE}"
 
@@ -98,7 +92,6 @@ cat > /etc/systemd/system/grasshopper-kali.service <<UNIT
 Description=Grasshopper persistent Kali Rolling workstation
 After=network-online.target
 Wants=network-online.target
-
 [Service]
 Type=simple
 ExecStart=/usr/bin/podman start -a ${NAME}
@@ -107,7 +100,6 @@ Restart=always
 RestartSec=5
 TimeoutStartSec=0
 NoNewPrivileges=true
-
 [Install]
 WantedBy=multi-user.target
 UNIT
@@ -116,7 +108,7 @@ systemctl disable --now grasshopper-vnc.service 2>/dev/null || true
 systemctl daemon-reload
 systemctl enable --now grasshopper-kali.service
 
-for i in \$(seq 1 60); do
+for i in $(seq 1 60); do
   if ss -lnt | grep -q "127.0.0.1:${HOST_VNC_PORT}"; then break; fi
   sleep 2
 done
@@ -131,21 +123,19 @@ cat > /etc/systemd/system/grasshopper-novnc.service <<UNIT
 Description=Grasshopper noVNC proxy for Kali Rolling
 After=network-online.target grasshopper-kali.service
 Requires=grasshopper-kali.service
-
 [Service]
 Type=simple
 ExecStart=/opt/noVNC/utils/novnc_proxy --listen 127.0.0.1:${NOVNC_PORT} --vnc 127.0.0.1:${HOST_VNC_PORT}
 Restart=always
 RestartSec=3
 NoNewPrivileges=true
-
 [Install]
 WantedBy=multi-user.target
 UNIT
 systemctl daemon-reload
 systemctl enable --now grasshopper-novnc.service
 
-for i in \$(seq 1 30); do
+for i in $(seq 1 30); do
   if curl -fsS "http://127.0.0.1:${NOVNC_PORT}/vnc.html" >/dev/null; then break; fi
   sleep 2
 done
