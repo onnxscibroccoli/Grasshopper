@@ -80,3 +80,30 @@ test("OCI OpenClaw scripts keep the gateway and Ollama loopback-only", () => {
   assert.doesNotMatch(bootstrap, /-p 0\.0\.0\.0:11434/);
   assert.doesNotMatch(verify, /gateway\.bind=lan/);
 });
+
+test("OCI OpenClaw backup helper is verified and retention-bounded", () => {
+  const backup = fs.readFileSync("scripts/oci-openclaw-backup.sh", "utf8");
+  assert.match(backup, /openclaw_n\(\)\{ command openclaw "\$@" <\/dev\/null; \}/);
+  assert.match(backup, /backup create --output/);
+  assert.match(backup, /--verify/);
+  assert.match(backup, /OPENCLAW_BACKUP=PASS/);
+  assert.match(backup, /RETENTION_DAYS/);
+  assert.doesNotMatch(backup, /rm -rf/);
+});
+
+test("OCI OpenClaw bootstrap installs and schedules the verified backup", () => {
+  assert.match(bootstrap, /oci-openclaw-backup\.sh/);
+  assert.match(bootstrap, /grasshopper-openclaw-backup\.service/);
+  assert.match(bootstrap, /grasshopper-openclaw-backup\.timer/);
+  assert.match(bootstrap, /OnUnitActiveSec=24h/);
+  assert.match(bootstrap, /Persistent=true/);
+  assert.match(bootstrap, /grasshopper-openclaw-backup/);
+});
+
+test("OCI OpenClaw verifier requires a recent backup and timer", () => {
+  assert.match(verify, /openclaw\.backup\.helper/);
+  assert.match(verify, /openclaw\.backup\.timer\.enabled/);
+  assert.match(verify, /openclaw\.backup\.timer\.active/);
+  assert.match(verify, /openclaw\.backup\.recent/);
+  assert.match(verify, /-mmin -1560/);
+});
