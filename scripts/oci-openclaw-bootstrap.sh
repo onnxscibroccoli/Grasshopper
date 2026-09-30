@@ -119,6 +119,7 @@ curl -fsSL --proto '=https' --tlsv1.2 \
   "https://raw.githubusercontent.com/onnxscibroccoli/Grasshopper/feat/oci-openclaw-backup-recovery/scripts/oci-openclaw-backup.sh" \
   -o "$HOME/.local/bin/grasshopper-openclaw-backup"
 chmod 700 "$HOME/.local/bin/grasshopper-openclaw-backup"
+"$HOME/.local/bin/grasshopper-openclaw-backup"
 
 if [[ "$GATEWAY_SUPERVISOR" == "systemd-user" ]]; then
   mkdir -p "$HOME/.config/systemd/user"
