@@ -7,11 +7,11 @@ const script = fs.readFileSync(path, "utf8");
 
 test("OCI Kali workstation uses the official Kali Rolling ARM64 image", () => {
   assert.match(script, /docker\.io\/kalilinux\/kali-rolling:arm64/);
-  assert.match(script, /127\.0\.0\.1:\\${HOST_VNC_PORT}/);
+  assert.match(script, /127\\.0\\.0\\.1:\\\$\\{HOST_VNC_PORT\\}/);
 });
 
 test("OCI Kali workstation keeps VNC loopback-only and persists home", () => {
-  assert.match(script, /--publish "127\.0\.0\.1:\\${HOST_VNC_PORT}:\${CONTAINER_PORT}"/);
+  assert.match(script, /--publish "127\\.0\\.0\\.1:\\\$\\{HOST_VNC_PORT\\}:\${CONTAINER_PORT}"/);
   assert.match(script, /--volume "\${HOME_DIR}:\/home\/kali:Z"/);
   assert.match(script, /grasshopper-kali\.service/);
   assert.match(script, /grasshopper-novnc\.service/);
