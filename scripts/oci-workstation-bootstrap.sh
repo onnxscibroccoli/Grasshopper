@@ -4,9 +4,9 @@ set -euo pipefail
 # Grasshopper OCI workstation bootstrap
 # Safe to rerun. No credentials are embedded or copied.
 # AWS Helix/Kali is never touched.
+# Cloud Shell may run in FIPS mode, so use RSA rather than ED25519.
 
 export OCI_REGION="${OCI_REGION:-us-ashburn-1}"
-REPO="https://github.com/onnxscibroccoli/Grasshopper.git"
 NAME="Grasshopper-Workstation"
 WORK="${HOME}/.grasshopper"
 KEY="${WORK}/ssh/grasshopper_oci"
@@ -14,7 +14,7 @@ mkdir -p "${WORK}/ssh" "${HOME}/src"
 chmod 700 "${WORK}/ssh"
 
 if [ ! -f "${KEY}" ]; then
-  ssh-keygen -t ed25519 -N "" -f "${KEY}" -C grasshopper-oci >/dev/null
+  ssh-keygen -t rsa -b 3072 -N "" -f "${KEY}" -C grasshopper-oci >/dev/null
 fi
 
 TENANCY_OCID="$(grep '^tenancy=' /etc/oci/config | head -1 | cut -d= -f2)"
@@ -28,7 +28,6 @@ AD="$(awk -F= '/^AVAILABILITY_DOMAIN=/{print $2}' "${WORK}/oci.env" 2>/dev/null 
 [ -n "${AD}" ] || { echo "Missing AVAILABILITY_DOMAIN"; exit 1; }
 
 IMAGE_OCID="$(oci compute image list --compartment-id "${COMPARTMENT_OCID}" --operating-system 'Oracle Linux' --operating-system-version '9' --shape 'VM.Standard.A1.Flex' --all --query 'data[0].id' --raw-output)"
-
 [ -n "${IMAGE_OCID}" ] && [ "${IMAGE_OCID}" != "null" ] || { echo "No VM.Standard.A1.Flex Oracle Linux 9 image available"; exit 1; }
 
 INSTANCE_OCID="$(oci compute instance list --compartment-id "${COMPARTMENT_OCID}" --display-name "${NAME}" --all --query 'data[0].id' --raw-output 2>/dev/null || true)"
@@ -49,7 +48,6 @@ if [ -z "${INSTANCE_OCID}" ] || [ "${INSTANCE_OCID}" = "null" ]; then
 fi
 
 echo "INSTANCE_OCID=${INSTANCE_OCID}"
-
 oci compute instance get --instance-id "${INSTANCE_OCID}" --wait-for-state RUNNING --max-wait-seconds 600 >/dev/null
 
 VNIC_ID="$(oci compute instance list-vnics --instance-id "${INSTANCE_OCID}" --query 'data[0].id' --raw-output)"
