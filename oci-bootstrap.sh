@@ -2,56 +2,82 @@
 set -Eeuo pipefail
 
 # Grasshopper OCI browser desktop bootstrap.
-# Safe to rerun. Reuses the existing Grasshopper-Workstation when present.
-# It configures a persistent XFCE desktop, VNC on localhost:5901, and noVNC
-# through nginx on TCP/80. It does not touch the protected AWS environment.
+# Convergent entrypoint: creates the experimental OCI workstation if it is absent,
+# then configures a persistent XFCE + VNC + noVNC browser desktop.
+# Never touches the protected AWS Helix/Kali production system.
 
 REGION="${OCI_CLI_REGION:-us-ashburn-1}"
 COMPARTMENT_NAME="Grasshopper"
 INSTANCE_NAME="Grasshopper-Workstation"
 SSH_USER="opc"
-KEY="${GRASSHOPPER_OCI_SSH_KEY:-$HOME/.grasshopper/ssh/grasshopper_oci}"
+ROOT="$HOME/.grasshopper"
+KEY="${GRASSHOPPER_OCI_SSH_KEY:-$ROOT/ssh/grasshopper_oci}"
+REBUILD_URL="https://raw.githubusercontent.com/onnxscibroccoli/Grasshopper/main/scripts/oci-workstation-rebuild.sh"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "missing command: $1"; }
 
 need oci
 need ssh
-[ -f "$KEY" ] || die "OCI SSH key not found: $KEY"
-
+need curl
+need jq
+[ -f /etc/oci/config ] || die "OCI Cloud Shell configuration not found"
 export OCI_CLI_REGION="$REGION"
 
 TENANCY_OCID="${TENANCY_OCID:-}"
-if [ -z "$TENANCY_OCID" ] && [ -r /etc/oci/config ]; then
-  TENANCY_OCID="$(awk -F= '/^tenancy=/{print $2; exit}' /etc/oci/config)"
-fi
+[ -n "$TENANCY_OCID" ] || TENANCY_OCID="$(awk -F= '/^tenancy=/{print $2; exit}' /etc/oci/config)"
 [ -n "$TENANCY_OCID" ] || die "could not determine tenancy OCID"
 
-COMPARTMENT_OCID="$(oci iam compartment list   --compartment-id "$TENANCY_OCID"   --access-level ACCESSIBLE   --compartment-id-in-subtree true   --all   --query "data[?name=='$COMPARTMENT_NAME'].id | [0]"   --raw-output 2>/dev/null || true)"
-
+COMPARTMENT_OCID="$(oci iam compartment list   --compartment-id "$TENANCY_OCID"   --access-level ACCESSIBLE   --compartment-id-in-subtree true   --all   --output json |
+  jq -r '.data[] | select(.name=="Grasshopper" and ."lifecycle-state"=="ACTIVE") | .id' | head -1)"
 [ -n "$COMPARTMENT_OCID" ] && [ "$COMPARTMENT_OCID" != "null" ] ||
   die "OCI compartment '$COMPARTMENT_NAME' not found"
 
-INSTANCE_OCID="$(oci compute instance list   --compartment-id "$COMPARTMENT_OCID"   --display-name "$INSTANCE_NAME"   --all   --query "data[?lifecycle-state!='TERMINATED'] | [0].id"   --raw-output 2>/dev/null || true)"
+find_instance() {
+  oci compute instance list     --compartment-id "$COMPARTMENT_OCID"     --display-name "$INSTANCE_NAME"     --all     --output json 2>/dev/null |
+    jq -r '.data[] | select(."lifecycle-state" != "TERMINATED") | .id' | head -1
+}
 
-[ -n "$INSTANCE_OCID" ] && [ "$INSTANCE_OCID" != "null" ] ||
-  die "no active $INSTANCE_NAME found; run the existing OCI workstation rebuild first"
+INSTANCE_OCID="$(find_instance || true)"
 
-PUBLIC_IP="$(oci compute instance list-vnics   --instance-id "$INSTANCE_OCID"   --query 'data[0]."public-ip"'   --raw-output 2>/dev/null || true)"
+if [ -z "$INSTANCE_OCID" ] || [ "$INSTANCE_OCID" = "null" ]; then
+  echo "No active $INSTANCE_NAME found."
+  echo "Provisioning the experimental OCI workstation now..."
+  echo
 
-[ -n "$PUBLIC_IP" ] && [ "$PUBLIC_IP" != "null" ] ||
-  die "workstation has no public IPv4 address"
+  curl -fsSL "$REBUILD_URL" | bash
 
-echo "Grasshopper OCI workstation: $INSTANCE_NAME"
+  [ -f "$ROOT/oci.env" ] || die "workstation rebuild completed without $ROOT/oci.env"
+  # shellcheck disable=SC1090
+  source "$ROOT/oci.env"
+
+  INSTANCE_OCID="$INSTANCE_OCID"
+  PUBLIC_IP="$PUBLIC_IP"
+else
+  PUBLIC_IP="$(oci compute instance list-vnics     --instance-id "$INSTANCE_OCID"     --query 'data[0]."public-ip"'     --raw-output 2>/dev/null || true)"
+fi
+
+[ -n "$INSTANCE_OCID" ] && [ "$INSTANCE_OCID" != "null" ] || die "unable to determine workstation OCID"
+[ -n "$PUBLIC_IP" ] && [ "$PUBLIC_IP" != "null" ] || die "workstation has no public IPv4 address"
+
+[ -f "$KEY" ] || {
+  [ -f "$ROOT/oci.env" ] || die "SSH key and OCI state file are missing"
+  # shellcheck disable=SC1090
+  source "$ROOT/oci.env"
+}
+[ -f "$KEY" ] || die "OCI SSH key not found: $KEY"
+
+echo "============================================================"
+echo "GRASSHOPPER OCI BROWSER DESKTOP"
+echo "============================================================"
+echo "Instance: $INSTANCE_NAME"
 echo "Public IP: $PUBLIC_IP"
-echo
-
-echo "Configuring persistent graphical desktop..."
-echo "You will be prompted once for the VNC password."
 echo
 
 ssh -o StrictHostKeyChecking=accept-new     -o ConnectTimeout=15     -o ServerAliveInterval=30     -o ServerAliveCountMax=6     -i "$KEY"     "$SSH_USER@$PUBLIC_IP" 'bash -s' <<'REMOTE'
 set -Eeuo pipefail
+
+echo "Installing graphical desktop and browser gateway..."
 
 sudo dnf -y install epel-release
 sudo dnf -y install   tigervnc-server   xorg-x11-server-Xorg   dbus-x11   xterm   git   curl   wget   openssl   nginx
@@ -67,7 +93,9 @@ sudo install -d -m 700 -o grasshopper -g grasshopper /home/grasshopper/.vnc
 
 if [ ! -f /home/grasshopper/.vnc/passwd ]; then
   echo
-  echo "Create the browser desktop VNC password:"
+  echo "============================================================"
+  echo "CREATE YOUR REMOTE DESKTOP PASSWORD"
+  echo "============================================================"
   sudo -u grasshopper vncpasswd
 fi
 
@@ -148,15 +176,14 @@ sudo systemctl enable --now grasshopper-vnc.service
 sudo systemctl enable --now grasshopper-novnc.service
 sudo systemctl enable --now nginx
 
+sudo mkdir -p /home/grasshopper/src
 if [ ! -d /home/grasshopper/src/Grasshopper/.git ]; then
-  sudo -u grasshopper mkdir -p /home/grasshopper/src
   sudo -u grasshopper git clone https://github.com/onnxscibroccoli/Grasshopper.git /home/grasshopper/src/Grasshopper
 fi
-
 sudo chown -R grasshopper:grasshopper /home/grasshopper/src
 
 echo
-echo "=== DESKTOP SERVICES ==="
+echo "=== SERVICE ACCEPTANCE ==="
 systemctl is-active grasshopper-vnc.service
 systemctl is-active grasshopper-novnc.service
 systemctl is-active nginx
@@ -164,6 +191,11 @@ systemctl is-active nginx
 echo
 echo "=== LOCAL LISTENERS ==="
 sudo ss -lnt | grep -E ':(80|5901|6080)\b' || true
+
+echo
+echo "=== BROWSER GATEWAY ==="
+curl -fsS http://127.0.0.1:6080/ >/dev/null
+echo "NOVNC_HTTP_OK"
 REMOTE
 
 echo
@@ -171,14 +203,14 @@ echo "============================================================"
 echo "GRASSHOPPER REMOTE DESKTOP READY"
 echo "============================================================"
 echo
-echo "Open this in any browser:"
+echo "Open in any browser:"
 echo
 echo "  http://$PUBLIC_IP/"
 echo
-echo "The VNC server is localhost-only. noVNC is the browser gateway."
+echo "VNC: localhost-only on 5901"
+echo "noVNC: localhost:6080"
+echo "nginx: public browser gateway on port 80"
+echo
 echo "The desktop services are enabled for reboot persistence."
-echo
-echo "If the browser cannot connect, TCP/80 must be permitted by the"
-echo "OCI subnet/security-list or NSG attached to the workstation VNIC."
-echo
-echo "The command is safe to rerun and will reuse the existing workstation."
+echo "The OCI workstation is experimental and isolated from AWS production."
+echo "============================================================"
