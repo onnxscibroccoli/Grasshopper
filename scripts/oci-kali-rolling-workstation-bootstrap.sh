@@ -41,13 +41,14 @@ RUN useradd -m -s /bin/bash kali \\
 COPY kali-entrypoint.sh /usr/local/bin/kali-entrypoint.sh
 RUN chmod 0755 /usr/local/bin/kali-entrypoint.sh
 WORKDIR /home/kali
+USER kali
 ENTRYPOINT ["/usr/local/bin/kali-entrypoint.sh"]
 CONTAINERFILE
 
 cat > "${ENTRYPOINT}" <<'ENTRYPOINT'
 #!/usr/bin/env bash
 set -Eeuo pipefail
-install -d -m 0700 -o kali -g kali /home/kali/.vnc
+install -d -m 0700 /home/kali/.vnc
 cat > /home/kali/.vnc/xstartup <<'XSTARTUP'
 #!/bin/sh
 unset SESSION_MANAGER
@@ -55,22 +56,20 @@ unset DBUS_SESSION_BUS_ADDRESS
 exec dbus-run-session -- startxfce4
 XSTARTUP
 chmod 0755 /home/kali/.vnc/xstartup
-chown kali:kali /home/kali/.vnc/xstartup
-rm -f /tmp/.X1-lock /tmp/.X11-unix/X1
-exec su - kali -c 'vncserver :1 -fg -geometry 1920x1080 -depth 24 -localhost no -SecurityTypes VncAuth -rfbauth /run/grasshopper/vnc-passwd'
+exec vncserver :1 -fg -geometry 1920x1080 -depth 24 -localhost no -SecurityTypes VncAuth -rfbauth /run/grasshopper/vnc-passwd'
 ENTRYPOINT
 chmod 0755 "${ENTRYPOINT}"
-
-if [[ ! -s "${VNC_PASS}" ]]; then
-  umask 077
-  printf '%s\n' "$(openssl rand -hex 16)" | podman run --rm -i "${IMAGE}" vncpasswd -f > "${VNC_PASS}"
-fi
-chmod 0600 "${VNC_PASS}"
 
 echo "Pulling official Kali Rolling ARM64 image..."
 podman pull "${IMAGE}"
 echo "Building Grasshopper Kali desktop image..."
 podman build --pull=never -t grasshopper/kali-rolling:desktop -f "${CONTAINERFILE}" "${BASE}"
+
+if [[ ! -s "${VNC_PASS}" ]]; then
+  umask 077
+  printf '%s\n' "$(openssl rand -hex 16)" | podman run --rm -i grasshopper/kali-rolling:desktop vncpasswd -f > "${VNC_PASS}"
+fi
+chmod 0600 "${VNC_PASS}"
 
 if podman container exists "${NAME}"; then
   podman rm -f "${NAME}" >/dev/null 2>&1 || true
