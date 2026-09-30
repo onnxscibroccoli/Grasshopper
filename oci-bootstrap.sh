@@ -95,7 +95,7 @@ sudo usermod -aG wheel grasshopper
 
 sudo install -d -m 700 -o grasshopper -g grasshopper /home/grasshopper/.vnc
 
-if [ ! -f /home/grasshopper/.vnc/passwd ]; then
+if ! sudo test -f /home/grasshopper/.vnc/passwd; then
   echo
   echo "============================================================"
   echo "CREATE YOUR REMOTE DESKTOP PASSWORD"
