@@ -82,7 +82,7 @@ echo "Installing graphical desktop and browser gateway..."
 sudo dnf -y install epel-release
 sudo dnf -y install   tigervnc-server   xorg-x11-server-Xorg   dbus-x11   xterm   git   curl   wget   openssl   nginx
 
-sudo dnf -y groupinstall "Xfce"
+sudo dnf -y install xfce4-session xfce4-panel xfdesktop xfwm4 xfconf xfce4-settings thunar xfce4-terminal
 
 if ! id grasshopper >/dev/null 2>&1; then
   sudo useradd -m -s /bin/bash grasshopper
