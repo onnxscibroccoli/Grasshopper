@@ -40,7 +40,10 @@ chmod 600 "${KEY}" "${KEY}.pub"
 echo "New workstation key: $(ssh-keygen -lf "${KEY}.pub" -E SHA256)"
 
 # Destroy every non-terminated instance with the exact workstation name in this compartment.
-mapfile -t IDS < <(oci compute instance list --compartment-id "${COMPARTMENT_OCID}" --display-name "${NAME}" --all --output json | jq -r '.data[] | select(."lifecycle-state" != "TERMINATED") | .id')
+echo "Discovering existing workstation..."
+INSTANCE_LIST_JSON="$(oci compute instance list --compartment-id "${COMPARTMENT_OCID}" --display-name "${NAME}" --all --output json)"
+mapfile -t IDS < <(printf '%s' "${INSTANCE_LIST_JSON}" | jq -r '.data[] | select(."lifecycle-state" != "TERMINATED") | .id')
+echo "Existing non-terminated workstations: ${#IDS[@]}"
 for id in "${IDS[@]}"; do
   echo "Terminating old workstation: ${id}"
   # Terminate is asynchronous. OCI wait-for-state uses work-request states, not TERMINATED.
@@ -65,6 +68,7 @@ for id in "${IDS[@]}"; do
   done
 done
 
+echo "Resolving OCI networking and image..."
 AD="$(oci iam availability-domain list --compartment-id "${TENANCY_OCID}" --query 'data[0].name' --raw-output)"
 VCN_OCID="$(oci network vcn list --compartment-id "${COMPARTMENT_OCID}" --display-name 'Grasshopper-VCN' --all --query 'data[0].id' --raw-output)"
 SUBNET_OCID="$(oci network subnet list --compartment-id "${COMPARTMENT_OCID}" --display-name 'Grasshopper-Subnet' --all --query 'data[0].id' --raw-output)"
@@ -95,8 +99,23 @@ touch /var/lib/grasshopper-bootstrap-complete
 echo "GRASSHOPPER_BOOTSTRAP_COMPLETE $(date -Is)"
 USERDATA
 
-USER_DATA_B64="$(base64 -w0 "${ROOT}/oci-bootstrap-user-data.sh")"
-INSTANCE_OCID="$(oci compute instance launch   --compartment-id "${COMPARTMENT_OCID}"   --availability-domain "${AD}"   --shape VM.Standard.A1.Flex   --display-name "${NAME}"   --subnet-id "${SUBNET_OCID}"   --assign-public-ip true   --image-id "${IMAGE_OCID}"   --shape-config '{"ocpus":2,"memoryInGBs":12}'   --ssh-authorized-keys-file "${KEY}.pub"   --user-data "${USER_DATA_B64}"   --freeform-tags '{"Project":"Grasshopper","Environment":"experimental","ProtectedBase":"AWS-Helix-Kali","Role":"agent-workstation","ManagedBy":"Grasshopper"}'   --wait-for-state RUNNING --max-wait-seconds 1200   --query 'data.id' --raw-output)"
+echo "Launching replacement workstation..."
+INSTANCE_OCID="$(oci compute instance launch \
+  --compartment-id "${COMPARTMENT_OCID}" \
+  --availability-domain "${AD}" \
+  --shape VM.Standard.A1.Flex \
+  --display-name "${NAME}" \
+  --subnet-id "${SUBNET_OCID}" \
+  --assign-public-ip true \
+  --image-id "${IMAGE_OCID}" \
+  --shape-config '{"ocpus":2,"memoryInGBs":12}' \
+  --ssh-authorized-keys-file "${KEY}.pub" \
+  --user-data-file "${ROOT}/oci-bootstrap-user-data.sh" \
+  --freeform-tags '{"Project":"Grasshopper","Environment":"experimental","ProtectedBase":"AWS-Helix-Kali","Role":"agent-workstation","ManagedBy":"Grasshopper"}' \
+  --wait-for-state RUNNING \
+  --max-wait-seconds 1200 \
+  --query 'data.id' \
+  --raw-output)"
 
 VNIC_ID="$(oci compute instance list-vnics --instance-id "${INSTANCE_OCID}" --query 'data[0].id' --raw-output)"
 PUBLIC_IP="$(oci network vnic get --vnic-id "${VNIC_ID}" --query 'data."public-ip"' --raw-output)"
