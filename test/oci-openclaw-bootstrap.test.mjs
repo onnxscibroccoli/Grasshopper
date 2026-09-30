@@ -38,6 +38,8 @@ test("OCI OpenClaw bootstrap is curl-pipe safe and closes stdin on CLI", () => {
   assert.match(bootstrap, /qwen3:0\.6b/);
   assert.match(bootstrap, /OPENCLAW_OCI_BOOTSTRAP=PASS/);
   assert.match(bootstrap, /oci-openclaw-verify\.sh/);
+  assert.match(bootstrap, /loginctl enable-linger "\$USER"/);
+  assert.match(bootstrap, /XDG_RUNTIME_DIR=/);
   assert.match(bootstrap, /nohup openclaw gateway run --port 18789 <\/dev\/null/);
   assert.doesNotMatch(bootstrap, /dirname -- "\$0"/);
   assert.doesNotMatch(bootstrap, /\bsource\s+/);
@@ -56,6 +58,9 @@ test("OCI OpenClaw verify is a read-only curl-pipe host test", () => {
   assert.match(verify, /OPENCLAW_OCI_VERIFY=PASS/);
   assert.match(verify, /ollama\.generate\.smoke/);
   assert.match(verify, /openclaw\.gateway\.listen\.not_public/);
+  assert.match(verify, /openclaw\.user\.linger/);
+  assert.match(verify, /openclaw\.gateway\.systemd\.enabled/);
+  assert.match(verify, /openclaw\.gateway\.systemd\.active/);
   assert.match(verify, /GRASSHOPPER_OCI_MODEL_OK/);
   assert.doesNotMatch(verify, /dirname -- "\$0"/);
   assert.doesNotMatch(verify, /\bsource\s+/);
