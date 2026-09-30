@@ -49,7 +49,7 @@ AD="$(awk -F= '/^AVAILABILITY_DOMAIN=/{print $2}' "${WORK}/oci.env" 2>/dev/null 
 IMAGE_OCID="$(oci compute image list --compartment-id "${COMPARTMENT_OCID}" --operating-system 'Oracle Linux' --operating-system-version '9' --shape 'VM.Standard.A1.Flex' --all --query 'data[0].id' --raw-output)"
 [ -n "${IMAGE_OCID}" ] && [ "${IMAGE_OCID}" != "null" ] || { echo "No VM.Standard.A1.Flex Oracle Linux 9 image available"; exit 1; }
 
-INSTANCE_OCID="$(oci compute instance list --compartment-id "${COMPARTMENT_OCID}" --display-name "${NAME}" --all --query 'data[0].id' --raw-output 2>/dev/null || true)"
+INSTANCE_OCID="${INSTANCE_OCID:-$(oci compute instance list --compartment-id "${COMPARTMENT_OCID}" --display-name "${NAME}" --all --query 'data[0].id' --raw-output 2>/dev/null || true)}"
 
 if [ -z "${INSTANCE_OCID}" ] || [ "${INSTANCE_OCID}" = "null" ]; then
   INSTANCE_OCID="$(oci compute instance launch \
@@ -67,10 +67,24 @@ if [ -z "${INSTANCE_OCID}" ] || [ "${INSTANCE_OCID}" = "null" ]; then
 fi
 
 echo "INSTANCE_OCID=${INSTANCE_OCID}"
+# Persist identity before readiness waits so a transient VNIC/SSH failure never loses the workstation ID.
+cat > "${WORK}/oci.env" <<EOF
+TENANCY_OCID=${TENANCY_OCID}
+COMPARTMENT_OCID=${COMPARTMENT_OCID}
+REGION=${OCI_REGION}
+AVAILABILITY_DOMAIN=${AD}
+VCN_OCID=${VCN_OCID}
+SUBNET_OCID=${SUBNET_OCID}
+INSTANCE_OCID=${INSTANCE_OCID}
+SSH_KEY=${KEY}
+EOF
+chmod 600 "${WORK}/oci.env"
 oci compute instance get --instance-id "${INSTANCE_OCID}" --wait-for-state RUNNING --max-wait-seconds 600 >/dev/null
 
 VNIC_ID="$(oci compute instance list-vnics --instance-id "${INSTANCE_OCID}" --query 'data[0].id' --raw-output)"
+[ -n "${VNIC_ID}" ] && [ "${VNIC_ID}" != "null" ] || { echo "No VNIC found for ${INSTANCE_OCID}"; exit 1; }
 PUBLIC_IP="$(oci network vnic get --vnic-id "${VNIC_ID}" --query 'data."public-ip"' --raw-output)"
+[ -n "${PUBLIC_IP}" ] && [ "${PUBLIC_IP}" != "null" ] || { echo "No public IP assigned to VNIC ${VNIC_ID}"; exit 1; }
 
 cat > "${WORK}/oci.env" <<EOF
 TENANCY_OCID=${TENANCY_OCID}
