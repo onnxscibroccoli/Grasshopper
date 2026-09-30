@@ -79,7 +79,11 @@ set -Eeuo pipefail
 
 echo "Installing graphical desktop and browser gateway..."
 
-sudo dnf -y install epel-release
+sudo dnf -y install epel-release dnf-utils
+sudo dnf config-manager --set-enabled ol9_developer_EPEL || true
+sudo dnf config-manager --set-enabled ol9_codeready_builder || true
+sudo dnf clean metadata
+sudo dnf -y makecache
 sudo dnf -y install   tigervnc-server   xorg-x11-server-Xorg   dbus-x11   xterm   git   curl   wget   openssl   nginx
 
 sudo dnf -y install xfce4-session xfce4-panel xfdesktop xfwm4 xfconf xfce4-settings thunar xfce4-terminal
