@@ -7,6 +7,8 @@ const verifyPath = "scripts/oci-openclaw-verify.sh";
 const bootstrap = fs.readFileSync(bootstrapPath, "utf8");
 const verify = fs.readFileSync(verifyPath, "utf8");
 
+const OPENCLAW_CMD = /(?<![\\w./-])openclaw(?![\\w.-])/;
+
 function unsafeOpenclawLines(source) {
   return source
     .split("\n")
@@ -15,9 +17,9 @@ function unsafeOpenclawLines(source) {
       if (!line || line.startsWith("#")) return false;
       if (line.includes("command -v openclaw")) return false;
       if (line.startsWith("openclaw_n()")) return false;
-      if (/\bopenclaw_n\b/.test(line)) return false;
-      if (/\bopenclaw\b/.test(line) && line.includes("</dev/null")) return false;
-      return /\bopenclaw\b/.test(line);
+      if (line.includes("openclaw_n ") || line.includes("openclaw_n\"") || line.includes("$(openclaw_n")) return false;
+      if (!OPENCLAW_CMD.test(line)) return false;
+      return !line.includes("</dev/null");
     });
 }
 
