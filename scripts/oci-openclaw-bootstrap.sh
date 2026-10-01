@@ -116,6 +116,44 @@ if openclaw_n --help 2>&1 | grep -qE '(^|[[:space:]])infer([[:space:]]|$)'; then
 else
   curl -fsS http://127.0.0.1:11434/api/generate -H 'Content-Type: application/json' -d '{"model":"qwen3:0.6b","prompt":"Reply with exactly: GRASSHOPPER_OCI_MODEL_OK","stream":false}' | grep -q 'GRASSHOPPER_OCI_MODEL_OK' || die "Local Ollama inference smoke test failed"
 fi
+log "Installing verified local backup helper..."
+BACKUP_DIR="$HOME/Backups/openclaw"
+mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
+curl -fsSL --proto '=https' --tlsv1.2 \
+  "https://raw.githubusercontent.com/onnxscibroccoli/Grasshopper/feat/oci-openclaw-backup-recovery/scripts/oci-openclaw-backup.sh" \
+  -o "$HOME/.local/bin/grasshopper-openclaw-backup"
+chmod 700 "$HOME/.local/bin/grasshopper-openclaw-backup"
+"$HOME/.local/bin/grasshopper-openclaw-backup"
+
+if [[ "$GATEWAY_SUPERVISOR" == "systemd-user" ]]; then
+  mkdir -p "$HOME/.config/systemd/user"
+  cat >"$HOME/.config/systemd/user/grasshopper-openclaw-backup.service" <<'UNIT'
+[Unit]
+Description=Grasshopper OpenClaw verified backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/grasshopper-openclaw-backup
+UNIT
+  cat >"$HOME/.config/systemd/user/grasshopper-openclaw-backup.timer" <<'UNIT'
+[Unit]
+Description=Daily Grasshopper OpenClaw verified backup
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=24h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+  systemctl --user daemon-reload
+  systemctl --user enable --now grasshopper-openclaw-backup.timer
+fi
+
 log "Final verification"
 printf 'OPENCLAW_VERSION=%s\n' "$OPENCLAW_VERSION"
 printf 'OLLAMA='; podman exec "$OLLAMA_CONTAINER" ollama --version

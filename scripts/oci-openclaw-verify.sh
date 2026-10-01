@@ -155,6 +155,32 @@ else
   fail "ollama.generate.smoke"
 fi
 
+if [[ -x "$HOME/.local/bin/grasshopper-openclaw-backup" ]]; then
+  pass "openclaw.backup.helper"
+else
+  fail "openclaw.backup.helper"
+fi
+
+if [[ -S "${XDG_RUNTIME_DIR}/bus" ]] && systemctl --user is-enabled grasshopper-openclaw-backup.timer >/dev/null 2>&1; then
+  pass "openclaw.backup.timer.enabled"
+else
+  fail "openclaw.backup.timer.enabled"
+fi
+
+if [[ -S "${XDG_RUNTIME_DIR}/bus" ]] && systemctl --user is-active grasshopper-openclaw-backup.timer >/dev/null 2>&1; then
+  pass "openclaw.backup.timer.active"
+else
+  fail "openclaw.backup.timer.active"
+fi
+
+BACKUP_DIR="${GRASSHOPPER_OPENCLAW_BACKUP_DIR:-$HOME/Backups/openclaw}"
+LATEST_BACKUP="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name '*-openclaw-backup.tar.gz' -mmin -1560 -print -quit 2>/dev/null || true)"
+if [[ -n "$LATEST_BACKUP" ]]; then
+  pass "openclaw.backup.recent"
+else
+  fail "openclaw.backup.recent"
+fi
+
 if command -v openclaw >/dev/null 2>&1; then
   PROVIDER_URL="$(openclaw_n config get models.providers.ollama.baseUrl 2>/dev/null | tr -d '[:space:]' || true)"
   if printf '%s' "$PROVIDER_URL" | grep -Fq "127.0.0.1:${OLLAMA_PORT}"; then
