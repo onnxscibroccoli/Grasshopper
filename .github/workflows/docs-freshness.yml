@@ -1,0 +1,41 @@
+name: Documentation freshness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "docs/**"
+      - "scripts/verify-doc-freshness.mjs"
+      - ".github/workflows/docs-freshness.yml"
+  push:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "docs/**"
+      - "scripts/verify-doc-freshness.mjs"
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    name: Verify current documentation freshness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Verify README snapshot freshness
+        run: node scripts/verify-doc-freshness.mjs
+      - name: Verify documentation links and required agent contract
+        run: |
+          test -f AGENTS.md
+          test -f docs/AGENTIC_GITHUB_AUTOMATION.md
+          grep -q "DEV_SANDBOX" docs/AGENTIC_GITHUB_AUTOMATION.md
+          grep -q "OpenClaw" docs/AGENTIC_GITHUB_AUTOMATION.md
