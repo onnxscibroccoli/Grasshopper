@@ -54,6 +54,8 @@ else
 fi
 
 printf 'PHASE=%s\n' "${PHASE:-UNSET}"
+[[ "$BACKUP_STATUS" == "PASS" ]] && pass "backup.status" || fail "backup.status"
+[[ "$RESTORE_STATUS" == "PASS" ]] && pass "restore.status" || fail "restore.status"
 printf 'FAILED=%s\n' "$FAILED"
 [[ "$FAILED" -eq 0 ]] || exit 1
 printf 'SECURITY_PHASE_VERIFY=PASS\n'
