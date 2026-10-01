@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,hashlib,json,os,re,sqlite3,subprocess,urllib.request,urllib.parse
+import argparse,contextlib,fcntl,hashlib,json,os,re,sqlite3,subprocess,urllib.request,urllib.parse
 from pathlib import Path
 from datetime import datetime,timezone
 
@@ -135,13 +135,29 @@ def git_sync(repo,ref="HEAD"):
     (ROOT/"manifests"/f'{repo.replace("/","__")}__{sha[:12]}.json').write_text(json.dumps(m,indent=2))
     print(json.dumps(m,indent=2))
 
+@contextlib.contextmanager
+def repo_lock(repo):
+    lock_dir=ROOT/"locks"; lock_dir.mkdir(parents=True,exist_ok=True)
+    safe=re.sub(r"[^A-Za-z0-9_.-]+","_",repo)
+    path=lock_dir/(safe+".lock")
+    with path.open("a+") as fh:
+        try:
+            fcntl.flock(fh,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError(f"repository ingest already running: {repo}")
+        try:
+            yield
+        finally:
+            fcntl.flock(fh,fcntl.LOCK_UN)
+
 def sync(repo,ref="HEAD"):
-    try:
-        return github_sync(repo,ref)
-    except Exception as api_error:
-        if os.environ.get("OMNIKALI_GITHUB_API_ONLY")=="1": raise
-        print(json.dumps({"source":"github-api","status":"FALLBACK","error":str(api_error)}))
-        return git_sync(repo,ref)
+    with repo_lock(repo):
+        try:
+            return github_sync(repo,ref)
+        except Exception as api_error:
+            if os.environ.get("OMNIKALI_GITHUB_API_ONLY")=="1": raise
+            print(json.dumps({"source":"github-api","status":"FALLBACK","error":str(api_error)}))
+            return git_sync(repo,ref)
 
 def search(q,limit=30):
     c=db(); rows=c.execute("""SELECT repo,path,snippet(content_fts,3,'>>>','<<<','…',24)
