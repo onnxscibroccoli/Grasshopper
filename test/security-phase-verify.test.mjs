@@ -70,10 +70,15 @@ test("public Gateway override fails in every phase", () => {
   }).status, 0);
 });
 
+// Regression: Reference tests run 36794791818 failed because the verifier
+// accepted DEV_SANDBOX when RESTORE_STATUS=NOT_PROVEN (exit 0).
+// Keep this assertion coupled to FAIL restore.status output.
 test("backup or restore evidence missing fails", () => {
-  assert.notEqual(run({
+  const result = run({
     GRASSHOPPER_SECURITY_PHASE: "DEV_SANDBOX",
     GRASSHOPPER_BACKUP_STATUS: "PASS",
     GRASSHOPPER_RESTORE_STATUS: "NOT_PROVEN",
-  }).status, 0);
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stdout + result.stderr, /FAIL restore\.status/);
 });
