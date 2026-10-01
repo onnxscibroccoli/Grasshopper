@@ -3,11 +3,6 @@ name: Documentation freshness
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "README.md"
-      - "docs/**"
-      - "scripts/verify-doc-freshness.mjs"
-      - ".github/workflows/docs-freshness.yml"
   push:
     branches: [main]
     paths:
