@@ -32,6 +32,12 @@ function run(extra = {}) {
   return result;
 }
 
+test("bootstrap declares DEV_SANDBOX", () => {
+  const fs = await import("node:fs");
+  const bootstrap = fs.readFileSync(new URL("../scripts/oci-openclaw-bootstrap.sh", import.meta.url), "utf8");
+  assert.match(bootstrap, /GRASSHOPPER_SECURITY_PHASE=DEV_SANDBOX/);
+});
+
 test("missing phase fails", () => {
   assert.notEqual(run().status, 0);
 });
