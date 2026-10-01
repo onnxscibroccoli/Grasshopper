@@ -24,24 +24,21 @@ esac
 if [[ "$PHASE" == "DEV_SANDBOX" ]]; then
   if [[ "$PERMISSIVE" == "1" ]]; then
     [[ -n "$SANDBOX_ID" ]] && pass "dev.sandbox.id" || fail "dev.sandbox.id"
-    [[ "$BROAD_SCOPES" == "1" || "$PUBLIC_GATEWAY" == "1" ]] && note "DEV_SANDBOX permissive controls are enabled by explicit contract" || note "DEV_SANDBOX is running without broad/public controls"
+    [[ "$BROAD_SCOPES" == "1" ]] && note "DEV_SANDBOX broad operator scopes are enabled by explicit contract" || note "DEV_SANDBOX broad operator scopes are disabled"
   else
     note "DEV_SANDBOX permissive mode is disabled"
   fi
 else
   [[ "$PERMISSIVE" != "1" ]] && pass "phase.no_permissive_mode" || fail "phase.no_permissive_mode"
   [[ "$BROAD_SCOPES" != "1" ]] && pass "phase.no_broad_operator_scopes" || fail "phase.no_broad_operator_scopes"
-  [[ "$PUBLIC_GATEWAY" != "1" ]] && pass "phase.no_public_gateway_override" || fail "phase.no_public_gateway_override"
 fi
+
+[[ "$PUBLIC_GATEWAY" != "1" ]] && pass "gateway.no_public_override" || fail "gateway.no_public_override"
 
 if command -v ss >/dev/null 2>&1; then
   LISTEN="$(ss -lnt 2>/dev/null || true)"
   if printf '%s\n' "$LISTEN" | grep -Eq "(0\\.0\\.0\\.0|\\*):${GATEWAY_PORT}\\b"; then
-    if [[ "$PHASE" == "DEV_SANDBOX" && "$PUBLIC_GATEWAY" == "1" ]]; then
-      note "Gateway has a non-loopback listener under explicit DEV_SANDBOX policy"
-    else
-      fail "gateway.not_public"
-    fi
+    fail "gateway.not_public"
   else
     pass "gateway.not_public"
   fi
