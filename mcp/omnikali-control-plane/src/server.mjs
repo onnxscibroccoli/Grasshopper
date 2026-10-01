@@ -6,6 +6,8 @@ import { startHttpMcp } from './transport.mjs';
 import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { snapshot as uiSnapshot, matchNodes as uiMatchNodes, act as uiAct } from './android-ui.mjs';
+import { sourceManifest, prepareSource, prepareBatch } from './morphe.mjs';
+import { catalog as appCatalog, optimizationPlan } from './app-intel.mjs';
 
 const ROOT = process.env.OMNIKALI_ROOT || process.cwd();
 const BROCCOLI_ROOT = process.env.BROCCOLI_ROOT || ROOT;
@@ -45,6 +47,11 @@ const factory = () => {
   server.registerTool('android.ui.text', { title: 'Enter Android UI text', description: 'Enter text into a previously identified focused UI element. Requires confirmation.', inputSchema: z.object({ node: z.object({ bounds: z.object({ cx:z.number(), cy:z.number() }) }), text: z.string(), confirm: z.boolean().default(false) }) }, guarded('android.ui.text', async ({ node, text }) => uiAct({ broccoliRoot: BROCCOLI_ROOT, action:'set_text', node, text })));
   server.registerTool('android.ui.back', { title: 'Android back', description: 'Navigate back using the Android UI. Requires confirmation.', inputSchema: z.object({ confirm: z.boolean().default(false) }) }, guarded('android.ui.back', async () => run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify('input keyevent 4')}`, BROCCOLI_ROOT)));
   server.registerTool('android.screenshot', { title: 'Android screenshot', description: 'Capture a screenshot on the Android target to shared storage.', inputSchema: z.object({ path: z.string().default('/storage/emulated/0/Download/OmniKali/mcp-screen.png') }) }, guarded('android.screenshot', async ({ path }) => run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(`screencap -p ${path}`)}`, BROCCOLI_ROOT)));
+  server.registerTool('app.catalog', { title: 'Catalog installed apps', description: 'Inventory third-party Android packages through the known-good Rish transport.', inputSchema: z.object({}) }, guarded('app.catalog', async () => appCatalog({ broccoliRoot: BROCCOLI_ROOT })));
+  server.registerTool('app.optimization.plan', { title: 'Plan app optimization', description: 'Measure selected installed APKs and return a device-specific replacement/optimization plan. No changes are made.', inputSchema: z.object({ packages: z.array(z.string()).max(30).optional() }) }, guarded('app.optimization.plan', async ({ packages }) => optimizationPlan({ broccoliRoot: BROCCOLI_ROOT, packages })));
+  server.registerTool('morphe.sources.manifest', { title: 'Morphe verified source manifest', description: 'Return the curated Morphe source registry with explicit evidence labels.', inputSchema: z.object({}) }, guarded('morphe.sources.manifest', async () => sourceManifest()));
+  server.registerTool('morphe.source.prepare', { title: 'Prepare Morphe source', description: 'Open a verified Morphe patch source deep link on Android. Morphe still requires its own confirmation before adding the source.', inputSchema: z.object({ sourceId: z.string(), confirm: z.boolean().default(false) }) }, guarded('morphe.source.prepare', async ({ sourceId }) => prepareSource({ broccoliRoot: BROCCOLI_ROOT, sourceId })));
+  server.registerTool('morphe.batch.prepare', { title: 'Prepare Morphe batch', description: 'Open Morphe batch patch preflight for selected Android packages. Morphe still requires explicit confirmation/start.', inputSchema: z.object({ packages: z.array(z.string()).min(1).max(20), confirm: z.boolean().default(false) }) }, guarded('morphe.batch.prepare', async ({ packages }) => prepareBatch({ broccoliRoot: BROCCOLI_ROOT, packages })));
   server.registerTool('app.inspect', { title: 'Inspect APK', description: 'Run the existing Broccoli application inspector against a local APK path.', inputSchema: z.object({ apkPath: z.string() }) }, guarded('app.inspect', async ({ apkPath }) => run(`python3 tools/apk_inspector.py ${JSON.stringify(apkPath)}`, BROCCOLI_ROOT)));
   server.registerTool('app.launch', { title: 'Launch Android app', description: 'Launch an Android package/activity through Rish. Requires confirmation.', inputSchema: z.object({ packageName: z.string().regex(/^[A-Za-z0-9_.]+$/), activity: z.string().regex(/^[A-Za-z0-9_.$]+$/).optional(), confirm: z.boolean().default(false) }) }, guarded('app.launch', async ({ packageName, activity }) => run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(activity ? `am start -n ${packageName}/${activity}` : `monkey -p ${packageName} 1`)}`, BROCCOLI_ROOT)));
   server.registerTool('app.stop', { title: 'Stop Android app', description: 'Stop an Android package through Rish. Requires confirmation.', inputSchema: z.object({ packageName: z.string().regex(/^[A-Za-z0-9_.]+$/), confirm: z.boolean().default(false) }) }, guarded('app.stop', async ({ packageName }) => run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(`am force-stop ${packageName}`)}`, BROCCOLI_ROOT)));
@@ -56,4 +63,4 @@ const factory = () => {
 };
 
 startHttpMcp(factory, { port: Number(process.env.PORT || 8787), host: process.env.HOST || '127.0.0.1', token: TOKEN });
-console.log(JSON.stringify({ service: 'omnikali-control-plane', transport: 'streamable-http', endpoint: '/mcp', toolCount: 24 }));
+console.log(JSON.stringify({ service: 'omnikali-control-plane', transport: 'streamable-http', endpoint: '/mcp', toolCount: 29 }));

@@ -1,6 +1,6 @@
-const SAFE = new Set(['device.identity','device.list','fs.read','fs.list','fs.search','process.list','android.rish','android.screenshot','android.ui.snapshot','android.ui.find','app.inspect','model.status','model.ask','human.status']);
-const MUTATING = new Set(['fs.write','fs.move','process.exec','process.kill','android.input','android.ui.tap','android.ui.text','android.ui.back','app.launch','app.stop']);
-const SENSITIVE = new Set(['fs.write','fs.move','process.exec','process.kill','android.input','android.ui.tap','android.ui.text','android.ui.back','app.launch','app.stop']);
+const SAFE = new Set(['device.identity','device.list','fs.read','fs.list','fs.search','process.list','android.rish','android.screenshot','android.ui.snapshot','android.ui.find','app.inspect','app.catalog','app.optimization.plan','morphe.sources.manifest','model.status','model.ask','human.status']);
+const MUTATING = new Set(['fs.write','fs.move','process.exec','process.kill','android.input','android.ui.tap','android.ui.text','android.ui.back','app.launch','app.stop','morphe.source.prepare','morphe.batch.prepare']);
+const SENSITIVE = new Set(['fs.write','fs.move','process.exec','process.kill','android.input','android.ui.tap','android.ui.text','android.ui.back','app.launch','app.stop','morphe.source.prepare','morphe.batch.prepare']);
 
 export function authorize(tool, { token, requiredToken, confirmation = false } = {}) {
   if (!requiredToken || token !== requiredToken) throw new Error('UNAUTHORIZED');
