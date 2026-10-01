@@ -82,3 +82,18 @@ When the pull request is non-draft and every gate is green, the guarded merge wo
 The recovery evidence currently used by the gate is the verified OpenClaw backup plus disposable restore drill recorded in the dated OCI DEV_SANDBOX evidence. This is recovery readiness evidence, not a claim of automatic production rollback.
 
 If post-merge validation fails, the response must use the documented revert/restore path and preserve the failure evidence. Do not silently continue after a failed production-contract validation.
+
+## Broccoli degradation guard
+
+Read `docs/DEGRADATION_LESSONS.md` before adding a transport, a script, or a status claim.
+
+Do not repeat these:
+
+- a doc whose body is "see chat"
+- a milestone called shipped while the file is a placeholder
+- a new root script per incident
+- a second copy of a known-good executor
+- RC=0 with no artifact treated as PASS
+- editing `rish_run.sh` because a new caller failed
+
+Run `node scripts/verify-no-broccoli-degradation.mjs` after structural changes. `npm test` includes `test/degradation-guard.test.mjs`.
