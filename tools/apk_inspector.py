@@ -81,8 +81,8 @@ def apktool_layouts(apk):
                     tree = ET.parse(path)
                     for node in tree.iter():
                         for key, value in node.attrib.items():
-                            if key.endswith("}id") and value.startswith("@+id/"):
-                                ids.add(value[5:])
+                            if key.endswith("}id") and value.startswith("@") and "/id/" in value:
+                                ids.add(value.split("/id/", 1)[1])
                             if key.endswith("}text") and value and not value.startswith("@"):
                                 texts.add(value)
                 except (ET.ParseError, OSError):
