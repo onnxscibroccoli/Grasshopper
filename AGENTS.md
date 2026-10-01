@@ -85,7 +85,7 @@ If post-merge validation fails, the response must use the documented revert/rest
 
 ## Broccoli degradation guard
 
-Read `docs/DEGRADATION_LESSONS.md` before adding a transport, a script, or a status claim.
+Read `docs/DEGRADATION_LESSONS.md` and `docs/PORTABILITY_AND_EXECUTION_BOUNDARIES.md` before adding a transport, a script, or a status claim.
 
 Do not repeat these:
 
@@ -95,5 +95,7 @@ Do not repeat these:
 - a second copy of a known-good executor
 - RC=0 with no artifact treated as PASS
 - editing `rish_run.sh` because a new caller failed
+- assuming the caller cwd or Bash exists inside a remote Android shell
+- treating a transport identity proof as end-to-end RDC or desktop proof
 
 Run `node scripts/verify-no-broccoli-degradation.mjs` after structural changes. `npm test` includes `test/degradation-guard.test.mjs`.
