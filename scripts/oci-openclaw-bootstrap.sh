@@ -121,7 +121,7 @@ BACKUP_DIR="$HOME/Backups/openclaw"
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
 curl -fsSL --proto '=https' --tlsv1.2 \
-  "https://raw.githubusercontent.com/onnxscibroccoli/Grasshopper/feat/oci-openclaw-backup-recovery/scripts/oci-openclaw-backup.sh" \
+  "https://raw.githubusercontent.com/onnxscibroccoli/Grasshopper/main/scripts/oci-openclaw-backup.sh" \
   -o "$HOME/.local/bin/grasshopper-openclaw-backup"
 chmod 700 "$HOME/.local/bin/grasshopper-openclaw-backup"
 "$HOME/.local/bin/grasshopper-openclaw-backup"

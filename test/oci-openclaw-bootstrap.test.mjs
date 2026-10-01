@@ -93,6 +93,8 @@ test("OCI OpenClaw backup helper is verified and retention-bounded", () => {
 
 test("OCI OpenClaw bootstrap installs and schedules the verified backup", () => {
   assert.match(bootstrap, /oci-openclaw-backup\.sh/);
+  assert.match(bootstrap, /Grasshopper\/main\/scripts\/oci-openclaw-backup\.sh/);
+  assert.doesNotMatch(bootstrap, /feat\/oci-openclaw-backup-recovery/);
   assert.match(bootstrap, /grasshopper-openclaw-backup\.service/);
   assert.match(bootstrap, /grasshopper-openclaw-backup\.timer/);
   assert.match(bootstrap, /OnUnitActiveSec=24h/);
