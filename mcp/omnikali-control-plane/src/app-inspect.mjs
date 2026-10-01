@@ -4,10 +4,10 @@ const PACKAGE_RE = /^[A-Za-z0-9_.]+$/;
 
 function run(command, cwd, timeoutMs = 30000) {
   return new Promise((resolve, reject) => {
-    const p = spawn('/bin/sh', ['-lc', command], { cwd });
+    const p = spawn('/bin/sh', ['-lc', command], { cwd, detached:true });
     let stdout = ''; let stderr = '';
     let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; p.kill('SIGKILL'); }, timeoutMs);
+    const timer = setTimeout(() => { timedOut = true; try { process.kill(-p.pid, 'SIGKILL'); } catch { p.kill('SIGKILL'); } }, timeoutMs);
     p.stdout.on('data', d => stdout += d);
     p.stderr.on('data', d => stderr += d);
     p.on('error', reject);
