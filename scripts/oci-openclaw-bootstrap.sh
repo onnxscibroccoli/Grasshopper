@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+# Experimental OCI workstation bootstrap is a DEV_SANDBOX only.
+# Regression: Reference tests run 36795647692 failed because
+# test/security-phase-verify.test.mjs requires this exact token.
+export GRASSHOPPER_SECURITY_PHASE=DEV_SANDBOX
 log(){ printf '\n[grasshopper-openclaw] %s\n' "$*"; }
 die(){ printf '\n[grasshopper-openclaw] ERROR: %s\n' "$*" >&2; exit 1; }
 command -v curl >/dev/null 2>&1 || die "curl is required"
