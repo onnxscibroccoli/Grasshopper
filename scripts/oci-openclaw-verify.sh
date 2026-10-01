@@ -38,6 +38,9 @@ fi
 
 log "OpenClaw OCI verify starting (read-only)"
 
+USER_UID="$(id -u)"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$USER_UID}"
+
 if command -v openclaw >/dev/null 2>&1; then
   OPENCLAW_VERSION="$(openclaw_n --version 2>/dev/null || true)"
   if [[ -n "$OPENCLAW_VERSION" ]]; then
@@ -67,6 +70,24 @@ if command -v openclaw >/dev/null 2>&1; then
   fi
 else
   fail "openclaw.gateway.mode.local"
+fi
+
+if command -v loginctl >/dev/null 2>&1 && [[ "$(loginctl show-user "$USER_UID" -p Linger --value 2>/dev/null || true)" == "yes" ]]; then
+  pass "openclaw.user.linger"
+else
+  fail "openclaw.user.linger"
+fi
+
+if [[ -S "${XDG_RUNTIME_DIR}/bus" ]] && systemctl --user is-enabled openclaw-gateway.service >/dev/null 2>&1; then
+  pass "openclaw.gateway.systemd.enabled"
+else
+  fail "openclaw.gateway.systemd.enabled"
+fi
+
+if [[ -S "${XDG_RUNTIME_DIR}/bus" ]] && systemctl --user is-active openclaw-gateway.service >/dev/null 2>&1; then
+  pass "openclaw.gateway.systemd.active"
+else
+  fail "openclaw.gateway.systemd.active"
 fi
 
 if curl -fsS "http://127.0.0.1:${GATEWAY_PORT}/" >/dev/null 2>&1; then
