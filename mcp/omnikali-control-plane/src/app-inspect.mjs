@@ -58,7 +58,12 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
   if (inspect.exitCode !== 0) throw new Error(`APK_INSPECTION_FAILED: ${inspect.timedOut ? 'timeout' : (inspect.stderr || inspect.stdout)}`);
   let staticInspection;
   try { staticInspection = JSON.parse(inspect.stdout); } catch { throw new Error('APK_INSPECTION_JSON_INVALID'); }
-  const live = snapshot ? await snapshot() : null;
+  let live = null;
+  let liveUiStatus = snapshot ? 'NOT_PROVEN' : 'NOT_REQUESTED';
+  if (snapshot) {
+    try { live = await snapshot(); liveUiStatus = 'PASS'; }
+    catch (error) { liveUiStatus = `NOT_PROVEN:${error.message}`; }
+  }
   return {
     schema:'omnikali.application.inspect/v1',
     packageName,
@@ -66,7 +71,8 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
     localApkPath:localPath,
     stagedApkPath:cachedApk,
     staticInspection,
-    liveUi:live,
+    liveUi,
+    liveUiStatus,
     layout: {
       staticLayoutCandidates: staticInspection.layout_candidates || [],
       liveNodeCount: live?.nodes?.length || 0,
