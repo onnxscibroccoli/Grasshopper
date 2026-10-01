@@ -1,41 +1,51 @@
-# Chat archive status — 2026-10-01 (all-go execution)
+# Chat archive status - 2026-10-01
 
-**GRAPH TAG:** `BROCCOLI-CHAT-KG-2026-10-01`
+GRAPH TAG: BROCCOLI-CHAT-KG-2026-10-01
 
-## Completed this pass
+## Recovered historical evidence
+
+The earlier broccoli-core main tree at e8eff12 contains a real archive implementation in tools/broccoli_conv_archive.py. It used compressed JSONL conversation artifacts plus SQLite conv/lookup tables, SHA-256 deduplication, Grok inbox ingestion, and /sdcard/Broccoli/pull bundle ingestion.
+
+The earlier runtime also contains provider-neutral Account(account_id, provider, availability, cooldown) scheduling in runtime/account_pool.py and a staged chat harvest pipeline in modules/chat_harvest.py, chat_reader.py, chat_store.py.
+
+This changes the evidence state from NOT_RECOVERED to RECOVERED_HISTORICAL for the existence and broad shape of the older archive. It does not prove that provider-complete export ingestion was ever finished.
+
+## Current implementation
 
 | Gate | Status | Evidence |
 |------|--------|----------|
-| Normalized schema | FROZEN | `schemas/chat-archive/*.schema.json` |
-| Page journal (atomic commit + checkpoint) | IMPLEMENTED | `tools/broccoli-archive/page-journal.mjs` |
-| Importer stub | IMPLEMENTED | `tools/broccoli-archive/importer-stub.mjs` |
-| Search stub with provenance | IMPLEMENTED | `tools/broccoli-archive/search-stub.mjs` |
-| Crash-safe design | DOCUMENTED + CODE | page journal + resumeFrom |
-| Protected-data field | IN SCHEMA | `protected` + `quarantine_ref` |
-| GCP bootstrap | PRESENT | `scripts/gcp-bootstrap.sh` + doc |
+| Normalized account/conversation/message schema | FROZEN | schemas/chat-archive/*.schema.json |
+| Historical archive recovery | PROVEN_HISTORICAL | broccoli-core tools/broccoli_conv_archive.py |
+| Provider-neutral account model | PROVEN_HISTORICAL | broccoli-core runtime/account_pool.py |
+| Crash-safe page journal | IMPLEMENTED | tools/broccoli-archive/page-journal.mjs |
+| Durable STARTED/COMMITTED journal | IMPLEMENTED | page-journal journal.jsonl |
+| Historical/generic import adapter | IMPLEMENTED | tools/broccoli-archive/historical-import.mjs |
+| SQLite + FTS derived index | IMPLEMENTED | tools/broccoli-archive/sqlite-index.py |
+| Protected-data scanner/quarantine | IMPLEMENTED | sqlite-index.py, searchable text excluded |
+| Provenance | IMPLEMENTED | provider/account/conversation/message/page/source hash |
+| Smoke test | IMPLEMENTED | tools/broccoli-archive/smoke-test.mjs |
+| Provider-complete adapters | NOT_PROVEN | ChatGPT mapping supported; Grok historical text supported; Gemini/Claude native exports not yet verified |
+| Forced-Termux-death recovery | NOT_PROVEN | needs live android-phone-a146u |
+| MCP query tool | PLANNED | next integration slice |
+| Knowledge-graph edge extraction | PLANNED | derived after searchable archive acceptance |
 
-## Still open (next atomic slices)
+## Recovery model
 
-| Gate | Status |
-|------|--------|
-| Real provider adapters | NOT_STARTED (waiting on sample export or AdGuard path) |
-| SQLite + FTS | NOT_STARTED |
-| Forced-Termux-death recovery test | NOT_PROVEN (needs live android-phone-a146u) |
-| Protected-data scanner | DESIGN |
-| MCP query tool | PLANNED |
-| Knowledge-graph edge extraction | PLANNED (after searchable archive) |
-| Live GCP instance | NOT_PROVEN (needs project ID + human confirm) |
+Raw committed pages remain authoritative. SQLite/FTS can be deleted and rebuilt. A page is written to a temporary file, atomically renamed, then the checkpoint is atomically updated. journal.jsonl records STARTED and COMMITTED states.
 
-## How to resume
+Android durable root:
+/sdcard/OmniKali/broccoli/archive-journal
 
-```bash
-node tools/broccoli-archive/page-journal.mjs          # shows next page
-node tools/broccoli-archive/importer-stub.mjs         # smoke import
-node tools/broccoli-archive/search-stub.mjs "Rish"    # provenance search
-```
+Historical compatibility input:
+/sdcard/Broccoli/pull
 
-On Android set `BROCCOLI_ARCHIVE_ROOT=/sdcard/OmniKali/broccoli/archive-journal`.
+The SD-card/shared-storage path is a durable checkpoint surface, not RAM. Page size must be benchmarked on the live phone.
 
-## Dual-use note
+## Next gates
 
-The same page-journal + checkpoint shape can later serve human-gate durable state without merging the two domains prematurely.
+1. Run the smoke test on a clean checkout.
+2. Add a benign forced-Termux-kill test around a multi-page import.
+3. Benchmark shared-storage page sizes on android-phone-a146u.
+4. Add MCP query/search with mandatory provenance.
+5. Add graph ingestion from indexed records.
+6. Add provider adapters one at a time with export fixtures and explicit evidence.
