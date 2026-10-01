@@ -1,8 +1,5 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 import path from "node:path";
-
-const execFileAsync = promisify(execFile);
 
 export const ANDROID_ACTIONS = Object.freeze([
   "device.identity",
@@ -26,30 +23,67 @@ export async function executeAndroidAction(action, {
   broccoliRoot = process.env.BROCCOLI_ROOT || path.join(process.env.HOME || ".", "broccoli-core"),
   python = process.env.BROCCOLI_PYTHON || "python3",
   timeoutMs = 30_000,
-  exec = execFileAsync,
+  spawnProcess = spawn,
 } = {}) {
   validateAction(action);
 
   const cli = path.join(broccoliRoot, "tools", "android_action_cli.py");
   const input = JSON.stringify(action);
-  const { stdout, stderr } = await exec(
-    python,
-    [cli],
-    {
-      input,
-      timeout: timeoutMs,
-      maxBuffer: 2 * 1024 * 1024,
-    },
-  );
 
-  const result = JSON.parse(stdout);
-  if (!result || typeof result !== "object") {
-    throw new Error("Android action CLI returned invalid JSON");
-  }
+  return await new Promise((resolve, reject) => {
+    const child = spawnProcess(python, [cli], {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
 
-  return {
-    ...result,
-    transport: "Grasshopper->broccoli-core CLI->Rish->Shizuku->Android-shell",
-    stderr: [result.stderr, stderr].filter(Boolean).join(""),
-  };
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      fn(value);
+    };
+
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      finish(reject, new Error(`Android action timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    child.stdout?.on("data", (chunk) => { stdout += chunk; });
+    child.stderr?.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      finish(reject, error);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      let result;
+      try {
+        result = JSON.parse(stdout);
+      } catch (error) {
+        finish(reject, new Error(`Android action CLI returned invalid JSON: ${error.message}; stderr=${stderr}`));
+        return;
+      }
+
+      const evidence = {
+        ...result,
+        returncode: result.returncode ?? code,
+        transport: "Grasshopper->broccoli-core CLI->Rish->Shizuku->Android-shell",
+        stderr: [result.stderr, stderr].filter(Boolean).join(""),
+      };
+
+      if (code !== 0 && evidence.ok !== true) {
+        finish(reject, Object.assign(
+          new Error(evidence.message || `Android action failed with exit code ${code}`),
+          { evidence },
+        ));
+        return;
+      }
+
+      finish(resolve, evidence);
+    });
+
+    child.stdin?.end(input);
+  });
 }
