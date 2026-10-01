@@ -107,9 +107,11 @@ grep -q 'uid=2000(shell)' "$REPORT/action-proof.json" ||
 pass "bounded Android action contract"
 
 log "checking self-healing runtime components"
-[ -x "$ROOT/scripts/termux-broccoli-supervisor.sh" ] &&
+[ -r "$ROOT/scripts/termux-broccoli-supervisor.sh" ] &&
   pass "Grasshopper supervisor present" ||
   warn "supervisor script not present in checked-out revision"
+[ -x "$ROOT/scripts/termux-broccoli-supervisor.sh" ] ||
+  warn "supervisor script is present but not executable in this checkout"
 
 [ -x "$HOME/.termux/boot/broccoli-supervisor" ] &&
   pass "Termux:Boot launcher present" ||
