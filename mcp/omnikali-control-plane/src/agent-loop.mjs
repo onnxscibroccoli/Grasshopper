@@ -94,7 +94,13 @@ export async function runAgentLoop({ goal, maxSteps = 8, snapshot, act, askModel
     if (planned.status === 'HUMAN_REQUIRED') return { status:'HUMAN_REQUIRED', reason:planned.reason || 'planner_requested_human', checkpoint:{step,goal,nodes:before.nodes}, trace };
     if (planned.status === 'DONE') return { status:'DONE', goal, trace };
     let node = null;
-    if (planned.action.type !== 'back') node = chooseNode(before.nodes, planned.action.selector);
+    try {
+      if (planned.action.type !== 'back') node = chooseNode(before.nodes, planned.action.selector);
+    } catch (error) {
+      trace[trace.length - 1].decisionError = error.message;
+      if (error.message === 'SELECTOR_NOT_FOUND' || error.message === 'SELECTOR_AMBIGUOUS') continue;
+      throw error;
+    }
     if (planned.action.type === 'text' && !/EditText|TextInput/i.test(node.className || '')) throw new Error('TEXT_TARGET_NOT_EDITABLE');
     const action = planned.action.type === 'back'
       ? { type:'back' }
@@ -107,7 +113,10 @@ export async function runAgentLoop({ goal, maxSteps = 8, snapshot, act, askModel
     trace[trace.length - 1].after = after;
     trace[trace.length - 1].verification = verification;
     if (humanAfter.length) return { status:'HUMAN_REQUIRED', reason:'security_or_authorization_boundary', checkpoint:{step,goal,hits:humanAfter,nodes:after.nodes}, trace };
-    if (!verification.verified) return { status:'REPLAN_REQUIRED', reason:verification.reason, trace };
+    if (!verification.verified) {
+      trace[trace.length - 1].replan = verification.reason;
+      continue;
+    }
   }
   return { status:'STEP_LIMIT_REACHED', goal, trace };
 }
