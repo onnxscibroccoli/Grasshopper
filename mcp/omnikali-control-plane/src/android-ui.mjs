@@ -5,10 +5,10 @@ import { join } from 'node:path';
 
 export function run(command, cwd, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
-    const p = spawn('/bin/sh', ['-lc', command], { cwd });
+    const p = spawn('/bin/sh', ['-lc', command], { cwd, detached:true });
     let stdout = ''; let stderr = '';
     let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; p.kill('SIGKILL'); }, timeoutMs);
+    const timer = setTimeout(() => { timedOut = true; try { process.kill(-p.pid, 'SIGKILL'); } catch { p.kill('SIGKILL'); } }, timeoutMs);
     p.stdout.on('data', d => stdout += d); p.stderr.on('data', d => stderr += d);
     p.on('error', reject); p.on('close', code => { clearTimeout(timer); if (timedOut) resolve({ exitCode:124, stdout, stderr, timedOut:true }); else resolve({ exitCode: code, stdout, stderr, timedOut:false }); });
   });
