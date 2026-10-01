@@ -69,7 +69,7 @@ log "capturing repository state"
 
 log "checking canonical Rish"
 RISH="$BROCCOLI_ROOT/lib/rish_run.sh"
-[ -x "$RISH" ] || fail "missing executable $RISH"
+[ -r "$RISH" ] || fail "missing readable $RISH"
 
 if [ -n "${BOOTCLASSPATH:-}" ]; then
   RISH_MODE="native-termux-environment"
