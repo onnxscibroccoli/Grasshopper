@@ -8,7 +8,7 @@ if (!Number.isFinite(maxAgeHours) || maxAgeHours <= 0) {
 }
 
 const readme = fs.readFileSync("README.md", "utf8");
-const match = readme.match(/(?:\*\*)?(?:Documentation snapshot|Documentation status)(?:\*\*)?:\s*(\d{4}-\d{2}-\d{2})/i);
+const match = readme.match(/(?:Documentation snapshot|Documentation status)[^0-9]*(\d{4}-\d{2}-\d{2})/i);
 
 if (!match) {
   console.error("FAIL docs.readme.snapshot_missing");
