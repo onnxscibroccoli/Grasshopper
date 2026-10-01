@@ -15,6 +15,7 @@ const required = [
   ["docs/BROCCOLI_KNOWLEDGE_GRAPH.md", "BROCCOLI-KG-2026-10-01"],
   ["docs/BROCCOLI_IMPLEMENTATION_PHILOSOPHY.md", "RISH_PRESERVE_ENV=0"],
   ["docs/DEGRADATION_LESSONS.md", "NOT_PROVEN"],
+  ["docs/PORTABILITY_AND_EXECUTION_BOUNDARIES.md", "host and target shells are separate runtimes"],
 ];
 
 export function audit(root) {
