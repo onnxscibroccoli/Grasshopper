@@ -31,3 +31,8 @@ Older Broccoli was helpful because the loop lived in the repo: intent, one schem
 ## What this does not close
 
 The RDC -> Termux artifact gate stays NOT_PROVEN until `/storage/emulated/0/Download/RDC_TERMUX_ANCHOR.txt` is fetched back with `RDC_TERMUX_ANCHOR_OK`, `uid=2000(shell)`, and `sdk=35`. This document does not promote that node.
+
+
+## New boundary lesson: working transport, wrong caller
+
+On 2026-10-01 the Rish transport was proven from `~/broccoli-core` with `RISH_PRESERVE_ENV=0`. The identical relative-path invocation from `~` failed because `./lib/rish_run.sh` was not addressable there. A subsequent Rish payload failed because Android's target shell had no `bash`. These are caller/target-runtime failures, not evidence that the known-good transport is broken. See `docs/PORTABILITY_AND_EXECUTION_BOUNDARIES.md`.
