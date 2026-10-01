@@ -2,7 +2,7 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-09-28 23:12 EDT
+**Documentation snapshot:** 2026-10-01 00:30 UTC
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
@@ -62,6 +62,17 @@ Important documentation includes:
 - `scripts/live-acceptance/`
 
 The live-acceptance suite contains explicit scenarios for normal execution, worker termination, stale lease reclamation, replacement completion, gateway restart, network interruption, database failure, and duplicate fencing.
+
+## Current development state
+
+**Phase:** `DEV_SANDBOX`  
+**OpenClaw:** 2026.9.7 on the persistent OCI development workstation  
+**GitHub automation:** repository-side verification plus bounded agentic development loop  
+**Recovery:** verified local OpenClaw backup and disposable restore drill  
+
+The development architecture intentionally favors rapid iteration and continuous access inside the isolated development boundary. The safety controls are verified backup/recovery, explicit evidence, and a hard production boundary. See [`docs/SECURITY_PHASE_MODEL.md`](docs/SECURITY_PHASE_MODEL.md) and [`docs/AGENTIC_GITHUB_AUTOMATION.md`](docs/AGENTIC_GITHUB_AUTOMATION.md).
+
+Known unproven items remain explicit: actual reboot survival, authenticated Android/operator access, production device scopes, off-host backup recovery, and complete authenticated desktop acceptance.
 
 ## Development cycle
 

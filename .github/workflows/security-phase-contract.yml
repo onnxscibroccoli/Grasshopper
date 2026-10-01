@@ -1,0 +1,24 @@
+name: security-phase-contract
+
+on:
+  pull_request:
+    paths:
+      - "scripts/security-phase-verify.sh"
+      - "test/security-phase-verify.test.mjs"
+      - "docs/SECURITY_PHASE_MODEL.md"
+      - "package.json"
+  push:
+    branches:
+      - main
+      - "feat/security-phase-gates"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run security phase contract tests
+        run: node --test test/security-phase-verify.test.mjs

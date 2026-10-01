@@ -2,10 +2,8 @@
 # Verified local OpenClaw state backup for OCI.
 set -Eeuo pipefail
 
-log(){ printf '[grasshopper-openclaw-backup] %s
-' "$*"; }
-die(){ printf '[grasshopper-openclaw-backup] ERROR: %s
-' "$*" >&2; exit 1; }
+log(){ printf '[grasshopper-openclaw-backup] %s\n' "$*"; }
+die(){ printf '[grasshopper-openclaw-backup] ERROR: %s\n' "$*" >&2; exit 1; }
 
 export PATH="$HOME/.openclaw/bin:$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
 openclaw_n(){ command openclaw "$@" </dev/null; }
@@ -23,14 +21,10 @@ openclaw_n backup create --output "$BACKUP_DIR" --verify
 find "$BACKUP_DIR" -maxdepth 1 -type f -name '*-openclaw-backup.tar.gz' \
   -mtime "+$RETENTION_DAYS" -delete
 
-LATEST="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name '*-openclaw-backup.tar.gz' -printf '%T@ %p
-' \
+LATEST="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name '*-openclaw-backup.tar.gz' -printf '%T@ %p\n' \
   | sort -nr | head -1 | cut -d' ' -f2-)"
 [[ -n "$LATEST" && -f "$LATEST" ]] || die "No verified OpenClaw backup archive found"
 
-printf 'BACKUP_ARCHIVE=%s
-' "$LATEST"
-printf 'BACKUP_SIZE_BYTES=%s
-' "$(stat -c '%s' "$LATEST")"
-printf 'OPENCLAW_BACKUP=PASS
-'
+printf 'BACKUP_ARCHIVE=%s\n' "$LATEST"
+printf 'BACKUP_SIZE_BYTES=%s\n' "$(stat -c '%s' "$LATEST")"
+printf 'OPENCLAW_BACKUP=PASS\n'
