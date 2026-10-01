@@ -1,3 +1,5 @@
+import { createHumanCheckpoint, clearHumanNotification, waitForHuman } from './human-gate.mjs';
+
 const HUMAN_PATTERNS = [
   /captcha/i,
   /verify\s+(?:you(?:'re| are)|human)/i,
@@ -66,14 +68,28 @@ export function verifyExpected(nodes, expected = {}) {
   }
 }
 
-export async function runAgentLoop({ goal, maxSteps = 8, snapshot, act, askModel, provider = 'openai' }) {
+export async function runAgentLoop({ goal, maxSteps = 8, snapshot, act, askModel, provider = 'openai', broccoliRoot, humanTimeoutMs = 300000 }) {
   if (!goal?.trim()) throw new Error('GOAL_REQUIRED');
   if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > 20) throw new Error('MAX_STEPS_OUT_OF_RANGE');
   const trace = [];
+  const pauseAtHumanGate = async (step, hits, nodes, reason) => {
+    const checkpoint = await createHumanCheckpoint({ broccoliRoot, goal, step, reason, hits, nodes });
+    const waited = await waitForHuman({ snapshot, checkpoint, detectHumanBoundary, timeoutMs: humanTimeoutMs });
+    if (waited.status === 'RESUMED') {
+      await clearHumanNotification(checkpoint.id, broccoliRoot);
+      return waited.snapshot;
+    }
+    return null;
+  };
   for (let step = 1; step <= maxSteps; step += 1) {
     const before = await snapshot();
     const human = detectHumanBoundary(before.nodes);
-    if (human.length) return { status:'HUMAN_REQUIRED', reason:'security_or_authorization_boundary', checkpoint:{ step, goal, hits:human, nodes:before.nodes }, trace };
+    if (human.length) {
+      const resumed = await pauseAtHumanGate(step, human, before.nodes, 'security_or_authorization_boundary');
+      if (!resumed) return { status:'WAITING_FOR_HUMAN', reason:'security_or_authorization_boundary', trace, checkpoint: await createHumanCheckpoint({ broccoliRoot, goal, step, reason:'security_or_authorization_boundary', hits:human, nodes:before.nodes }) };
+      trace.push({ step, humanGate:'RESUMED', checkpoint:resumed });
+      continue;
+    }
     const prompt = JSON.stringify({
       role:'OmniKali UI planner',
       rules:[
@@ -112,7 +128,12 @@ export async function runAgentLoop({ goal, maxSteps = 8, snapshot, act, askModel
     trace[trace.length - 1].actionResult = actionResult;
     trace[trace.length - 1].after = after;
     trace[trace.length - 1].verification = verification;
-    if (humanAfter.length) return { status:'HUMAN_REQUIRED', reason:'security_or_authorization_boundary', checkpoint:{step,goal,hits:humanAfter,nodes:after.nodes}, trace };
+    if (humanAfter.length) {
+      const resumed = await pauseAtHumanGate(step, humanAfter, after.nodes, 'security_or_authorization_boundary');
+      if (!resumed) return { status:'WAITING_FOR_HUMAN', reason:'security_or_authorization_boundary', trace, checkpoint: await createHumanCheckpoint({ broccoliRoot, goal, step, reason:'security_or_authorization_boundary', hits:humanAfter, nodes:after.nodes }) };
+      trace[trace.length - 1].humanGate = 'RESUMED';
+      trace[trace.length - 1].humanResumeSnapshot = resumed;
+    }
     if (!verification.verified) {
       trace[trace.length - 1].replan = verification.reason;
       continue;
