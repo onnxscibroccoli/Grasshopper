@@ -26,7 +26,7 @@ child_alive() {
 
 start_child() {
   if child_alive; then return 0; fi
-  nohup "$PYTHON" -u "$ROOT/runtime/main.py" >> "$ROOT/runtime.log" 2>&1 &
+  nohup env PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON" -u "$ROOT/runtime/main.py" >> "$ROOT/runtime.log" 2>&1 &
   local pid=$!
   printf '%s\n' "$pid" > "$ROOT/runtime.pid"
   log "START child pid=$pid"
