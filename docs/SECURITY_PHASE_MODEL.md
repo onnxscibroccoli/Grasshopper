@@ -1,174 +1,271 @@
 # Grasshopper Security Phase Model
 
-**Status:** Proposed architecture contract
+**Status:** Proposed architecture contract  
 **Scope:** Grasshopper Phase 2 / OmniKali development, staging, and production boundaries
-**Principle:** Optimize early iteration without allowing development permissiveness to become an accidental production security policy.
 
-## 1. Design goal
+## 1. Design principle
 
-Grasshopper needs two properties that normally conflict:
-1. Very fast experimentation while the architecture is still being discovered.
-2. A deterministic path to a fail-closed production system.
+Grasshopper deliberately uses different operating philosophies at different lifecycle stages.
 
-The solution is a security-phase model. Security posture is explicit, versioned, testable, and promoted through gates. A permissive development environment is an intentional sandbox, never an implicit production default.
+**Development optimizes for velocity, accessibility, experimentation, and recoverability. Production optimizes for controlled trust and fail-closed behavior.**
+
+The development environment should not become difficult to use merely because it is possible to make it more restrictive. During architecture discovery, continuous access to development tools and open configurations produce faster learning and better evidence.
+
+The safety mechanism for this phase is primarily:
+
+- isolation from production;
+- durable, verified backups;
+- disposable resources;
+- rapid rebuild;
+- observable state;
+- reproducible bootstrap;
+- promotion gates.
+
+Security restrictions are tightened when the system crosses into staging and production, not preemptively imposed on every development experiment.
 
 The phases are:
-- DEV_SANDBOX: permissive, disposable, isolated, fast iteration.
-- STAGING: authenticated, bounded, production-like, destructive actions gated.
-- PROD_CANDIDATE: fail-closed by default, all trust boundaries explicit, launch evidence required.
-- PROD: fail-closed, least privilege, durable audit/recovery, no implicit trust.
 
-No phase may silently downgrade another phase.
+- `DEV_SANDBOX`: maximum practical velocity and accessibility.
+- `STAGING`: production-shaped validation with bounded trust.
+- `PROD_CANDIDATE`: fail-closed hardening and launch evidence.
+- `PROD`: least privilege, durable recovery, and continuous verification.
+
+No production control may silently inherit development permissiveness.
 
 ## 2. Immutable production boundary
 
 The validated production path remains:
 
-CloudFront -> nginx -> Helix :8092 -> libvirt/QEMU -> helix-omnikali -> Kali
+`CloudFront -> nginx -> Helix :8092 -> libvirt/QEMU -> helix-omnikali -> Kali`
 
-This architecture is protected while Grasshopper evolves.
+Development must remain independently recoverable and must not mutate that production path merely to make experimentation easier.
 
-Development experiments must not:
-- replace production port 80/443 ownership;
-- install a competing production ingress;
-- replace production RDS;
-- alter production authentication;
-- expose the OpenClaw Gateway publicly;
-- use production credentials as development fixtures;
-- claim live acceptance from local tests.
-
-The existing production desktop/database/worker/executor boundaries remain evidence-gated. If evidence is missing, the BIST state is NOT_PROVEN, not an inferred pass.
+The development environment therefore receives freedom **inside its own boundary**, rather than freedom to cross the production boundary.
 
 ## 3. Phase policy
 
 | Control | DEV_SANDBOX | STAGING | PROD_CANDIDATE | PROD |
 |---|---|---|---|---|
-| Network reachability | permissive inside isolated sandbox | allowlisted | allowlisted | allowlisted |
-| Gateway bind | loopback or private sandbox network | loopback/private | loopback/private | loopback/private |
-| Authentication | disposable test identity permitted | required | required | required |
-| Authorization | broad test scopes permitted | bounded scopes | least privilege | least privilege |
-| Secrets | synthetic/disposable only | isolated test secrets | production-like secret handling | production secrets only |
-| Tool execution | broad test tools | allowlist | allowlist + approvals | allowlist + approvals |
-| Destructive actions | permitted on disposable resources | gated | gated + evidence | explicit approval/policy gate |
-| Data | synthetic | sanitized | production-shaped, non-sensitive | production data |
-| Persistence | optional | required for tested services | required | required |
-| Backups | optional | required for stateful services | verified restore | verified restore |
-| Audit | development logs | structured | immutable/retained | immutable/retained |
-| Failure behavior | diagnostics may be permissive | fail closed at trust boundary | fail closed | fail closed |
-| Acceptance | unit/integration | authenticated live tests | launch gate | continuous verification |
+| Development-tool access | continuously available | bounded | controlled | least privilege |
+| Network reachability | open inside isolated development boundary | allowlisted | allowlisted | allowlisted |
+| Gateway bind | loopback/private | loopback/private | loopback/private | loopback/private |
+| Authentication | convenient/disposable test identity | required | required | required |
+| Authorization | broad test scopes | bounded scopes | least privilege | least privilege |
+| Tool execution | broad experimentation | bounded | allowlist + approvals | allowlist + approvals |
+| Destructive actions | allowed against disposable resources | gated | gated + evidence | explicit approval/policy |
+| Data | synthetic/test data | sanitized | production-shaped, non-sensitive | production data |
+| Persistence | strongly preferred | required | required | required |
+| Backup | rapid, frequent, verified | required + restore test | verified restore | verified restore |
+| Audit | useful diagnostics | structured | retained | retained/continuous |
+| Failure behavior | favor diagnostics and recovery | fail closed at trust boundary | fail closed | fail closed |
+| Acceptance | rapid integration tests | authenticated live tests | launch gate | continuous verification |
 
-## 4. Security architecture
+The DEV_SANDBOX row is intentionally permissive. It is not a production security baseline.
 
-Use four explicit planes.
+## 4. Development operating model
 
-### Plane A: Human/operator plane
+The development environment should feel like an always-available laboratory.
 
-Android/browser -> authenticated transport -> operator client -> OpenClaw/Helix APIs.
+Preferred characteristics:
 
-Development may use a broad disposable operator identity.
+- persistent development workstation;
+- continuous access to shell, browser, agents, logs, model endpoints, and development APIs;
+- open configuration for rapid experimentation;
+- broad operator permissions when limited to development resources;
+- fast service restart;
+- easy reset;
+- easy cloning;
+- automatic backups;
+- rapid restore;
+- disposable infrastructure;
+- no production dependency.
 
-Staging and production require:
+The default response to a development failure should be:
+
+`observe -> back up -> repair or reset -> reproduce -> learn`
+
+rather than:
+
+`lock down -> wait for approval -> manually recover`
+
+This maximizes iteration speed while retaining a durable recovery path.
+
+## 5. Security boundary for permissive development
+
+Permissiveness is acceptable when the resource itself is disposable or independently recoverable.
+
+The critical rule is:
+
+**Open development configuration must not create open production access.**
+
+DEV_SANDBOX may use:
+
+- broad operator scopes;
+- convenient authentication for development;
+- experimental agents;
+- experimental models;
+- broad development tools;
+- relaxed internal network policy;
+- automatic startup;
+- direct diagnostic access;
+- destructive tests against disposable resources.
+
+DEV_SANDBOX must not receive:
+
+- production credentials;
+- unrestricted production database access;
+- authority to replace production ingress;
+- authority to mutate the validated production desktop;
+- production identity reuse.
+
+This is the main security control during early development: **boundary isolation plus recoverability**, rather than restrictive controls on the developer's hands.
+
+## 6. Backup-first development security
+
+Because development intentionally remains accessible, backups become a primary resilience control.
+
+Every persistent development system should have:
+
+1. automatic backup;
+2. archive verification;
+3. retention policy;
+4. documented restore procedure;
+5. restore-to-staging capability;
+6. periodic recovery drill.
+
+A backup is not considered valid merely because an archive exists.
+
+Required evidence:
+
+`create -> verify -> restore -> inspect -> accept`
+
+For stateful agent systems, supported application backup mechanisms must be used rather than copying live database files in unsafe states.
+
+The OCI OpenClaw work already follows this model:
+
+- scheduled local backup;
+- verified archive;
+- restore-to-staging;
+- explicit evidence of the recovery operation.
+
+The next maturity step is off-host recovery.
+
+## 7. Four architecture planes
+
+### Plane A: Human/operator
+
+`Developer -> development transport -> operator client -> development services`
+
+During DEV_SANDBOX, optimize for accessibility.
+
+During later phases, progressively add:
+
 - authenticated identity;
-- device/client identity;
-- explicit operator scopes;
-- approval for privileged execution;
-- no bearer token copied into application configuration when pairing can mint a device credential.
+- device identity;
+- bounded scopes;
+- approvals;
+- audit.
 
-The current OCI OpenClaw Gateway remains loopback-only. SSH forwarding or an identity-aware private transport is the intended development operator path. Public port 18789 is prohibited.
+The development Gateway can remain loopback/private while still being highly accessible through an authenticated developer transport.
 
 ### Plane B: Control plane
 
-The control plane owns durable state, leases, task lifecycle, recovery, authorization, audit, and acceptance evidence.
+Owns:
 
-It must never infer authorization from network reachability.
+- durable state;
+- task lifecycle;
+- leases;
+- authorization;
+- recovery;
+- audit;
+- acceptance evidence.
+
+Even during development, the control plane should preserve state correctness.
 
 ### Plane C: Execution plane
 
-Workers and guest agents execute only leased, authorized work.
+Development execution can be broad, but it must remain fenced to development resources.
 
-Required invariants:
-- every execution has an owner;
-- every execution has a lease/fence;
-- stale workers cannot complete a newer generation;
-- human input has priority;
-- privileged execution is explicit;
-- recovery is deterministic.
+The production invariants remain:
 
-### Plane D: Guest/workstation plane
+- owner;
+- lease;
+- generation;
+- fencing;
+- deterministic recovery.
 
-Kali desktop, browser, filesystem, and local agents are treated as a separate trust boundary.
+### Plane D: Guest/workstation
 
-Persistence is valuable, but persistence does not imply trust. A restored workstation must re-enter through the control-plane authorization path.
+The persistent Kali workstation is a development asset and may remain highly accessible.
 
-## 5. Development permissiveness contract
+Persistence does not equal production authorization.
 
-DEV_SANDBOX may deliberately enable:
-- broad operator scopes;
-- disposable credentials;
-- test-only guest execution;
-- relaxed network policy inside an isolated VCN/network;
-- automatic service startup;
-- experimental agents and models;
-- fast-reset infrastructure.
+A restored workstation is still required to pass the appropriate promotion/acceptance path before becoming a production workstation.
 
-It may not enable:
-- access to production credentials;
-- access to production databases;
-- modification of the validated production ingress;
-- unrestricted Internet exposure of control-plane administration;
-- reuse of development identities in production.
+## 8. Promotion gates
 
-Every permissive control must have:
-1. a phase identifier;
-2. a documented reason;
-3. a bounded resource scope;
-4. an expiry/removal condition;
-5. a verifier.
+### Gate 0: DEV_SANDBOX
 
-## 6. Promotion gates
+Optimize for learning velocity.
 
-### Gate 0: Development correctness
 Required:
-- syntax/tests pass;
-- sandbox isolation verified;
-- no production credentials referenced;
-- no production endpoints mutated;
-- BIST output is deterministic.
 
-### Gate 1: Staging security
+- development boundary identified;
+- production credentials absent;
+- backup functioning;
+- restore path known;
+- bootstrap reproducible;
+- failures observable.
+
+Restrictive production-style controls are not required unless the experiment itself concerns those controls.
+
+### Gate 1: STAGING
+
+Introduce the controls that the actual product will need:
+
+- authentication;
+- bounded authorization;
+- bounded execution;
+- approval for destructive operations;
+- allowlisted network paths;
+- verified backup/restore;
+- structured audit.
+
+### Gate 2: PROD_CANDIDATE
+
+Now convert the architecture from permissive to fail-closed.
+
 Required:
-- authentication required;
-- operator scopes bounded;
-- execution allowlist active;
-- destructive actions require approval;
-- network reachability allowlisted;
-- backup and restore verified;
-- audit records generated.
 
-### Gate 2: Production-candidate hardening
-Required:
-- all permissive controls have explicit removal evidence;
-- public listeners are enumerated and justified;
-- all secrets are production-managed;
-- least-privilege scopes are verified;
-- failure paths are fail-closed;
-- stale lease/fencing tests pass;
-- authenticated browser -> workspace -> WSS -> guest execution path passes;
-- recovery acceptance passes;
-- clean-host reconstruction is independently verified.
+- every remaining permissive exception identified;
+- every exception has a removal decision;
+- public listeners enumerated;
+- production secret sources verified;
+- least-privilege scopes verified;
+- unknown actions denied;
+- failed authentication denied;
+- failed authorization denied;
+- stale execution rejected;
+- recovery acceptance passed;
+- clean-host reconstruction independently verified;
+- authenticated browser -> workspace -> WSS -> guest path passed.
 
-### Gate 3: Production launch
-Required:
-- BIST contains no unexplained FAIL;
-- launch-critical NOT_PROVEN items are resolved or explicitly excluded;
-- production restore point exists;
-- rollback path is tested;
-- monitoring and verification are active;
-- no undocumented human setup step remains.
+### Gate 3: PROD
 
-## 7. Fail-closed invariants
+Production requires:
 
-The following become non-negotiable outside DEV_SANDBOX:
+- fail-closed trust boundaries;
+- least privilege;
+- durable audit;
+- verified recovery;
+- rollback;
+- continuous BIST;
+- no undocumented human setup.
+
+## 9. Fail-closed production invariants
+
+Outside DEV_SANDBOX:
+
 - missing authentication => deny;
 - missing authorization => deny;
 - missing owner => do not execute;
@@ -178,98 +275,129 @@ The following become non-negotiable outside DEV_SANDBOX:
 - unknown resource => deny;
 - missing secret => fail closed;
 - ambiguous routing => deny;
-- failed acceptance gate => do not publish a user-facing access link;
-- failed backup verification => do not declare recovery-ready;
+- failed acceptance => do not publish access;
+- failed backup verification => not recovery-ready;
 - unverified public listener => block promotion;
-- production boundary uncertainty => NOT_PROVEN.
+- unknown security phase => fail.
 
-## 8. Verification implementation
+## 10. Verification
 
-Verification must inspect effective state, not merely configuration files.
+Verification must inspect effective state, not merely intended configuration.
 
-At minimum, the verifier should report:
-- PHASE
-- AUTH_REQUIRED
-- AUTHZ_MODE
-- PUBLIC_LISTENERS
-- PRODUCTION_ENDPOINTS_REFERENCED
-- SECRET_SOURCE
-- EXECUTION_POLICY
-- BACKUP_STATUS
-- RESTORE_STATUS
-- BIST_STATUS
+At minimum report:
 
-The verifier must distinguish PASS, FAIL, NOT_PROVEN, and NOT_APPLICABLE.
+- `PHASE`
+- `AUTH_REQUIRED`
+- `AUTHZ_MODE`
+- `PUBLIC_LISTENERS`
+- `PRODUCTION_ENDPOINTS_REFERENCED`
+- `SECRET_SOURCE`
+- `EXECUTION_POLICY`
+- `BACKUP_STATUS`
+- `RESTORE_STATUS`
+- `BIST_STATUS`
 
-A development verifier may report permissive controls as expected. It must not translate them into production PASS.
+Use:
 
-## 9. OCI OpenClaw application
+- `PASS`
+- `FAIL`
+- `NOT_PROVEN`
+- `NOT_APPLICABLE`
 
-The current OCI workstation already demonstrates several useful invariants:
-- OpenClaw Gateway is loopback-only.
-- Ollama is loopback-only.
-- OpenClaw runs under a persistent systemd user service.
-- user linger is enabled.
-- verified local backups are scheduled.
-- backup archive verification and restore-to-staging have been exercised.
+Development permissiveness must be reported as development state, not converted into production PASS.
 
-These are development/staging foundations, not proof of production launch.
+## 11. OCI OpenClaw application
 
-Still outstanding evidence includes:
+The current OCI workstation is a good example of the intended development model:
+
+- OpenClaw Gateway remains loopback-only;
+- Ollama remains loopback-only;
+- OpenClaw has persistent systemd supervision;
+- user linger is enabled;
+- development tools remain available;
+- verified local backups are scheduled;
+- backup archive verification has passed;
+- restore-to-staging has been exercised.
+
+The remaining evidence is deliberately treated as future gates:
+
 - actual reboot survival;
-- authenticated remote/operator path from Android;
-- device pairing and least-privilege scopes;
+- authenticated Android/operator path;
+- device pairing and production scopes;
 - workspace/memory behavior;
-- production-grade off-host recovery strategy.
+- off-host recovery;
+- complete authenticated desktop acceptance.
 
-These remain explicit gates rather than assumptions.
+We should not impose production restrictions on the workstation simply to claim that it is secure. Instead, we should make its development boundary explicit and its recovery excellent.
 
-## 10. Promotion mechanism
+## 12. Promotion is a deliberate change of operating model
 
-Promotion is monotonic:
+`DEV_SANDBOX -> STAGING -> PROD_CANDIDATE -> PROD`
 
-DEV_SANDBOX -> STAGING -> PROD_CANDIDATE -> PROD
+The transition should progressively replace:
 
-A higher phase may tighten controls but may not inherit a weaker control accidentally.
+`accessibility + recovery`
 
-Configuration should therefore use explicit phase selection. Production must reject an unknown phase rather than falling back to development.
+with:
 
-Recommended rule:
+`identity + authorization + approval + verification`
 
-unknown phase => FAIL
+The development environment therefore stays fast until the architecture is sufficiently understood to justify tightening it.
 
-and:
+Unknown phase:
 
-PROD + permissive control => FAIL
+`FAIL`
 
-The implementation should make the phase visible in every verification report and acceptance artifact.
+Production plus development permissiveness:
 
-## 11. Failure learning loop
+`FAIL`
 
-Every incident becomes one of:
-- contract clarification;
-- verifier improvement;
-- test case;
+Development plus verified isolation and recoverability:
+
+`VALID DEV STATE`
+
+## 13. Failure learning loop
+
+Every development failure is valuable evidence.
+
+Convert it into one or more of:
+
 - architecture decision;
-- operational runbook update.
+- verifier improvement;
+- regression test;
+- bootstrap improvement;
+- operational runbook;
+- recovery drill.
 
-The known curl-pipe/stdin failure is an example: the bootstrap contract now uses stdin-safe OpenClaw invocations. Similar failures should become durable repository knowledge instead of remaining operator folklore.
+The curl-pipe/stdin problem is an example: the failure became a durable bootstrap rule rather than a recurring operator trap.
 
-## 12. Exit criteria for removing permissiveness
+The same principle applies to every new blocker.
 
-A permissive control is removed only when:
-1. the replacement control exists;
-2. the replacement has a test;
-3. the live verifier observes it;
-4. the relevant acceptance scenario passes;
-5. rollback is documented;
-6. the old permissive path is disabled;
-7. the evidence is committed.
+## 14. Removing development permissiveness
 
-This prevents temporary development shortcuts from becoming permanent attack surface.
+A development control is not removed merely because it looks insecure.
 
-## 13. Architecture rule
+It is removed when:
 
-**Move quickly inside the sandbox. Move deliberately across trust boundaries. Fail closed at promotion.**
+1. the corresponding architecture is understood;
+2. a production requirement exists for the restriction;
+3. the replacement control exists;
+4. the replacement has a test;
+5. live verification observes it;
+6. acceptance passes;
+7. rollback is understood;
+8. the old development path is no longer required.
 
-The architecture is intentionally optimized so that experimentation happens where failure is cheap, while production trust is earned through evidence.
+This prevents premature hardening from slowing discovery while still guaranteeing a path to production hardening.
+
+## 15. Architecture rule
+
+**Keep development open, accessible, recoverable, and fast. Keep it isolated from production. Harden at promotion. Fail closed at the production boundary.**
+
+The security strategy is therefore not “restrict everything immediately.”
+
+It is:
+
+`OPEN DEVELOPMENT + STRONG BACKUP + HARD BOUNDARY + EVIDENCE-DRIVEN PROMOTION`
+
+That is the operating model optimized for rapid Grasshopper Phase 2 iteration.
