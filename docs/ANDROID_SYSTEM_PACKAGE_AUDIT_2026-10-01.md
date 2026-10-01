@@ -1,81 +1,144 @@
-# Android System Package Audit 2026-10-01
+# Android System Package Audit - 2026-10-01
 
 ## Evidence identity
 
-- Android device: Samsung SM-A146U
+- Device: Samsung SM-A146U
 - Android: 15
 - API: 35
-- RDC device: `localhost`
+- Architecture: aarch64
+- Build fingerprint: `samsung/a14xmsq/a14xm:15/AP3A.240905.015.A2/A146USQSJEZH3:user/release-keys`
+- RDC device name: `localhost`
 - RDC device ID: `566d623e-df45-4b16-b2be-4cbd08567a49`
-- Audit output: `/sdcard/OmniKali/android-package-audit-20261001-130941`
-- Audit method: Android `pm` inventory through the live device, with path classification
-- Canonical Rish contract: unchanged
+- Audit capture directory: `/sdcard/OmniKali/android-package-audit-20261001-130941`
+- Audit method: live Android PackageManager inventory plus APK-path classification
+- Canonical Broccoli Rish wrapper: unchanged
 
 ## Inventory
 
-The live device currently reports:
+Live PackageManager inventory returned:
 
+- 460 total packages
 - 91 third-party packages
-- 220 packages whose APK path is under `/system`
-- 12 under `/system_ext`
-- 47 under `/product`
-- 16 under `/vendor`
-- 26 under `/apex`
-- 76 under `/data/app`
-- 63 under `/mnt/asec`
+- 369 packages reported with the Android system-package classification
 
-The `data_app` and `mnt_asec` locations are important. Package classification by the Android `system` flag alone is not equivalent to "stock immutable system APK".
+APK path classification across the complete inventory:
 
-## System-flagged packages outside base partitions
+- 26 APEX
+- 220 `/system`
+- 12 `/system_ext`
+- 47 `/product`
+- 16 `/vendor`
+- 76 `/data/app`
+- 63 `/mnt/asec`
 
-48 packages currently carry the system-package classification while their installed APK path is under `/data/app`. Examples include Chrome, Play Store, Google Play services, WebView, Samsung services, and carrier components.
+The path classification is evidence about the current installed location. It is **not** by itself proof that a package is stock, vendor-signed, unmodified, or safe.
 
-This is evidence of updated/system-designated packages, not evidence that all 48 are aftermarket. A future audit should compare installer/source, signing certificate, version, and known firmware package manifests before assigning provenance.
+## System-package finding
 
-No system-flagged package was observed under `/mnt/asec` in this audit.
+The 369 system-tagged packages are not all immutable base-image packages.
 
-## Morphe and execution-plane packages
+A second pass intersected the system-package list with package code paths:
 
-Installed and observed:
+- 321 system-tagged packages resolve from base partitions/APEX paths.
+- 48 system-tagged packages resolve from `/data/app`.
+- No system-tagged package was observed under `/mnt/asec`.
+
+The 48 `/data/app` system-tagged packages include updated Google, Samsung, carrier, and Android framework components. Observed examples include:
+
+- `com.android.chrome`
+- `com.android.vending`
+- `com.google.android.gms`
+- `com.google.android.webview`
+- `com.google.android.networkstack`
+- `com.google.android.youtube`
+- `com.google.android.captiveportallogin`
+- `com.samsung.android.themestore`
+- `com.samsung.android.scs`
+- `com.sec.android.sbrowser`
+
+Therefore future integrity/provenance checks must distinguish:
+
+1. base-partition package
+2. updated system package
+3. ordinary third-party package
+4. `/mnt/asec` package
+5. APEX package
+
+Do not label the 369 system packages as "stock" without signature, hash, version, installer/source, and firmware-baseline evidence.
+
+## Execution-relevant installed packages
+
+The live inventory contains:
 
 - `app.morphe.manager`
 - `app.morphe.android.youtube`
 - `app.morphe.android.apps.youtube.music`
+- `anddea.youtube.music`
+- `app.revanced.android.gms`
+- `app.revanced.manager.plugin.downloader.apkcombo`
+- `moe.shizuku.privileged.api`
+- `com.rosan.ruto`
+- `org.autojs.autojs.modify`
+- `com.agatamessina.webinspector`
+- `com.northmendo.Appzuku`
+- `io.github.muntashirakon.AppManager`
+- `io.github.samolego.canta`
+
+These are inventory observations, not endorsements.
+
+## Termux add-on state
+
+Present:
+
 - `com.termux`
 - `com.termux.api`
-- `com.termux.boot`
 - `com.termux.gui`
 - `com.termux.window`
+- `com.termux.boot`
 - `com.gardockt.termuxterminalwidget`
 - `io.github.swiftstagrime.termuxrunner`
-- `moe.shizuku.privileged.api`
 
-The official Termux Float, Styling, Tasker, Widget, and X11 package IDs were not present in the package inventory at audit time. This is not a design exclusion. They remain candidates for the human interaction plane.
+Absent from the live PackageManager inventory:
 
-## Important architectural finding
+- `com.termux.float`
+- `com.termux.styling`
+- `com.termux.tasker`
+- `com.termux.widget`
+- `com.termux.x11`
 
-Morphe already separates patch execution from the Android UI in its patcher library. The remote/off-device architecture should therefore treat APK patching as a portable worker capability rather than making APKTool a required phone-side dependency.
+Absent means **NOT_INSTALLED**, not **NOT_RELEVANT**.
 
-The preferred future pipeline is:
+Termux:Float, Termux:X11, and Termux:Styling remain candidate components for the human interaction plane. Installation and integration should be separately gated experiments.
 
-1. acquire original APK
-2. preserve immutable original and cryptographic hash
-3. inspect APK
-4. resolve compatible Morphe patch source/version
-5. run patch/build in a persistent remote worker
-6. sign output with an explicit artifact identity
-7. verify package/version/signature/artifact hash
-8. transfer APK to Android
-9. optionally install through an explicit human gate or Shizuku-controlled installer
-10. retain provenance, logs, source versions, and output hash
+## Rish/RDC boundary
 
-The worker should support both Morphe Patcher-native patch execution and APKTool where resource decoding/rebuilding is actually required. Do not force APKTool into bytecode/raw-resource patches when the Morphe patcher can avoid that cost.
+Unprivileged RDC execution was sufficient to complete the PackageManager inventory.
+
+A later attempt to invoke the canonical Rish wrapper from the RDC child timed out. This does not invalidate the established interactive-Termux Rish proof. It identifies the caller boundary `RDC child -> Rish` as separate from `interactive Termux -> Rish`.
+
+The canonical Rish wrapper was not changed during this audit.
 
 ## Evidence labels
 
-- Android package inventory: **PASS**
-- System-vs-third-party inventory: **PASS**
-- System provenance determination for every package: **NOT_PROVEN**
-- Termux Float/X11/Styling exclusion: **NOT_APPLICABLE**. They are not installed, but remain eligible future components.
+- Live Android package inventory: **PASS**
+- Third-party/system counts: **PASS**
+- System code-path classification: **PASS**
+- 48 system-tagged packages outside base partitions: **PASS**
+- Full stock/provenance determination: **NOT_PROVEN**
+- Termux Float/X11/Styling exclusion: **NOT_APPLICABLE**
 - Remote APK patch worker: **DESIGN_ONLY**
 - Reproducible Morphe patch artifact pipeline: **NOT_PROVEN**
+
+## Raw artifacts
+
+The device-side audit directory contains:
+
+- `packages-fui.txt`
+- `third-party.txt`
+- `system.txt`
+- `system-paths.txt`
+- `classified.tsv`
+- `system-classified.tsv`
+- `path-class-counts.txt`
+
+The existing third-party package inventory remains in `docs/ANDROID_THIRD_PARTY_PACKAGES_2026-10-01.txt`.
