@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 ROOT="${BROCCOLI_ROOT:-$HOME/broccoli-core}"
-PYTHON="${BROCCOLI_PYTHON:-$PREFIX/bin/python3}"
+PREFIX_DIR="${PREFIX:-/data/data/com.termux/files/usr}"
+PYTHON="${BROCCOLI_PYTHON:-$PREFIX_DIR/bin/python3}"
 LOG_DIR="$ROOT/reports"
 PID_FILE="$ROOT/runtime-supervisor.pid"
 LOG_FILE="$LOG_DIR/runtime-supervisor.log"
