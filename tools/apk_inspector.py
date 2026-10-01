@@ -78,6 +78,9 @@ def apktool_layouts(apk):
                 rel = path.relative_to(root).as_posix()
                 layouts.append(rel)
                 try:
+                    raw = path.read_text(errors="ignore")
+                    ids.update(re.findall(r"@(?:\\+)?id/([A-Za-z0-9_]+)", raw))
+                    texts.update(re.findall(r'android:text="([^"]+)"', raw))
                     tree = ET.parse(path)
                     for node in tree.iter():
                         for key, value in node.attrib.items():
