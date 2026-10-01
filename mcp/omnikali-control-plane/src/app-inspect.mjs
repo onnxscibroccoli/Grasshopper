@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 const PACKAGE_RE = /^[A-Za-z0-9_.]+$/;
 
@@ -45,7 +47,8 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
     return { schema:'omnikali.application.inspect/v1', packageName, remoteApkPath:apkPath, sharedApkPath:sharedPath, status:'APK_COPIED_NOT_VISIBLE_TO_ORCHESTRATOR', evidence:'Rish copied installed APK to shared storage, but the orchestrator cannot read the shared path.' };
   }
 
-  const inspect = await run(`python3 ${shellQuote(`${broccoliRoot}/tools/apk_inspector.py`)} ${shellQuote(localPath)}`, broccoliRoot);
+  const inspectorPath = process.env.OMNIKALI_APK_INSPECTOR || resolve(dirname(fileURLToPath(import.meta.url)), '../../../tools/apk_inspector.py');
+  const inspect = await run(`python3 ${shellQuote(inspectorPath)} ${shellQuote(localPath)}`, broccoliRoot, 90000);
   if (inspect.exitCode !== 0) throw new Error(`APK_INSPECTION_FAILED: ${inspect.timedOut ? 'timeout' : (inspect.stderr || inspect.stdout)}`);
   let staticInspection;
   try { staticInspection = JSON.parse(inspect.stdout); } catch { throw new Error('APK_INSPECTION_JSON_INVALID'); }
