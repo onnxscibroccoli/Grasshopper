@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { executeAndroidAction } from "../src/android/android-action-client.mjs";
+import { executeAndroidAction, ANDROID_ACTIONS } from "../src/android/android-action-client.mjs";
 
 function fakeSpawn(output, expectedRoot, expectedAction = "device.identity", code = 0) {
   return (_file, args, options) => {
-    assert.deepEqual(args, [`${expectedRoot}/tools/android_action_cli.py`]);
+    assert.deepEqual(args, [expectedRoot + "/tools/android_action_cli.py"]);
     assert.deepEqual(options.stdio, ["pipe", "pipe", "pipe"]);
     const child = new EventEmitter();
     child.stdout = new EventEmitter();
@@ -21,6 +21,14 @@ function fakeSpawn(output, expectedRoot, expectedAction = "device.identity", cod
     return child;
   };
 }
+
+test("application inspection actions are allowlisted", () => {
+  assert.ok(ANDROID_ACTIONS.includes("ui.dump"));
+  assert.ok(ANDROID_ACTIONS.includes("package.inspect"));
+  assert.ok(ANDROID_ACTIONS.includes("package.export"));
+  assert.ok(ANDROID_ACTIONS.includes("app.launch"));
+  assert.ok(ANDROID_ACTIONS.includes("app.stop"));
+});
 
 test("rejects arbitrary action before execution", async () => {
   await assert.rejects(

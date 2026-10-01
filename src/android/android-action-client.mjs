@@ -4,6 +4,11 @@ import path from "node:path";
 export const ANDROID_ACTIONS = Object.freeze([
   "device.identity",
   "display.list",
+  "ui.dump",
+  "package.inspect",
+  "package.export",
+  "app.launch",
+  "app.stop",
   "tap",
   "swipe",
   "text",
@@ -15,7 +20,7 @@ function validateAction(action) {
     throw new TypeError("Android action must be an object");
   }
   if (!ANDROID_ACTIONS.includes(action.action)) {
-    throw new Error(`Android action is not allowlisted: ${String(action.action)}`);
+    throw new Error("Android action is not allowlisted: " + String(action.action));
   }
 }
 
@@ -47,7 +52,7 @@ export async function executeAndroidAction(action, {
 
     const timer = setTimeout(() => {
       child.kill("SIGTERM");
-      finish(reject, new Error(`Android action timed out after ${timeoutMs}ms`));
+      finish(reject, new Error("Android action timed out after " + timeoutMs + "ms"));
     }, timeoutMs);
 
     child.stdout?.on("data", (chunk) => { stdout += chunk; });
@@ -62,7 +67,7 @@ export async function executeAndroidAction(action, {
       try {
         result = JSON.parse(stdout);
       } catch (error) {
-        finish(reject, new Error(`Android action CLI returned invalid JSON: ${error.message}; stderr=${stderr}`));
+        finish(reject, new Error("Android action CLI returned invalid JSON: " + error.message + "; stderr=" + stderr));
         return;
       }
 
@@ -73,10 +78,10 @@ export async function executeAndroidAction(action, {
         stderr: [result.stderr, stderr].filter(Boolean).join(""),
       };
 
-      if (code !== 0 && evidence.ok !== true) {
-        const detail = evidence.message || evidence.combined_output || evidence.stderr || `exit code ${code}`;
+      if (code !== 0 || evidence.ok !== true) {
+        const detail = evidence.message || evidence.combined_output || evidence.stderr || ("exit code " + code);
         finish(reject, Object.assign(
-          new Error(`Android action failed: ${detail}`),
+          new Error("Android action failed: " + detail),
           { evidence },
         ));
         return;
