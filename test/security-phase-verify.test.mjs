@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const root = new URL("..", import.meta.url).pathname;
@@ -33,8 +32,11 @@ function run(extra = {}) {
   return result;
 }
 
+// Regression: Reference tests run 36795408721 failed because this file used
+// `const fs = await import("node:fs")` inside a non-async test callback.
+// Module-scope static import keeps the assertion parseable under node --test.
 test("bootstrap declares DEV_SANDBOX", () => {
-  const bootstrap = fs.readFileSync(new URL("../scripts/oci-openclaw-bootstrap.sh", import.meta.url), "utf8");
+  const bootstrap = readFileSync(new URL("../scripts/oci-openclaw-bootstrap.sh", import.meta.url), "utf8");
   assert.match(bootstrap, /GRASSHOPPER_SECURITY_PHASE=DEV_SANDBOX/);
 });
 
