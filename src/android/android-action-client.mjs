@@ -74,8 +74,9 @@ export async function executeAndroidAction(action, {
       };
 
       if (code !== 0 && evidence.ok !== true) {
+        const detail = evidence.message || evidence.combined_output || evidence.stderr || `exit code ${code}`;
         finish(reject, Object.assign(
-          new Error(evidence.message || `Android action failed with exit code ${code}`),
+          new Error(`Android action failed: ${detail}`),
           { evidence },
         ));
         return;
