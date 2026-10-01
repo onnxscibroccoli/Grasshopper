@@ -28,7 +28,9 @@ def badging(apk):
     permissions = []
     for line in out.splitlines():
         if line.startswith("package:"):
-            for k, v in re.findall(r"(name|versionCode|versionName|compileSdkVersion|targetSdkVersion|minSdkVersion):'?([^' ]+)'?", line):
+            for k, v in re.findall(r"(name|versionCode|versionName|compileSdkVersion|targetSdkVersion|minSdkVersion)='([^']+)'", line):
+                package[k] = v
+            for k, v in re.findall(r"(minSdkVersion|targetSdkVersion|compileSdkVersion):'([^']+)'", line):
                 package[k] = v
         elif line.startswith("uses-permission:"):
             m = re.search(r"name='([^']+)'", line)
