@@ -21,7 +21,7 @@ export function createApplicationModel(input = {}) {
     },
     elements: Array.isArray(input.elements)
       ? input.elements.map((element, index) => ({
-          id: stableText(element.id) || \`element-\${index + 1}\`,
+          id: stableText(element.id) || "element-" + (index + 1),
           role: stableText(element.role),
           name: stableText(element.name),
           text: stableText(element.text),
