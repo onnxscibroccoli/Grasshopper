@@ -37,6 +37,46 @@ RDC can create a Termux-shell child and access the Broccoli source tree. From th
 
 Therefore the transport handoff remains **NOT_PROVEN**, not failed permanently.
 
+## Corrected proof contract
+
+Empty stdout is not a verdict. `rish` starts `app_process`, which does not reliably inherit the RDC pipe. uid 2000 cannot write Termux home, so the artifact must be written by the Rish command to shared storage.
+
+Canonical probe in `broccoli-core` (calls `lib/rish_run.sh`, does not edit it):
+
+```
+/data/data/com.termux/files/usr/bin/bash -lc 'bash $HOME/broccoli-core/tools/rdc_termux_anchor.sh'
+```
+
+Accept only if this file exists and contains the three markers:
+
+```
+/storage/emulated/0/Download/RDC_TERMUX_ANCHOR.txt
+```
+
+```
+RDC_TERMUX_ANCHOR_OK
+uid=2000(shell)
+sdk=35
+```
+
+Fallback copy: `/data/local/tmp/RDC_TERMUX_ANCHOR.txt`.
+
+If RDC is shell uid rather than the Termux app uid, do not treat `am` RC=0 as execution. The supported external hop, after `allow-external-apps=true` and a Termux force-stop, is an explicit foreground service whose only proof is the same file:
+
+```
+am start-foreground-service --user 0 \
+  -n com.termux/com.termux.app.RunCommandService \
+  -a com.termux.RUN_COMMAND \
+  --es com.termux.RUN_COMMAND_PATH /data/data/com.termux/files/usr/bin/bash \
+  --esa com.termux.RUN_COMMAND_ARGUMENTS -l,-c,bash\ $HOME/broccoli-core/tools/rdc_termux_anchor.sh \
+  --es com.termux.RUN_COMMAND_WORKDIR /data/data/com.termux/files/home \
+  --ez com.termux.RUN_COMMAND_BACKGROUND true
+```
+
+## Off-device limitation
+
+OmniKali has no adb client and no attached device. `npx @wonderwhy-er/desktop-commander@latest remote` authenticates a host to mcp.desktopcommander.app; it does not cross this Android gate. It was not started.
+
 ## Required next acceptance artifact
 
 ```
@@ -45,18 +85,22 @@ uid=2000(shell)
 sdk=35
 ```
 
-The artifact must be persistent and independently inspectable.
+The artifact must be persistent and independently inspectable. This document does not claim that artifact exists.
 
 ## Intended execution chain
 
 ```
 RDC
   ↓
-supported Termux external-command mechanism
+login Termux bash
   ↓
-working Broccoli
+tools/rdc_termux_anchor.sh
+  ↓
+lib/rish_run.sh
   ↓
 Rish/Shizuku
+  ↓
+shared-storage artifact
   ↓
 Ruto
   ↓
