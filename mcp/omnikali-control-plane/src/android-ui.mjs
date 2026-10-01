@@ -41,8 +41,9 @@ export function matchNodes(nodes, selector = {}) {
 }
 
 export async function snapshot({ broccoliRoot, output = join(tmpdir(), `omnikali-ui-${Date.now()}.xml`) }) {
-  const remote = `/data/local/tmp/omnikali-ui-${Date.now()}.xml`;
-  const command = `RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(`uiautomator dump --compressed ${remote} >/dev/null 2>&1; cat ${remote}`)}`;
+  const remote = `/sdcard/OmniKali/ui/omnikali-ui-${Date.now()}.xml`;
+  const payload = `mkdir -p /sdcard/OmniKali/ui && rm -f ${remote} && uiautomator dump ${remote}; rc=\$?; if [ \$rc -ne 0 ]; then exit \$rc; fi; cat ${remote}`;
+  const command = `RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(payload)}`;
   const r = await run(command, broccoliRoot, 20000);
   const start = r.stdout.indexOf('<?xml');
   const xml = start >= 0 ? r.stdout.slice(start) : '';
