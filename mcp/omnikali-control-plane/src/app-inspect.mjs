@@ -22,7 +22,7 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
   const remote = await run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(`pm path ${packageName}`)}`, broccoliRoot);
   if (remote.exitCode !== 0) throw new Error(`APK_PATH_FAILED: ${remote.stderr || remote.stdout}`);
   const apkPath = remote.stdout.split(/\r?\n/).map(line => line.replace(/^package:/, '').trim()).find(Boolean);
-  if (!apkPath || !apkPath.startsWith('/data/app/')) throw new Error('APK_PATH_NOT_FOUND');
+  if (!apkPath || !apkPath.startsWith('/') || apkPath.split('/').includes('..') || /[\r\n]/.test(apkPath)) throw new Error('APK_PATH_NOT_FOUND');
 
   const safeName = packageName.replaceAll('.', '_');
   const sharedDir = '/storage/emulated/0/Download/OmniKali/apks';
