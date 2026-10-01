@@ -10,7 +10,7 @@ const run = (command, cwd) => new Promise((resolve, reject) => {
 export async function catalog({ broccoliRoot }) {
   const r = await run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify("pm list packages -3 | sed 's/^package://' | sort")}`, broccoliRoot);
   if (r.exitCode !== 0) throw new Error(`APP_CATALOG_FAILED: ${r.stderr || r.stdout}`);
-  return { packages: r.stdout.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean), evidence: 'pm list packages -3 via known-good Rish wrapper' };
+  return { packages: r.stdout.split(/\r?\n/).map(x=>x.trim()).filter(Boolean), evidence: 'pm list packages -3 via known-good Rish wrapper' };
 }
 
 export async function optimizationPlan({ broccoliRoot, packages }) {
@@ -20,8 +20,8 @@ export async function optimizationPlan({ broccoliRoot, packages }) {
   for (const p of selected) {
     const cmd = `p=${p}; apk=$(pm path "$p" 2>/dev/null | head -1 | cut -d: -f2-); size=$(stat -c '%s' "$apk" 2>/dev/null || echo 0); printf '%s\\t%s\\t%s\\n' "$p" "$size" "$apk"`;
     const r = await run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(cmd)}`, broccoliRoot);
-    const line = r.stdout.trim().split(/\\r?\\n/).filter(Boolean).pop() || '';
-    const [packageName,size,apkPath] = line.split('\\t');
+    const line = r.stdout.trim().split(/\r?\n/).filter(Boolean).pop() || '';
+    const [packageName,size,apkPath] = line.split('\t');
     results.push({ packageName, sizeBytes:Number(size||0), apkPath:apkPath||null });
   }
   return {

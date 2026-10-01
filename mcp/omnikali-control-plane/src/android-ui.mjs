@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 export function run(command, cwd) {
   return new Promise((resolve, reject) => {
-    const p = spawn('/bin/bash', ['-lc', command], { cwd });
+    const p = spawn('/bin/sh', ['-lc', command], { cwd });
     let stdout = ''; let stderr = '';
     p.stdout.on('data', d => stdout += d); p.stderr.on('data', d => stderr += d);
     p.on('error', reject); p.on('close', code => resolve({ exitCode: code, stdout, stderr }));
