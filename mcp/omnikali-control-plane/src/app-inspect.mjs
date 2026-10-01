@@ -48,7 +48,11 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
   }
 
   const inspectorPath = process.env.OMNIKALI_APK_INSPECTOR || resolve(dirname(fileURLToPath(import.meta.url)), '../../../tools/apk_inspector.py');
-  const inspect = await run(`python3 ${shellQuote(inspectorPath)} ${shellQuote(localPath)}`, broccoliRoot, 90000);
+  const cacheDir = resolve(broccoliRoot, '.cache', 'omnikali-apk-intel');
+  const cachedApk = resolve(cacheDir, `${safeName}.apk`);
+  const stage = await run(`mkdir -p ${shellQuote(cacheDir)} && cp ${shellQuote(localPath)} ${shellQuote(cachedApk)}`, broccoliRoot, 30000);
+  if (stage.exitCode !== 0) throw new Error(`APK_STAGE_FAILED: ${stage.timedOut ? 'timeout' : (stage.stderr || stage.stdout)}`);
+  const inspect = await run(`python3 ${shellQuote(inspectorPath)} ${shellQuote(cachedApk)}`, broccoliRoot, 90000);
   if (inspect.exitCode !== 0) throw new Error(`APK_INSPECTION_FAILED: ${inspect.timedOut ? 'timeout' : (inspect.stderr || inspect.stdout)}`);
   let staticInspection;
   try { staticInspection = JSON.parse(inspect.stdout); } catch { throw new Error('APK_INSPECTION_JSON_INVALID'); }
@@ -58,6 +62,7 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
     packageName,
     remoteApkPath:apkPath,
     localApkPath:localPath,
+    stagedApkPath:cachedApk,
     staticInspection,
     liveUi:live,
     layout: {
