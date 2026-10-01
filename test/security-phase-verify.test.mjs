@@ -70,10 +70,10 @@ test("public Gateway override fails in every phase", () => {
   }).status, 0);
 });
 
-// Regression: Reference tests run 36795105437 failed because the merged
-// test asserted /FAIL restore.status/ while the verifier emits
-// FAIL restore.evidence.NOT_PROVEN (exit already non-zero).
-// Keep this assertion coupled to FAIL restore.evidence output.
+// Regression: Reference tests run 36795402697 failed because the test
+// asserted /FAIL restore.evidence/ while the verifier emits FAIL restore.status
+// when restore evidence is not PASS (exit already non-zero).
+// Keep this assertion coupled to FAIL restore.status output.
 test("backup or restore evidence missing fails", () => {
   const result = run({
     GRASSHOPPER_SECURITY_PHASE: "DEV_SANDBOX",
@@ -81,5 +81,5 @@ test("backup or restore evidence missing fails", () => {
     GRASSHOPPER_RESTORE_STATUS: "NOT_PROVEN",
   });
   assert.notEqual(result.status, 0);
-  assert.match(result.stdout + result.stderr, /FAIL restore\.evidence/);
+  assert.match(result.stdout + result.stderr, /FAIL restore\.status/);
 });
