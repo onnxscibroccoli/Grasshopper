@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://onnxscibroccoli.github.io/schemas/chat-archive/conversation.schema.json",
+  "title": "ChatArchiveConversation",
+  "type": "object",
+  "required": ["conversation_id", "account_id", "provider", "source_hash", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "conversation_id": { "type": "string", "minLength": 1 },
+    "account_id": { "type": "string", "minLength": 1 },
+    "provider": {
+      "type": "string",
+      "enum": ["openai", "xai", "google", "anthropic", "other"]
+    },
+    "title": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "source_hash": { "type": "string", "minLength": 32 },
+    "project_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "message_count": { "type": "integer", "minimum": 0 },
+    "metadata": { "type": "object", "additionalProperties": true }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://onnxscibroccoli.github.io/schemas/chat-archive/page.schema.json",
+  "title": "ChatArchivePage",
+  "type": "object",
+  "required": ["page_id", "checkpoint_id", "messages", "committed_at", "page_hash"],
+  "additionalProperties": false,
+  "properties": {
+    "page_id": { "type": "integer", "minimum": 0 },
+    "checkpoint_id": { "type": "string" },
+    "messages": {
+      "type": "array",
+      "items": { "$ref": "message.schema.json" }
+    },
+    "committed_at": { "type": "string", "format": "date-time" },
+    "page_hash": { "type": "string", "minLength": 32 },
+    "source": { "type": "string" }
+  }
+}
