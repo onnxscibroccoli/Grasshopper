@@ -52,6 +52,11 @@ clone_or_update(){
 clone_or_update "$BROCCOLI_ROOT" "$BROCCOLI_URL"
 clone_or_update "$ROOT" "$GRASSHOPPER_URL"
 
+log "creating local working-tree backups"
+tar -czf "$REPORT/broccoli-core-working-tree.tgz" -C "$BROCCOLI_ROOT" --exclude=.git .
+tar -czf "$REPORT/grasshopper-working-tree.tgz" -C "$ROOT" --exclude=.git .
+pass "working-tree backups created"
+
 log "capturing repository state"
 {
   printf '%s\n' '=== broccoli-core ==='
