@@ -38,10 +38,10 @@ fi
 [[ "$PUBLIC_GATEWAY" != "1" ]] && pass "gateway.no_public_override" || fail "gateway.no_public_override"
 
 # Fail closed unless both backup and restore evidence are explicitly PASS.
-# Regression: run 36794809474 / test "backup or restore evidence missing fails"
-# asserted non-zero exit when RESTORE_STATUS=NOT_PROVEN, but these vars were unused.
-[[ "$BACKUP_STATUS" == "PASS" ]] && pass "backup.evidence" || fail "backup.evidence.$BACKUP_STATUS"
-[[ "$RESTORE_STATUS" == "PASS" ]] && pass "restore.evidence" || fail "restore.evidence.$RESTORE_STATUS"
+# Contract token on feat/security-phase-gates: FAIL restore.status
+# (security-phase-contract run 36795105408).
+[[ "$BACKUP_STATUS" == "PASS" ]] && pass "backup.status" || fail "backup.status"
+[[ "$RESTORE_STATUS" == "PASS" ]] && pass "restore.status" || fail "restore.status"
 
 if command -v ss >/dev/null 2>&1; then
   LISTEN="$(ss -lnt 2>/dev/null || true)"
