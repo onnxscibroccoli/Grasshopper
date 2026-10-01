@@ -30,9 +30,9 @@ def badging(apk):
     permissions = []
     for line in out.splitlines():
         if line.startswith("package:"):
-            for k, v in re.findall(r"(name|versionCode|versionName|compileSdkVersion|targetSdkVersion|minSdkVersion)='([^']+)'", line):
+            for k, v in re.findall(r"(?<![A-Za-z])(name|versionCode|versionName|compileSdkVersion|targetSdkVersion|minSdkVersion)='([^']+)'", line):
                 package[k] = v
-            for k, v in re.findall(r"(minSdkVersion|targetSdkVersion|compileSdkVersion):'([^']+)'", line):
+            for k, v in re.findall(r"(?<![A-Za-z])(minSdkVersion|targetSdkVersion|compileSdkVersion):'([^']+)'", line):
                 package[k] = v
         elif line.startswith("uses-permission:"):
             m = re.search(r"name='([^']+)'", line)
@@ -48,7 +48,7 @@ def zip_inventory(apk):
     with zipfile.ZipFile(apk) as z:
         names = z.namelist()
     layouts = sorted({n for n in names if re.match(r"res/layout(?:-[^/]+)?/[^/]+\.xml$", n)})
-    dex = sorted(n for n in names if re.fullmatch(r"classes(?:\\d+)?\.dex", Path(n).name))
+    dex = sorted(n for n in names if re.fullmatch(r"classes(?:\d+)?\.dex", Path(n).name))
     native = sorted(n for n in names if n.startswith("lib/") and n.endswith(".so"))
     return {
         "layoutFiles": layouts,
