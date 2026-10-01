@@ -32,18 +32,20 @@ start_child() {
   log "START child pid=$pid"
 }
 
-cleanup() {
-  if command -v termux-wake-unlock >/dev/null 2>&1; then termux-wake-unlock >/dev/null 2>&1 || true; fi
-  rm -f "$PID_FILE"
-  log "STOP supervisor"
-}
-trap cleanup INT TERM EXIT
-
 if [ -f "$PID_FILE" ]; then
   old="$(cat "$PID_FILE" 2>/dev/null || true)"
   if [ -n "$old" ] && kill -0 "$old" 2>/dev/null; then log "ALREADY_RUNNING pid=$old"; exit 0; fi
 fi
-printf '%s\n' "$$" > "$PID_FILE"
+printf '%s\n' "$" > "$PID_FILE"
+
+cleanup() {
+  if command -v termux-wake-unlock >/dev/null 2>&1; then termux-wake-unlock >/dev/null 2>&1 || true; fi
+  if [ -f "$PID_FILE" ] && [ "$(cat "$PID_FILE" 2>/dev/null || true)" = "$" ]; then
+    rm -f "$PID_FILE"
+  fi
+  log "STOP supervisor"
+}
+trap cleanup INT TERM EXIT
 log "START supervisor pid=$$ root=$ROOT"
 
 while :; do start_child; sleep "$INTERVAL"; done
