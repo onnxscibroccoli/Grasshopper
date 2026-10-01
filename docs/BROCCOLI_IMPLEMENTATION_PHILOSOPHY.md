@@ -84,3 +84,8 @@ Update `docs/BROCCOLI_KNOWLEDGE_GRAPH.md` when a node changes status. Do not add
 ## Felt win
 
 The first Grasshopper behavior that counts is still the Broccoli one, under a stricter contract: an authorized agent says the intent, the cheapest schema matches, a dry-run passes, the adapter performs it, and a durable result comes back without a human reviewing the implementation.
+
+
+## Boundary discipline learned from degradation
+
+The loop is only reproducible if every execution boundary is explicit. A command must not depend on the caller's current directory, and a remote payload must not assume the host interpreter exists on the target. Separate transport proof, target-shell proof, artifact proof, and product proof. When one boundary fails, repair that boundary without destabilizing the already-proven lower layer.
