@@ -93,6 +93,19 @@ grep -q 'uid=2000(shell)' /sdcard/GRASSHOPPER_ANDROID_ORCHESTRATOR_PROOF.txt ||
 cp /sdcard/GRASSHOPPER_ANDROID_ORCHESTRATOR_PROOF.txt "$REPORT/rish-proof.txt"
 pass "RDC -> Termux -> Rish -> Shizuku -> Android shell"
 
+log "checking bounded Android action contract"
+PYTHON="${BROCCOLI_PYTHON:-python3}"
+ACTION_CLI="$BROCCOLI_ROOT/tools/android_action_cli.py"
+[ -r "$ACTION_CLI" ] || fail "missing readable Android action CLI: $ACTION_CLI"
+command -v "$PYTHON" >/dev/null 2>&1 || fail "Python interpreter required for Android action CLI"
+printf '%s\n' '{"action":"device.identity"}' |
+  "$PYTHON" "$ACTION_CLI" > "$REPORT/action-proof.json"
+grep -q '"ok": true' "$REPORT/action-proof.json" ||
+  fail "Android action CLI did not report success"
+grep -q 'uid=2000(shell)' "$REPORT/action-proof.json" ||
+  fail "Android action CLI evidence does not prove shell identity"
+pass "bounded Android action contract"
+
 log "checking self-healing runtime components"
 [ -x "$ROOT/scripts/termux-broccoli-supervisor.sh" ] &&
   pass "Grasshopper supervisor present" ||
@@ -117,6 +130,7 @@ cat > "$ROOT/.omnikali/android-orchestrator-state.json.new" <<EOF
   "captured_at": "$(date -Iseconds)",
   "transport": "RDC->Termux->Rish->Shizuku->Android-shell",
   "transport_status": "PASS",
+  "action_contract_status": "PASS",
   "operator_context": "current-Termux-user",
   "device": "$(getprop ro.product.device 2>/dev/null || true)",
   "sdk": "$(getprop ro.build.version.sdk 2>/dev/null || true)",
@@ -127,12 +141,14 @@ cat > "$ROOT/.omnikali/android-orchestrator-state.json.new" <<EOF
 EOF
 mv "$ROOT/.omnikali/android-orchestrator-state.json.new" "$ROOT/.omnikali/android-orchestrator-state.json"
 cp "$REPORT/rish-proof.txt" "$ROOT/reports/android-orchestrator/latest-rish-proof.txt"
+cp "$REPORT/action-proof.json" "$ROOT/reports/android-orchestrator/latest-action-proof.json"
 
 cat > "$REPORT/RECOVERY_MANIFEST.txt" <<EOF
 schema=grasshopper.android-recovery/v1
 captured_at=$(date -Iseconds)
 transport=PASS
 rish_target_artifact=PASS
+action_contract=PASS
 operator_access=current-Termux-user
 privileged_android_shell=uid=2000(shell)
 production_mutation=NONE
