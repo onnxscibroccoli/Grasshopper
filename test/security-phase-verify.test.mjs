@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const root = new URL("..", import.meta.url).pathname;
@@ -33,7 +34,6 @@ function run(extra = {}) {
 }
 
 test("bootstrap declares DEV_SANDBOX", () => {
-  const fs = await import("node:fs");
   const bootstrap = fs.readFileSync(new URL("../scripts/oci-openclaw-bootstrap.sh", import.meta.url), "utf8");
   assert.match(bootstrap, /GRASSHOPPER_SECURITY_PHASE=DEV_SANDBOX/);
 });
