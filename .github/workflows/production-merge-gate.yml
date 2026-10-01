@@ -47,7 +47,9 @@ jobs:
           test -f docs/LIVE_EVIDENCE_OCI_DEV_2026-10-01.md
           grep -q "backup" docs/SECURITY_PHASE_MODEL.md
           grep -q "restore" docs/SECURITY_PHASE_MODEL.md
-          grep -q "disposable restore drill passes" docs/LIVE_EVIDENCE_OCI_DEV_2026-10-01.md
+          grep -q "disposable restore drill" docs/LIVE_EVIDENCE_OCI_DEV_2026-10-01.md
+          grep -q "Archive verification: PASS" docs/LIVE_EVIDENCE_OCI_DEV_2026-10-01.md
+          grep -q "restore operation completed successfully" docs/LIVE_EVIDENCE_OCI_DEV_2026-10-01.md
 
       - name: Verify required contract workflows are green for this commit
         env:
