@@ -59,14 +59,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Always-on PR workflows. Fail closed if missing or not successful.
           required=(
-            "security-phase-contract"
-            "Documentation freshness"
             "Agentic Reference Control Plane"
             "Agentic Development Loop"
             "Agentic MVP Reproducibility"
             "BIST"
             "Reference tests"
+          )
+          # Path-filtered workflows. If GitHub never scheduled them for this SHA,
+          # they are not pending; treat as skipped. If they did run, they must pass.
+          optional=(
+            "security-phase-contract"
+            "Documentation freshness"
           )
 
           for attempt in $(seq 1 30); do
@@ -79,6 +84,20 @@ jobs:
               line="$(printf '%s\n' "$runs" | awk -F '\t' -v n="$name" '$1==n {print; exit}')"
               if [ -z "$line" ]; then
                 missing=1
+                continue
+              fi
+              status="$(printf '%s\n' "$line" | cut -f2)"
+              conclusion="$(printf '%s\n' "$line" | cut -f3)"
+              if [ "$status" != "completed" ]; then
+                pending=1
+              elif [ "$conclusion" != "success" ]; then
+                failed=1
+              fi
+            done
+
+            for name in "${optional[@]}"; do
+              line="$(printf '%s\n' "$runs" | awk -F '\t' -v n="$name" '$1==n {print; exit}')"
+              if [ -z "$line" ]; then
                 continue
               fi
               status="$(printf '%s\n' "$line" | cut -f2)"
