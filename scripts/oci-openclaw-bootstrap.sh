@@ -13,6 +13,11 @@ export PATH="$HOME/.openclaw/bin:$HOME/.local/bin:$HOME/.local/share/mise/shims:
 command -v openclaw >/dev/null 2>&1 || die "OpenClaw installation did not produce an executable"
 OPENCLAW_VERSION="$(openclaw_n --version)"
 log "OpenClaw: $OPENCLAW_VERSION"
+log "Declaring Grasshopper development phase..."
+mkdir -p "$HOME/.config/environment.d"
+printf '%s\n' 'GRASSHOPPER_SECURITY_PHASE=DEV_SANDBOX' > "$HOME/.config/environment.d/grasshopper.conf"
+chmod 600 "$HOME/.config/environment.d/grasshopper.conf"
+
 log "Applying low-power host settings..."
 mkdir -p "$HOME/.openclaw"
 chmod 700 "$HOME/.openclaw"

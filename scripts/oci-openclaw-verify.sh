@@ -18,8 +18,23 @@ OLLAMA_PORT="${GRASSHOPPER_OLLAMA_PORT:-11434}"
 OLLAMA_CONTAINER="${GRASSHOPPER_OLLAMA_CONTAINER:-grasshopper-ollama}"
 MODEL="${GRASSHOPPER_OLLAMA_MODEL:-qwen3:0.6b}"
 SMOKE_TOKEN="GRASSHOPPER_OCI_MODEL_OK"
+BACKUP_DIR="${GRASSHOPPER_OPENCLAW_BACKUP_DIR:-$HOME/Backups/openclaw}"
+BACKUP_MAX_AGE_HOURS="${GRASSHOPPER_BACKUP_MAX_AGE_HOURS:-48}"
+VERIFY_RECOVERY="${GRASSHOPPER_VERIFY_RECOVERY:-0}"
 
 export PATH="$HOME/.openclaw/bin:$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+
+PHASE="${GRASSHOPPER_SECURITY_PHASE:-}"
+if [[ -z "$PHASE" && -f "$HOME/.config/environment.d/grasshopper.conf" ]]; then
+  PHASE="$(awk -F= '$1=="GRASSHOPPER_SECURITY_PHASE"{print $2}' "$HOME/.config/environment.d/grasshopper.conf" | tail -1)"
+fi
+if [[ "$PHASE" == "DEV_SANDBOX" ]]; then
+  pass "security.phase.DEV_SANDBOX"
+else
+  fail "security.phase.DEV_SANDBOX"
+  printf 'SECURITY_PHASE=%s\n' "${PHASE:-unset}"
+fi
+
 
 log "OpenClaw OCI verify starting (read-only)"
 
@@ -128,6 +143,37 @@ if command -v openclaw >/dev/null 2>&1; then
   fi
 else
   fail "openclaw.ollama.baseUrl"
+fi
+
+printf 'BACKUP_DIR=%s\n' "$BACKUP_DIR"
+LATEST_BACKUP="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name '*-openclaw-backup.tar.gz' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -1 | cut -d' ' -f2- || true)"
+if [[ -n "$LATEST_BACKUP" ]]; then
+  BACKUP_AGE_SECONDS=$(( $(date +%s) - $(stat -c %Y "$LATEST_BACKUP") ))
+  BACKUP_MAX_AGE_SECONDS=$((BACKUP_MAX_AGE_HOURS * 3600))
+  if (( BACKUP_AGE_SECONDS <= BACKUP_MAX_AGE_SECONDS )); then
+    pass "backup.recent"
+    if openclaw_n backup verify "$LATEST_BACKUP" >/dev/null 2>&1; then
+      pass "backup.verified"
+      printf 'BACKUP_ARCHIVE=%s\n' "$LATEST_BACKUP"
+      if [[ "$VERIFY_RECOVERY" == "1" ]]; then
+        RESTORE_DIR="$(mktemp -d /tmp/grasshopper-openclaw-restore-XXXXXX)"
+        if openclaw_n backup restore "$LATEST_BACKUP" --target "$RESTORE_DIR/restored" >/dev/null 2>&1 && find "$RESTORE_DIR/restored" -name manifest.json -type f -size +0c -print -quit | grep -q .; then
+          pass "backup.restore.drill"
+        else
+          fail "backup.restore.drill"
+        fi
+        rm -rf "$RESTORE_DIR"
+      else
+        printf 'BACKUP_RESTORE_DRILL=NOT_RUN\n'
+      fi
+    else
+      fail "backup.verified"
+    fi
+  else
+    fail "backup.recent"
+  fi
+else
+  fail "backup.recent"
 fi
 
 printf 'MODEL=%s\n' "$MODEL"

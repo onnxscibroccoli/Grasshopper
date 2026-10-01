@@ -65,3 +65,20 @@ Every infrastructure change must be traceable to:
 - verification result
 
 A clean source checkout plus a passing test suite is the minimum reproducibility signal, not the final production acceptance criterion.
+
+## Automatic merge gate
+
+Automatic merging is permitted only after the repository production-contract gate passes in full.
+
+The gate requires:
+
+- the complete repository test suite to pass
+- the required production-contract GitHub Actions workflows for the exact proposed commit to pass
+- a documented and verified recovery path to be present
+- no production credentials or production infrastructure mutation by the agent
+
+When the pull request is non-draft and every gate is green, the guarded merge workflow may enable GitHub auto-merge. A failing or incomplete gate must not merge.
+
+The recovery evidence currently used by the gate is the verified OpenClaw backup plus disposable restore drill recorded in the dated OCI DEV_SANDBOX evidence. This is recovery readiness evidence, not a claim of automatic production rollback.
+
+If post-merge validation fails, the response must use the documented revert/restore path and preserve the failure evidence. Do not silently continue after a failed production-contract validation.

@@ -35,6 +35,7 @@
     "verify:agentic-control-plane": "sh ./scripts/verify-agentic-control-plane.sh",
     "bist": "node scripts/bist.mjs",
     "validate:bist-schema": "node scripts/validate-bist-schema.mjs report schemas/examples/bist-report.valid.json && node scripts/validate-bist-schema.mjs evidence schemas/examples/bist-evidence.valid.json",
-    "test:bist-schema": "node --test test/bist-schema.test.mjs"
+    "test:bist-schema": "node --test test/bist-schema.test.mjs",
+    "test:security-phase": "node --test test/security-phase-verify.test.mjs"
   }
 }
