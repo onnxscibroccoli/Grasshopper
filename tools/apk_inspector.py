@@ -5,6 +5,8 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
@@ -59,6 +61,40 @@ def zip_inventory(apk):
         "entryCount": len(names),
     }
 
+def apktool_layouts(apk):
+    tool = shutil.which("apktool")
+    if not tool:
+        return {"available": False, "reason": "APKTOOL_NOT_INSTALLED"}
+    with tempfile.TemporaryDirectory(prefix="omnikali-apk-") as out:
+        rc, _, err = run([tool, "d", "-f", "-o", out, apk], 60)
+        if rc != 0:
+            return {"available": False, "reason": "APKTOOL_FAILED", "stderr": err[-4000:]}
+        root = Path(out) / "res"
+        layouts = []
+        ids = set()
+        texts = set()
+        if root.exists():
+            for path in root.glob("layout*/**/*.xml"):
+                rel = path.relative_to(root).as_posix()
+                layouts.append(rel)
+                try:
+                    tree = ET.parse(path)
+                    for node in tree.iter():
+                        for key, value in node.attrib.items():
+                            if key.endswith("}id") and value.startswith("@+id/"):
+                                ids.add(value[5:])
+                            if key.endswith("}text") and value and not value.startswith("@"):
+                                texts.add(value)
+                except (ET.ParseError, OSError):
+                    continue
+        return {
+            "available": True,
+            "layoutFiles": sorted(layouts),
+            "layoutCount": len(layouts),
+            "resourceIds": sorted(ids),
+            "literalTexts": sorted(texts),
+        }
+
 def main():
     if len(sys.argv) != 2:
         print("usage: apk_inspector.py APK", file=sys.stderr)
@@ -74,6 +110,7 @@ def main():
             "sizeBytes": os.path.getsize(apk),
             "badging": badging(apk),
             "zip": zip_inventory(apk),
+            "decoded": apktool_layouts(apk),
         }
         print(json.dumps(result, separators=(",", ":")))
         return 0
