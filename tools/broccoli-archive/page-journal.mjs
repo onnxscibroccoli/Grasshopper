@@ -3,7 +3,7 @@
  * Raw pages are durable source. SQLite/FTS is derived.
  */
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile, readFile, rename, appendFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, rename, appendFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const DEFAULT_ROOT = process.env.BROCCOLI_ARCHIVE_ROOT || './archive-journal';
@@ -41,7 +41,19 @@ export class PageJournal {
     await this.event('COMMITTED',pageId,{page_hash:page.page_hash});
     return page;
   }
-  async resumeFrom(){const ckpt=await this.readCheckpoint();return Number(ckpt.last_page_id??-1)+1;}
+  async resumeFrom(){
+    await this.ensure();
+    const ckpt=await this.readCheckpoint();
+    let next=Number(ckpt.last_page_id??-1)+1;
+    while(true){
+      const path=join(this.pagesDir,'page-'+next+'.json');
+      try{await access(path);}catch{break;}
+      const check=await this.verifyPage(next);
+      if(!check.ok) break;
+      next+=1;
+    }
+    return next;
+  }
   async verifyPage(pageId){
     const raw=await readFile(join(this.pagesDir,'page-'+pageId+'.json'),'utf8');
     const page=JSON.parse(raw),expected=page.page_hash,copy={...page,page_hash:''},actual=sha256(copy);
