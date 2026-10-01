@@ -80,3 +80,28 @@ Still unproven:
 - complete authenticated desktop acceptance.
 
 The workstation remains intentionally open inside its development boundary. Promotion gates, not premature hardening, provide the transition to staging and production controls.
+
+
+## Repeatable verifier evidence
+
+The read-only OCI verifier was executed on the live workstation with `GRASSHOPPER_VERIFY_RECOVERY=1`.
+
+Result: `OPENCLAW_OCI_VERIFY=PASS`.
+
+The verifier independently confirmed:
+
+- persistent `DEV_SANDBOX` declaration;
+- OpenClaw 2026.9.7;
+- local Gateway mode;
+- Gateway HTTP and socket loopback;
+- Ollama loopback;
+- running rootless Podman container;
+- model presence and inference smoke;
+- Ollama provider loopback URL;
+- backup age within 48 hours;
+- cryptographic/archive backup verification;
+- disposable restore drill with manifest inspection.
+
+The phase-contract regression suite now has **8/8 passing tests**.
+
+The test suite also caught and corrected an invalid module-level import during this iteration. No live service was changed as part of that correction.
