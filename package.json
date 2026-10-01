@@ -33,6 +33,7 @@
     "validate:migration-byte-reconciliation": "node scripts/validate-migration-byte-reconciliation.mjs",
     "verify:agentic-reproducibility": "sh ./scripts/verify-agentic-reproducibility.sh",
     "verify:agentic-control-plane": "sh ./scripts/verify-agentic-control-plane.sh",
+    "verify:no-broccoli-degradation": "node scripts/verify-no-broccoli-degradation.mjs",
     "bist": "node scripts/bist.mjs",
     "validate:bist-schema": "node scripts/validate-bist-schema.mjs report schemas/examples/bist-report.valid.json && node scripts/validate-bist-schema.mjs evidence schemas/examples/bist-evidence.valid.json",
     "test:bist-schema": "node --test test/bist-schema.test.mjs",
