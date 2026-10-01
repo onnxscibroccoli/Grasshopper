@@ -1,0 +1,117 @@
+name: Production merge gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      enable_auto_merge:
+        description: "Enable auto-merge after the complete gate passes"
+        required: true
+        default: "true"
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: production-merge-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout proposed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run complete repository production-contract suite
+        run: npm test
+
+      - name: Verify documented recovery path
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x scripts/oci-openclaw-backup.sh
+          test -f docs/SECURITY_PHASE_MODEL.md
+          test -f docs/LIVE_EVIDENCE_OCI_DEV_2026-10-01.md
+          grep -q "backup" docs/SECURITY_PHASE_MODEL.md
+          grep -q "restore" docs/SECURITY_PHASE_MODEL.md
+          grep -q "disposable restore drill passes" docs/LIVE_EVIDENCE_OCI_DEV_2026-10-01.md
+
+      - name: Verify required contract workflows are green for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            "security-phase-contract"
+            "Documentation freshness"
+            "Agentic Reference Control Plane"
+            "Agentic Development Loop"
+            "Agentic MVP Reproducibility"
+            "BIST"
+            "Reference tests"
+          )
+
+          for attempt in $(seq 1 30); do
+            runs="$(gh api "repos/$REPO/actions/runs?head_sha=$SHA&per_page=100" --jq '.workflow_runs[] | [.name,.status,.conclusion] | @tsv')"
+            missing=0
+            failed=0
+            pending=0
+
+            for name in "${required[@]}"; do
+              line="$(printf '%s\n' "$runs" | awk -F '\t' -v n="$name" '$1==n {print; exit}')"
+              if [ -z "$line" ]; then
+                missing=1
+                continue
+              fi
+              status="$(printf '%s\n' "$line" | cut -f2)"
+              conclusion="$(printf '%s\n' "$line" | cut -f3)"
+              if [ "$status" != "completed" ]; then
+                pending=1
+              elif [ "$conclusion" != "success" ]; then
+                failed=1
+              fi
+            done
+
+            if [ "$failed" -eq 1 ]; then
+              echo "Required workflow failed."
+              printf '%s\n' "$runs"
+              exit 1
+            fi
+            if [ "$missing" -eq 0 ] && [ "$pending" -eq 0 ]; then
+              echo "All required contract workflows passed."
+              exit 0
+            fi
+            echo "Waiting for required workflows (attempt $attempt/30)."
+            sleep 10
+          done
+
+          echo "Timed out waiting for required contract workflows."
+          printf '%s\n' "$runs"
+          exit 1
+
+      - name: Enable auto-merge only after every gate passes
+        if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}"             --repo "${{ github.repository }}"             --auto             --squash             --delete-branch
+
+      - name: Report manual-dispatch gate result
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "Production merge gate passed. No pull request was mutated by manual dispatch."
