@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse,hashlib,json,os,re,sqlite3,subprocess
+import argparse,contextlib,fcntl,hashlib,json,os,re,sqlite3,subprocess,urllib.request,urllib.parse
 from pathlib import Path
 from datetime import datetime,timezone
 
@@ -37,16 +37,80 @@ def category(path):
 
 def repo_dir(repo): return ROOT/"repos"/repo.replace("/","__")
 
+def gh_headers():
+    h={"Accept":"application/vnd.github+json","User-Agent":"OmniKali-GitHub-Ingest/1"}
+    token=os.environ.get("GITHUB_TOKEN")
+    if token: h["Authorization"]=f"Bearer {token}"
+    return h
+
+def gh_json(url):
+    req=urllib.request.Request(url,headers=gh_headers())
+    with urllib.request.urlopen(req,timeout=45) as r: return json.load(r)
+
+def gh_bytes(url):
+    h=gh_headers(); h["Accept"]="application/vnd.github.raw+json"
+    req=urllib.request.Request(url,headers=h)
+    with urllib.request.urlopen(req,timeout=45) as r: return r.read()
+
+def github_tree(repo,ref):
+    owner,name=repo.split("/",1)
+    commit=gh_json(f"https://api.github.com/repos/{owner}/{name}/commits/{urllib.parse.quote(ref,safe='')}")
+    sha=commit["sha"]
+    tree=gh_json(f"https://api.github.com/repos/{owner}/{name}/git/trees/{sha}?recursive=1")
+    return sha,tree
+
+def github_sync(repo,ref="HEAD"):
+    sha,tree=github_tree(repo,ref)
+    entries=tree.get("tree",[])
+    if tree.get("truncated"): raise RuntimeError("GitHub tree API returned truncated=true")
+    rows=[]
+    for e in entries:
+        if e.get("type")!="blob": continue
+        path=e["path"]; size_i=int(e.get("size") or 0)
+        rows.append((repo,sha,path,"blob",size_i,e["sha"],category(path)))
+        if len(rows)>=MAX_PATHS: break
+    c=db()
+    c.execute("DELETE FROM paths WHERE repo=? AND commit_sha=?",(repo,sha))
+    c.executemany("INSERT OR REPLACE INTO paths VALUES(?,?,?,?,?,?,?)",rows)
+    pri={"KNOWLEDGE_RELEVANT":0,"DOCUMENTATION":1,"IMPLEMENTATION":2,"AUTOMATION":3,"TEST":4,"OTHER":5,"PROTECTED":99}
+    cand=sorted((r for r in rows if r[-1]!="PROTECTED" and r[4]<=MAX_TEXT and
+                 (Path(r[2]).suffix.lower() in EXT or Path(r[2]).name.lower().startswith(("readme","license")))),
+                key=lambda r:(pri[r[-1]],len(r[2])))[:MAX_TEXT_FILES]
+    texts=[]
+    owner,name=repo.split("/",1)
+    for r in cand:
+        url=f"https://raw.githubusercontent.com/{owner}/{name}/{sha}/{urllib.parse.quote(r[2],safe='/')}"
+        try: raw=gh_bytes(url)
+        except Exception: continue
+        if len(raw)>MAX_TEXT or b"\x00" in raw: continue
+        if hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()!=r[5]: continue
+        text=raw.decode("utf-8",errors="replace")
+        texts.append((repo,sha,r[2],text,hashlib.sha256(raw).hexdigest()))
+    c.executemany("INSERT OR REPLACE INTO content VALUES(?,?,?,?,?)",texts)
+    c.execute("DELETE FROM content_fts WHERE repo=? AND commit_sha=?",(repo,sha))
+    c.executemany("INSERT INTO content_fts(repo,commit_sha,path,text) VALUES(?,?,?,?)",
+                  [(r[0],r[1],r[2],r[3]) for r in texts])
+    now=datetime.now(timezone.utc).isoformat()
+    c.execute("INSERT OR REPLACE INTO repos VALUES(?,?,?,?,?,?,?)",
+              (repo,"github-api://"+repo,ref,sha,len(rows),now,"OK"))
+    c.commit(); c.close()
+    m={"schema":"github-ingest/v1","source":"github-api","repo":repo,"ref":ref,"commit_sha":sha,
+       "tree_entries_indexed":len(rows),"text_files_indexed":len(texts),
+       "protected_paths_excluded":sum(r[-1]=="PROTECTED" for r in rows),
+       "tree_truncated":False,"indexed_at":now}
+    (ROOT/"manifests").mkdir(exist_ok=True)
+    (ROOT/"manifests"/f'{repo.replace("/","__")}__{sha[:12]}.json').write_text(json.dumps(m,indent=2))
+    print(json.dumps(m,indent=2))
+
 def ensure(repo):
     d=repo_dir(repo); d.parent.mkdir(parents=True,exist_ok=True)
     if not (d/".git").exists():
         run(["git","clone","--filter=blob:none","--no-checkout",f"https://github.com/{repo}.git",str(d)])
-    else:
-        if os.environ.get("OMNIKALI_GITHUB_NO_FETCH") != "1":
-            run(["git","fetch","--filter=blob:none","--no-tags","origin"],cwd=d)
+    elif os.environ.get("OMNIKALI_GITHUB_NO_FETCH")!="1":
+        run(["git","fetch","--filter=blob:none","--no-tags","origin"],cwd=d)
     return d
 
-def sync(repo,ref="HEAD"):
+def git_sync(repo,ref="HEAD"):
     d=ensure(repo); sha=run(["git","rev-parse",ref],cwd=d).strip()
     rows=[]
     for line in run(["git","ls-tree","-r","--long",sha],cwd=d).splitlines():
@@ -59,24 +123,41 @@ def sync(repo,ref="HEAD"):
         if len(rows)>=MAX_PATHS: break
     c=db(); c.execute("DELETE FROM paths WHERE repo=? AND commit_sha=?",(repo,sha))
     c.executemany("INSERT OR REPLACE INTO paths VALUES(?,?,?,?,?,?,?)",rows)
-    pri={"KNOWLEDGE_RELEVANT":0,"DOCUMENTATION":1,"IMPLEMENTATION":2,"AUTOMATION":3,"TEST":4,"OTHER":5,"PROTECTED":99}
-    cand=sorted((r for r in rows if r[-1]!="PROTECTED" and r[4]<=MAX_TEXT and
-                 (Path(r[2]).suffix.lower() in EXT or Path(r[2]).name.lower().startswith(("readme","license")))),
-                key=lambda r:(pri[r[-1]],len(r[2])))[:MAX_TEXT_FILES]
-    texts=[]
-    for _,_,path,_,_,_,_ in cand:
-        try: raw=run(["git","show",f"{sha}:{path}"],cwd=d)
-        except Exception: continue
-        if "\x00" in raw: continue
-        texts.append((repo,sha,path,raw,hashlib.sha256(raw.encode()).hexdigest()))
-    c.executemany("INSERT OR REPLACE INTO content VALUES(?,?,?,?,?)",texts)
-    c.execute("DELETE FROM content_fts WHERE repo=? AND commit_sha=?",(repo,sha))
-    c.executemany("INSERT INTO content_fts(repo,commit_sha,path,text) VALUES(?,?,?,?)",[(r[0],r[1],r[2],r[3]) for r in texts])
     now=datetime.now(timezone.utc).isoformat()
-    c.execute("INSERT OR REPLACE INTO repos VALUES(?,?,?,?,?,?,?)",(repo,str(d),ref,sha,len(rows),now,"OK")); c.commit(); c.close()
-    m={"schema":"github-ingest/v1","repo":repo,"ref":ref,"commit_sha":sha,"tree_entries_indexed":len(rows),
-       "text_files_indexed":len(texts),"protected_paths_excluded":sum(r[-1]=="PROTECTED" for r in rows),"indexed_at":now}
-    (ROOT/"manifests").mkdir(exist_ok=True); (ROOT/"manifests"/f'{repo.replace("/","__")}__{sha[:12]}.json').write_text(json.dumps(m,indent=2)); print(json.dumps(m,indent=2))
+    c.execute("INSERT OR REPLACE INTO repos VALUES(?,?,?,?,?,?,?)",
+              (repo,str(d),ref,sha,len(rows),now,"METADATA_ONLY_FALLBACK"))
+    c.commit(); c.close()
+    m={"schema":"github-ingest/v1","source":"git-fallback","repo":repo,"ref":ref,"commit_sha":sha,
+       "tree_entries_indexed":len(rows),"text_files_indexed":0,
+       "protected_paths_excluded":sum(r[-1]=="PROTECTED" for r in rows),
+       "tree_truncated":False,"indexed_at":now}
+    (ROOT/"manifests").mkdir(exist_ok=True)
+    (ROOT/"manifests"/f'{repo.replace("/","__")}__{sha[:12]}.json').write_text(json.dumps(m,indent=2))
+    print(json.dumps(m,indent=2))
+
+@contextlib.contextmanager
+def repo_lock(repo):
+    lock_dir=ROOT/"locks"; lock_dir.mkdir(parents=True,exist_ok=True)
+    safe=re.sub(r"[^A-Za-z0-9_.-]+","_",repo)
+    path=lock_dir/(safe+".lock")
+    with path.open("a+") as fh:
+        try:
+            fcntl.flock(fh,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError(f"repository ingest already running: {repo}")
+        try:
+            yield
+        finally:
+            fcntl.flock(fh,fcntl.LOCK_UN)
+
+def sync(repo,ref="HEAD"):
+    with repo_lock(repo):
+        try:
+            return github_sync(repo,ref)
+        except Exception as api_error:
+            if os.environ.get("OMNIKALI_GITHUB_API_ONLY")=="1": raise
+            print(json.dumps({"source":"github-api","status":"FALLBACK","error":str(api_error)}))
+            return git_sync(repo,ref)
 
 def search(q,limit=30):
     c=db(); rows=c.execute("""SELECT repo,path,snippet(content_fts,3,'>>>','<<<','…',24)

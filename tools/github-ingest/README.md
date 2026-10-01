@@ -71,3 +71,11 @@ The archive/knowledge system should treat GitHub repository records and AI conve
 - \`source_family=conversation\`
 
 Both can feed the same provenance-aware search and graph layer.
+
+## API-first validation
+
+The current implementation prefers the GitHub Trees API for commit/tree metadata and raw content retrieval for bounded high-signal files. Selected content is verified against its Git blob SHA before indexing. Public repositories can be indexed without cloning the repository.
+
+If the recursive tree response is truncated, or the API is unavailable, the tool falls back to the Git partial-clone path. `OMNIKALI_GITHUB_API_ONLY=1` disables fallback and makes the failure explicit. `GITHUB_TOKEN` may be supplied for private repositories and higher API limits.
+
+A per-repository lock under the index root prevents concurrent workers from racing on the same evidence index.
