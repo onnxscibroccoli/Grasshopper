@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { executeAndroidAction } from "../src/android/android-action-client.mjs";
 
-function fakeSpawn(output, expectedRoot, code = 0) {
+function fakeSpawn(output, expectedRoot, expectedAction = "device.identity", code = 0) {
   return (_file, args, options) => {
     assert.deepEqual(args, [`${expectedRoot}/tools/android_action_cli.py`]);
     assert.deepEqual(options.stdio, ["pipe", "pipe", "pipe"]);
@@ -11,7 +11,7 @@ function fakeSpawn(output, expectedRoot, code = 0) {
     child.stdout = new EventEmitter();
     child.stderr = new EventEmitter();
     child.stdin = { end(value) {
-      assert.equal(JSON.parse(value).action, "device.identity");
+      assert.equal(JSON.parse(value).action, expectedAction);
       queueMicrotask(() => {
         child.stdout.emit("data", output);
         child.emit("close", code);
@@ -63,7 +63,7 @@ test("propagates failed CLI evidence", async () => {
           stdout: "",
           stderr: "action failure",
           combined_output: "action failure",
-        }), root, 1),
+        }), root, "tap", 1),
       },
     ),
     /action failure/,
