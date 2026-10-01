@@ -273,3 +273,103 @@ Do not call the GCP worker production-ready until all are true:
 - No credentials appear in source, manifests, logs, or KG.
 
 This is a persistent agent/evidence/control worker, not yet the complete OmniKali remote desktop. The remote Kali desktop remains a separate acceptance path.
+
+
+## 17. Network prerequisite for a private VM
+
+A VM with no external IPv4 address still needs controlled outbound internet access for Debian packages, GitHub API/tree reads, and the pinned Node artifact. Cloud NAT is the intended path. Google documents that Public NAT permits VMs without external IPv4 addresses to reach internet destinations while not permitting unsolicited inbound connections. citeturn0search0turn0search1
+
+Create one regional Cloud Router and Public NAT for the VM's subnet before running the bootstrap:
+
+```bash
+NETWORK="default"
+REGION="us-central1"
+ROUTER="omnikali-router"
+NAT="omnikali-nat"
+
+gcloud compute routers create "$ROUTER" --network="$NETWORK" --region="$REGION"
+
+gcloud compute routers nats create "$NAT"   --router="$ROUTER"   --router-region="$REGION"   --nat-all-subnet-ip-ranges   --auto-allocate-nat-external-ips
+```
+
+If the project already has a Cloud NAT gateway serving the selected subnet, do not create a duplicate gateway. Verify the existing configuration instead.
+
+## 18. Executable reproducible bootstrap
+
+The repository now contains the canonical worker bootstrap:
+
+```bash
+sudo bash /opt/omnikali/src/Grasshopper/scripts/gcp/worker-bootstrap.sh
+```
+
+The script fail-closes if:
+- the VM has an external IPv4 address;
+- GitHub HTTPS egress is unavailable;
+- the CPU architecture is unsupported;
+- the exact Node release artifact hash does not verify;
+- Grasshopper or Broccoli Core cannot be pinned to the requested refs;
+- Grasshopper tests or Python compilation fail;
+- API-only GitHub evidence ingest fails.
+
+It records the exact source commits in `/var/lib/omnikali/worker-source.json`.
+
+For a controlled pin, set the refs before execution:
+
+```bash
+export GRASSHOPPER_REF="main"
+export BROCCOLI_REF="main"
+sudo bash /opt/omnikali/src/Grasshopper/scripts/gcp/worker-bootstrap.sh
+```
+
+The script supports both amd64 and arm64 Debian workers. The earlier manual Node x64 command in this document is superseded by this architecture-aware script.
+
+## 19. Worker verification gate
+
+After bootstrap, run:
+
+```bash
+sudo -u omnikali python3 /opt/omnikali/src/Grasshopper/scripts/gcp/verify-worker.py
+```
+
+Expected terminal evidence:
+
+```text
+GCP_WORKER_VERIFY_PASS
+grasshopper_commit=<exact SHA>
+broccoli_commit=<exact SHA>
+node=v22.23.3
+sqlite_integrity=ok
+external_ipv4=false
+```
+
+This verification is a deployment gate. A running VM, reachable SSH session, or populated directory alone is not sufficient evidence.
+
+## 20. Persistent disk mount gate
+
+Do not let bootstrap guess which block device is the new Persistent Disk.
+
+On first setup:
+
+```bash
+lsblk -o NAME,SIZE,FSTYPE,UUID,MOUNTPOINTS
+```
+
+Identify the newly attached disk by size and empty filesystem state, then format it once and mount it at `/var/lib/omnikali`. Record the UUID in `/etc/fstab`. Never run `mkfs` against a device that has not been positively identified.
+
+After reboot:
+
+```bash
+findmnt /var/lib/omnikali
+sudo -u omnikali test -s /var/lib/omnikali/worker-source.json
+sudo -u omnikali python3 /opt/omnikali/src/Grasshopper/scripts/gcp/verify-worker.py
+```
+
+A reboot-preservation test must pass before the worker is marked production-ready.
+
+## 21. Current gate status
+
+`PROVEN`: PR #121 merged; read-only GitHub evidence MCP query; API-only GitHub ingest implementation; per-repository nonblocking ingest lock; 196/196 Grasshopper test evidence from the prior OCI validation.
+
+`IMPLEMENTED_NOT_LIVE_GCP`: architecture-aware bootstrap; Node artifact checksum verification; private-worker network preflight; source manifest; worker verification gate.
+
+`NOT_PROVEN`: actual GCP VM creation, Cloud NAT reachability, Persistent Disk reboot preservation, clean GCP bootstrap, and end-to-end GCP worker verification. These require a selected GCP project and actual cloud execution.
