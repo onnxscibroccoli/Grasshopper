@@ -42,7 +42,8 @@ def ensure(repo):
     if not (d/".git").exists():
         run(["git","clone","--filter=blob:none","--no-checkout",f"https://github.com/{repo}.git",str(d)])
     else:
-        run(["git","fetch","--filter=blob:none","--no-tags","origin"],cwd=d)
+        if os.environ.get("OMNIKALI_GITHUB_NO_FETCH") != "1":
+            run(["git","fetch","--filter=blob:none","--no-tags","origin"],cwd=d)
     return d
 
 def sync(repo,ref="HEAD"):
