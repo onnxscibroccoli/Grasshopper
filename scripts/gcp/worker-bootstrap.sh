@@ -1,6 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-: "$GRASSHOPPER_REF"; : "$BROCCOLI_REF"
 GRASSHOPPER_REF="${GRASSHOPPER_REF:-main}"
 BROCCOLI_REF="${BROCCOLI_REF:-main}"
 GRASSHOPPER_DIR="${GRASSHOPPER_DIR:-/opt/omnikali/src/Grasshopper}"
@@ -23,6 +22,8 @@ case "$(dpkg --print-architecture)" in amd64) NODE_ARCH=x64;; arm64) NODE_ARCH=a
 TARBALL="node-v$NODE_VERSION-linux-$NODE_ARCH.tar.xz"
 cd /tmp
 curl -fsSLO "https://nodejs.org/dist/v$NODE_VERSION/$TARBALL"
+curl -fsSLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt"
+grep "  $TARBALL$" SHASUMS256.txt | sha256sum -c -
 rm -rf "/opt/node-v$NODE_VERSION-linux-$NODE_ARCH"
 tar -xJf "$TARBALL" -C /opt
 ln -sfn "/opt/node-v$NODE_VERSION-linux-$NODE_ARCH" /opt/node
