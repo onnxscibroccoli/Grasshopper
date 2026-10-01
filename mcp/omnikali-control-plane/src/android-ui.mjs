@@ -3,12 +3,14 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export function run(command, cwd) {
+export function run(command, cwd, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
     const p = spawn('/bin/sh', ['-lc', command], { cwd });
     let stdout = ''; let stderr = '';
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; p.kill('SIGKILL'); }, timeoutMs);
     p.stdout.on('data', d => stdout += d); p.stderr.on('data', d => stderr += d);
-    p.on('error', reject); p.on('close', code => resolve({ exitCode: code, stdout, stderr }));
+    p.on('error', reject); p.on('close', code => { clearTimeout(timer); if (timedOut) resolve({ exitCode:124, stdout, stderr, timedOut:true }); else resolve({ exitCode: code, stdout, stderr, timedOut:false }); });
   });
 }
 
@@ -41,7 +43,7 @@ export function matchNodes(nodes, selector = {}) {
 export async function snapshot({ broccoliRoot, output = join(tmpdir(), `omnikali-ui-${Date.now()}.xml`) }) {
   const remote = `/data/local/tmp/omnikali-ui-${Date.now()}.xml`;
   const command = `RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(`uiautomator dump --compressed ${remote} >/dev/null 2>&1; cat ${remote}`)}`;
-  const r = await run(command, broccoliRoot);
+  const r = await run(command, broccoliRoot, 20000);
   const start = r.stdout.indexOf('<?xml');
   const xml = start >= 0 ? r.stdout.slice(start) : '';
   if (!xml) throw new Error(`UI_SNAPSHOT_FAILED: ${r.stderr || r.stdout}`);
