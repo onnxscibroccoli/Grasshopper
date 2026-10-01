@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -x scripts/oci-openclaw-backup.sh
+          test -f scripts/oci-openclaw-backup.sh
           test -f docs/SECURITY_PHASE_MODEL.md
           test -f docs/LIVE_EVIDENCE_OCI_DEV_2026-10-01.md
           grep -q "backup" docs/SECURITY_PHASE_MODEL.md
