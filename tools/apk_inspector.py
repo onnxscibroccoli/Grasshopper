@@ -49,6 +49,7 @@ def zip_inventory(apk):
     return {
         "layoutFiles": layouts,
         "layoutCount": len(layouts),
+        "layout_candidates": layouts,
         "dexFiles": dex,
         "nativeLibraries": native,
         "hasManifest": "AndroidManifest.xml" in names,
