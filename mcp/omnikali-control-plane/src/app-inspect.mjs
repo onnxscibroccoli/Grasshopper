@@ -25,8 +25,10 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
   if (!PACKAGE_RE.test(packageName)) throw new Error('INVALID_ANDROID_PACKAGE');
   const remote = await run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(`pm path ${packageName}`)}`, broccoliRoot);
   if (remote.exitCode !== 0) throw new Error(`APK_PATH_FAILED: ${remote.timedOut ? 'timeout' : (remote.stderr || remote.stdout)}`);
-  const apkPath = remote.stdout.split(/\r?\n/).map(line => line.replace(/^package:/, '').trim()).find(Boolean);
-  if (!apkPath || !apkPath.startsWith('/') || apkPath.split('/').includes('..') || /[\r\n]/.test(apkPath)) throw new Error('APK_PATH_NOT_FOUND');
+  const pathSource = `${remote.stdout}\n${remote.stderr}`;
+  const apkMatch = pathSource.match(/(?:^|\n)package:([^\r\n]+)/);
+  const apkPath = apkMatch ? apkMatch[1].trim() : null;
+  if (!apkPath || !apkPath.startsWith('/') || apkPath.split('/').includes('..') || /[\r\n]/.test(apkPath)) throw new Error(`APK_PATH_NOT_FOUND: ${remote.stdout || remote.stderr || 'empty transport output'}`);
 
   const safeName = packageName.replaceAll('.', '_');
   const sharedDir = '/storage/emulated/0/Download/OmniKali/apks';
