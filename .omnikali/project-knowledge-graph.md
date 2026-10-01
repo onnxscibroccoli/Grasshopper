@@ -34,6 +34,6 @@ Broccoli detail lives in `docs/BROCCOLI_KNOWLEDGE_GRAPH.md` (`BROCCOLI-KG-2026-1
 ## Current evidence
 Helix task lifecycle, PostgreSQL persistence, worker lease recovery, replacement-worker recovery, real Kali execution, and fencing/idempotency behavior have previously been exercised. Re-verify after changes.
 
-Broccoli Termux -> Rish with `RISH_PRESERVE_ENV=0` printed `uid=2000(shell)` and sdk 35 on 2026-10-01. The RDC shell-written artifact gate remains NOT_PROVEN.
+Broccoli Termux -> Rish with `RISH_PRESERVE_ENV=0` printed `uid=2000(shell)` and sdk 35 on 2026-10-01 and successfully wrote the named marker artifact. The RDC shell-written artifact gate remains NOT_PROVEN because the artifact has not been fetched back through RDC in this session. A 2026-10-01 portability incident also established that caller cwd and target-shell availability must be treated as separate execution contracts; see `docs/PORTABILITY_AND_EXECUTION_BOUNDARIES.md`.
 
 **Canonical graph marker:** `OMNIKALI-KG-2026-09-28`
