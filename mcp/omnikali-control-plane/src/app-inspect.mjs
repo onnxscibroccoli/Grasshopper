@@ -2,14 +2,16 @@ import { spawn } from 'node:child_process';
 
 const PACKAGE_RE = /^[A-Za-z0-9_.]+$/;
 
-function run(command, cwd) {
+function run(command, cwd, timeoutMs = 30000) {
   return new Promise((resolve, reject) => {
     const p = spawn('/bin/sh', ['-lc', command], { cwd });
     let stdout = ''; let stderr = '';
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; p.kill('SIGKILL'); }, timeoutMs);
     p.stdout.on('data', d => stdout += d);
     p.stderr.on('data', d => stderr += d);
     p.on('error', reject);
-    p.on('close', code => resolve({ exitCode: code, stdout, stderr }));
+    p.on('close', code => { clearTimeout(timer); if (timedOut) resolve({ exitCode:124, stdout, stderr, timedOut:true }); else resolve({ exitCode: code, stdout, stderr, timedOut:false }); });
   });
 }
 
@@ -20,7 +22,7 @@ function shellQuote(value) {
 export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) {
   if (!PACKAGE_RE.test(packageName)) throw new Error('INVALID_ANDROID_PACKAGE');
   const remote = await run(`RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(`pm path ${packageName}`)}`, broccoliRoot);
-  if (remote.exitCode !== 0) throw new Error(`APK_PATH_FAILED: ${remote.stderr || remote.stdout}`);
+  if (remote.exitCode !== 0) throw new Error(`APK_PATH_FAILED: ${remote.timedOut ? 'timeout' : (remote.stderr || remote.stdout)}`);
   const apkPath = remote.stdout.split(/\r?\n/).map(line => line.replace(/^package:/, '').trim()).find(Boolean);
   if (!apkPath || !apkPath.startsWith('/') || apkPath.split('/').includes('..') || /[\r\n]/.test(apkPath)) throw new Error('APK_PATH_NOT_FOUND');
 
@@ -31,7 +33,7 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
     `RISH_PRESERVE_ENV=0 bash ./lib/rish_run.sh ${JSON.stringify(`mkdir -p ${sharedDir} && cp ${apkPath} ${sharedPath} && chmod 644 ${sharedPath}`)}`,
     broccoliRoot,
   );
-  if (copy.exitCode !== 0) throw new Error(`APK_COPY_FAILED: ${copy.stderr || copy.stdout}`);
+  if (copy.exitCode !== 0) throw new Error(`APK_COPY_FAILED: ${copy.timedOut ? 'timeout' : (copy.stderr || copy.stdout)}`);
 
   const localCandidates = [sharedPath, `/sdcard/Download/OmniKali/apks/${safeName}.apk`];
   let localPath = null;
@@ -44,7 +46,7 @@ export async function inspectInstalled({ broccoliRoot, packageName, snapshot }) 
   }
 
   const inspect = await run(`python3 ${shellQuote(`${broccoliRoot}/tools/apk_inspector.py`)} ${shellQuote(localPath)}`, broccoliRoot);
-  if (inspect.exitCode !== 0) throw new Error(`APK_INSPECTION_FAILED: ${inspect.stderr || inspect.stdout}`);
+  if (inspect.exitCode !== 0) throw new Error(`APK_INSPECTION_FAILED: ${inspect.timedOut ? 'timeout' : (inspect.stderr || inspect.stdout)}`);
   let staticInspection;
   try { staticInspection = JSON.parse(inspect.stdout); } catch { throw new Error('APK_INSPECTION_JSON_INVALID'); }
   const live = snapshot ? await snapshot() : null;
