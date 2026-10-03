@@ -42,8 +42,8 @@ for role in companion dev; do
 hw.lcd.width=1080
 hw.lcd.height=2408
 hw.lcd.density=400
-hw.ramSize=3072
-hw.cpu.ncore=2
+hw.ramSize=2048
+hw.cpu.ncore=1
 disk.dataPartition.size=8G
 showDeviceFrame=no
 hw.keyboard=yes

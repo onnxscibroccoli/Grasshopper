@@ -3,10 +3,13 @@ Status: implementation in progress; acceptance not yet proven.
 User authorized AWS/OCI setup and autonomous execution on 2026-10-02.
 ## Intent and choice
 Run two persistent Android 15 development environments controlled by Grasshopper.
-Use a dedicated AWS m7i.xlarge (4 vCPU, 16 GiB) with explicit nested virtualization,
+Use a dedicated AWS m7i-flex.large (2 vCPU, 8 GiB) with explicit nested virtualization,
 100 GiB encrypted gp3, IMDSv2, termination protection, SSM-only administration,
 and a new security group with no inbound rules. No production host mutation.
-AWS price observed: USD 0.2016/hour compute; storage, IPv4 and egress extra.
+Initial m7i.xlarge launch was rejected by the account Free Tier restriction.
+AWS lists m7i-flex.large as eligible with nested virtualization. Eligibility does
+not establish zero charges: credit balance, storage, IPv4 and egress still apply.
+Guest allocations reduced to 2 GiB RAM and 1 vCPU each for this host.
 OCI controller has no /dev/kvm and 2.8 GiB free. Existing AWS base has
 KVM but only 298 MiB available RAM, so neither is a suitable dual emulator host.
 ## Environments and boundaries

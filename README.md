@@ -123,3 +123,13 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+## Isolated Android worker
+
+The Android 15 companion/root-development worker is being implemented on
+`feat/isolated-android-worker`. See [design and recovery](docs/android-worker/design.md).
+Run `bash -n scripts/android-worker/bootstrap.sh` to check host script syntax.
+Run `python3 scripts/android-worker/verify.py` on the dedicated worker to collect
+boot, identity, UI artifacts and persistence markers. Repeat after restart.
+Private noVNC is SSM-only; native phone access and local hardware handoff remain
+NOT_PROVEN. This does not upgrade the production readiness claim.
