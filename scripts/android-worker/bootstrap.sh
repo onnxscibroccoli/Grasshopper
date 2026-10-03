@@ -82,8 +82,10 @@ Environment=QT_X11_NO_MITSHM=1
 ExecStart=/opt/android-sdk/emulator/emulator -avd $role -memory 2048 -cores 1 -port $port -accel on -gpu swiftshader_indirect -no-audio -no-boot-anim -no-snapshot -camera-back none -camera-front none -no-metrics
 Restart=on-failure
 RestartSec=20
-TimeoutStopSec=90
+TimeoutStopSec=60
+ExecStop=/opt/android-sdk/platform-tools/adb -P 5038 -s 127.0.0.1:$port emu kill
 KillSignal=SIGTERM
+KillMode=mixed
 UMask=0077
 NoNewPrivileges=true
 ProtectSystem=strict
