@@ -17,6 +17,7 @@ export class InstanceReconciler {
     const provider = this.providers[name]; if (!provider) throw new Error("no provider registered: " + name);
     return assertProvider(provider);
   }
+  async current(instanceId) { const state = await this.controlPlane.store.load(); return state.instances?.[instanceId]; }
   async reconcileInstance(instanceId) {
     const state = await this.controlPlane.store.load(); const instance = state.instances?.[instanceId];
     if (!instance) throw new Error("unknown instance: " + instanceId);
@@ -28,14 +29,14 @@ export class InstanceReconciler {
       if (instance.state === "provisioning") {
         const provisioned = await provider.provision(instance);
         if (provisioned.ok === false) return this.fail(instanceId, "provision failed");
-        if (instance.desired?.running === false) return this.set(instanceId, "stopped", { resourceId: provisioned.resourceId, provider: provisioned.provider, capabilities: provisioned.capabilities });
+        if (instance.desired?.running === false) { await this.set(instanceId, "stopped", { resourceId: provisioned.resourceId, provider: provisioned.provider, capabilities: provisioned.capabilities }); return this.current(instanceId); }
         const started = await provider.start(instance);
         if (started.ok === false) return this.fail(instanceId, "start failed");
-        return this.set(instanceId, "ready", { resourceId: started.resourceId, provider: started.provider, capabilities: started.capabilities });
+        await this.set(instanceId, "ready", { resourceId: started.resourceId, provider: started.provider, capabilities: started.capabilities }); return this.current(instanceId);
       }
       if (instance.state === "ready" && observed.state === "stopped") {
         const started = await provider.start(instance); if (started.ok === false) return this.fail(instanceId, "resume failed");
-        return this.set(instanceId, "ready", { resourceId: started.resourceId, provider: started.provider, capabilities: started.capabilities });
+        await this.set(instanceId, "ready", { resourceId: started.resourceId, provider: started.provider, capabilities: started.capabilities }); return this.current(instanceId);
       }
       if (instance.state === "stopped" && instance.desired?.running === true) {
         const started = await provider.start(instance); if (started.ok === false) return this.fail(instanceId, "start failed");
