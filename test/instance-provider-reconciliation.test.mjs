@@ -35,7 +35,7 @@ test("ephemeral destroy goes through destroying then destroyed", async () => {
     await cp.createInstance({ id: "i2", name: "tmp", mode: "ephemeral", desired: { provider: "memory", running: true } });
     await reconciler.reconcileInstance("i2");
     const state = await reconciler.destroyInstance("i2");
-    assert.equal(state.instances.i2.state, "destroyed");
+    assert.equal(state.state, "destroyed");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -47,6 +47,6 @@ test("provider absence degrades rather than falsely reporting ready", async () =
     const provider = reconciler.providers.memory;
     await provider.destroy({ id: "i3" });
     const state = await reconciler.reconcileInstance("i3");
-    assert.equal(state.instances.i3.state, "degraded");
+    assert.equal(state.state, "degraded");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
