@@ -90,3 +90,20 @@ test("backup or restore evidence missing fails", () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stdout + result.stderr, /FAIL restore\.status/);
 });
+
+test("self-test proves missing-input failure and fixture pass", () => {
+  const result = spawnSync("bash", [verifier, "--self-test"], {
+    cwd: root,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      GRASSHOPPER_SECURITY_PHASE: "PROD",
+      GRASSHOPPER_BACKUP_STATUS: "PASS",
+      GRASSHOPPER_RESTORE_STATUS: "PASS",
+    },
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /SELF_TEST missing=FAIL/);
+  assert.match(result.stdout, /SELF_TEST fixture=PASS/);
+  assert.match(result.stdout, /SECURITY_PHASE_SELF_TEST=PASS/);
+});
