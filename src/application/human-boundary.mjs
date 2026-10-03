@@ -1,5 +1,6 @@
 export const HUMAN_BOUNDARIES = Object.freeze([
   "AUTHENTICATION_REQUIRED",
+  "OAUTH_AUTHORIZATION_REQUIRED",
   "MFA_REQUIRED",
   "CAPTCHA_REQUIRED",
   "BOT_CHECK_REQUIRED",
@@ -16,6 +17,7 @@ const RULES = Object.freeze([
   ["SECURITY_KEY_REQUIRED", /\b(security key|passkey|hardware key|yubikey)\b/i],
   ["BIOMETRIC_REQUIRED", /\b(fingerprint|face id|touch id|biometric)\b/i],
   ["PAYMENT_AUTHORIZATION_REQUIRED", /\b(3[- ]d secure|payment authentication|authorize payment)\b/i],
+  ["OAUTH_AUTHORIZATION_REQUIRED", /\b(oauth|device authorization|authorize (?:this )?(?:app|application|device)|grant access|allow .{0,40} access)\b/i],
   ["AUTHENTICATION_REQUIRED", /\b(sign in|log in|login|required authentication|authentication required)\b/i],
   ["CONSENT_REQUIRED", /\b(cookie consent|accept cookies|terms and conditions|privacy consent)\b/i],
 ]);
