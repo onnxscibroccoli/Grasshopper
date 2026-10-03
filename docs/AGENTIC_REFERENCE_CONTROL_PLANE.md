@@ -53,3 +53,19 @@ This makes the intended client flow explicit:
 `create instance -> wait ready -> switch -> run tasks -> switch between instances -> stop/resume persistent OR destroy ephemeral`
 
 The same instance contract can later map to a cloud VM, Android emulator, containerized browser, KVM guest, edge emulator, or another provider without changing the user-facing selection model.
+
+## Provider reconciliation
+
+Instances are provider-neutral at the control-plane boundary. A provider adapter implements:
+
+`provision -> start -> stop -> destroy -> inspect`
+
+The reconciler owns desired-state convergence and fail-closed degradation. A missing provider resource does not become ready; it becomes degraded with an auditable reason.
+
+The current deterministic provider is memory, used for contract and lifecycle verification. Provider names reserved by the contract include android-worker, kvm, container, and edge-android. Their live provisioning remains adapter work rather than being inferred from a state record.
+
+## Android workspace boundary
+
+The Android workspace bridge uses only the existing bounded Android action contract. It can inspect identity/displays, launch approved packages, and inject bounded tap/swipe/text/keyevent actions. Native-phone return is modeled as an explicit capability and user-intent route.
+
+Frame capture/streaming is deliberately not claimed here. The proven virtual-display screenshot path remains separate evidence until a bounded frame transport is implemented and verified.
