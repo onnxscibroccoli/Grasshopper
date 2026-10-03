@@ -3,6 +3,7 @@
 import json, os, pathlib, subprocess, sys, time, uuid
 ADB="/opt/android-sdk/platform-tools/adb"
 ADB_PORT="5038"
+PERSIST="/data/local/tmp/grasshopper-persistence"
 OUT=pathlib.Path("/var/lib/grasshopper-android/evidence")
 OUT.mkdir(parents=True,exist_ok=True)
 def adb(serial,*args):
@@ -50,10 +51,9 @@ for role,serial,expected in [("companion","127.0.0.1:5555","2000"),("dev","127.0
             subprocess.run([ADB,"-P",ADB_PORT,"-s",serial,"exec-out","screencap","-p"],stdout=f,check=True,timeout=45)
         assert (OUT/(role+".png")).read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
         marker=OUT/(role+"-expected-marker")
-        if not marker.exists():
-            marker.write_text(str(uuid.uuid4()))
-            adb_run(serial,"push",str(marker),"/sdcard/grasshopper-persistence")
-        item["marker"]=adb(serial,"shell","cat","/sdcard/grasshopper-persistence")
+        if not marker.exists(): marker.write_text(str(uuid.uuid4()))
+        adb_run(serial,"push",str(marker),PERSIST)
+        item["marker"]=adb(serial,"shell","cat",PERSIST)
         assert item["marker"]==marker.read_text()
         item["status"]="PASS"
     except Exception as exc:
