@@ -14,7 +14,7 @@ test("Android workspace bridge uses bounded actions and exposes virtual display 
   await bridge.swipe(36, 10, 20, 30, 400);
   await bridge.text(36, "hello");
   await bridge.keyevent(36, "ENTER");
-  assert.equal(calls.length, 6);
+  assert.equal(calls.length, 7);
   assert.equal(calls[2].display_id, 36);
 });
 
