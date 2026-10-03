@@ -1,0 +1,33 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const script = path.resolve(process.cwd(), 'scripts/cloud-android/persistent-device.sh');
+
+test('cloud Android script exists and is executable', () => {
+  const st = fs.statSync(script);
+  assert.ok((st.mode & 0o111) !== 0);
+});
+
+test('cloud Android defaults to loopback and token-gated presentation', () => {
+  const body = fs.readFileSync(script, 'utf8');
+  assert.match(body, /set -Eeuo pipefail/);
+  assert.match(body, /CLOUD_ANDROID_LISTEN_ADDR:-127\.0\.0\.1/);
+  assert.match(body, /hostfwd=tcp:"\$LISTEN_ADDR":"\$ADB_PORT"-:5555/);
+  assert.match(body, /--token-plugin TokenFile/);
+  assert.match(body, /chmod 600 "\$TOKEN_MAP"/);
+});
+
+test('cloud Android pins Android-x86 9.0-r2 provenance', () => {
+  const body = fs.readFileSync(script, 'utf8');
+  assert.match(body, /android-x86_64-9\.0-r2\.iso/);
+  assert.match(body, /f7eb8fc56f29ad5432335dc054183acf086c539f3990f0b6e9ff58bd6df4604e/);
+});
+
+test('cloud Android injects only an operator public key', () => {
+  const body = fs.readFileSync(script, 'utf8');
+  assert.match(body, /CLOUD_ANDROID_ADB_PUBLIC_KEY_FILE/);
+  assert.match(body, /adbkey\.pub/);
+  assert.doesNotMatch(body, /cp .*adbkey[^.]/);
+});
