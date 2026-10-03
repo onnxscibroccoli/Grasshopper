@@ -35,3 +35,37 @@ No production credentials are read. No live production mutation is performed. Th
 This gate grows the automation surface from MVP source reproduction to the reference control plane. It does not replace the validated production topology:
 
 `authenticated client -> Helix gateway -> provider-neutral PostgreSQL -> worker -> Kali`
+
+## Instance model
+
+The reference control plane treats a user workspace as an **instance** with an explicit lifecycle and retention mode.
+
+- `persistent`: stop and resume without destroying the instance identity or durable state.
+- `ephemeral`: create for a bounded workflow and destroy when the workflow is finished.
+- Each instance has a stable `instanceId`, a human-readable name, a kind, desired configuration, and lifecycle state.
+- `activeInstanceId` is the control-plane selection used by a client to switch the visible workspace.
+- Tasks may target an instance explicitly. A task cannot target a missing, destroyed, or non-ready instance.
+- Multiple instances may coexist for one user. They are not serialized behind the active UI selection.
+- Instance lifecycle in this reference implementation is stateful control-plane intent. Provider-specific provisioning, desktop frame transport, and hypervisor operations remain separate adapters and are not claimed by this gate.
+
+This makes the intended client flow explicit:
+
+`create instance -> wait ready -> switch -> run tasks -> switch between instances -> stop/resume persistent OR destroy ephemeral`
+
+The same instance contract can later map to a cloud VM, Android emulator, containerized browser, KVM guest, edge emulator, or another provider without changing the user-facing selection model.
+
+## Provider reconciliation
+
+Instances are provider-neutral at the control-plane boundary. A provider adapter implements:
+
+`provision -> start -> stop -> destroy -> inspect`
+
+The reconciler owns desired-state convergence and fail-closed degradation. A missing provider resource does not become ready; it becomes degraded with an auditable reason.
+
+The current deterministic provider is memory, used for contract and lifecycle verification. Provider names reserved by the contract include android-worker, kvm, container, and edge-android. Their live provisioning remains adapter work rather than being inferred from a state record.
+
+## Android workspace boundary
+
+The Android workspace bridge uses only the existing bounded Android action contract. It can inspect identity/displays, launch approved packages, and inject bounded tap/swipe/text/keyevent actions. Native-phone return is modeled as an explicit capability and user-intent route.
+
+Frame capture/streaming is deliberately not claimed here. The proven virtual-display screenshot path remains separate evidence until a bounded frame transport is implemented and verified.
