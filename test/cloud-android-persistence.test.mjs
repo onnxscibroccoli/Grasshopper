@@ -15,6 +15,7 @@ test('cloud Android defaults to loopback and token-gated presentation', () => {
   assert.match(body, /set -Eeuo pipefail/);
   assert.match(body, /CLOUD_ANDROID_LISTEN_ADDR:-127\.0\.0\.1/);
   assert.match(body, /hostfwd=tcp:"\$LISTEN_ADDR":"\$ADB_PORT"-:5555/);
+  assert.match(body, /androidboot\.qemu=1/);
   assert.match(body, /--token-plugin TokenFile/);
   assert.match(body, /chmod 600 "\$TOKEN_MAP"/);
   assert.match(body, /ws_alive\(\)/);
