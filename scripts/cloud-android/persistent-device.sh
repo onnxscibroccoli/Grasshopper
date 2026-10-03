@@ -29,6 +29,7 @@ WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-/opt/noVNC/utils/websockify/run}
 
 fail() { echo "ERROR: $*" >&2; exit 2; }
 alive() { [ -s "$QEMU_PID" ] && kill -0 "$(cat "$QEMU_PID")" 2>/dev/null; }
+ws_alive() { [ -s "$WS_PID" ] && kill -0 "$(cat "$WS_PID")" 2>/dev/null; }
 
 require_tools() {
   [ -n "$QEMU_BIN" ] || fail "qemu-system-x86_64 is required"
@@ -69,9 +70,14 @@ prepare() {
   cp "$ADB_KEY_FILE" "$RAMDISK_EDIT/adb_keys"
   chmod 600 "$RAMDISK_EDIT/adb_keys"
   if grep -q '^ro.adb.secure=' "$RAMDISK_EDIT/default.prop"; then
-    sed -i 's/^ro.adb.secure=.*/ro.adb.secure=0/' "$RAMDISK_EDIT/default.prop"
+    sed -i 's/^ro.adb.secure=.*/ro.adb.secure=1/' "$RAMDISK_EDIT/default.prop"
   else
-    printf '%s\n' 'ro.adb.secure=0' >> "$RAMDISK_EDIT/default.prop"
+    printf '%s\n' 'ro.adb.secure=1' >> "$RAMDISK_EDIT/default.prop"
+  fi
+  if grep -q '^ro.secure=' "$RAMDISK_EDIT/default.prop"; then
+    sed -i 's/^ro.secure=.*/ro.secure=0/' "$RAMDISK_EDIT/default.prop"
+  else
+    printf '%s\n' 'ro.secure=0' >> "$RAMDISK_EDIT/default.prop"
   fi
 
   if ! grep -q '^import /init.omnikali-cloud.rc$' "$RAMDISK_EDIT/init.rc"; then
@@ -84,6 +90,9 @@ on boot
     setprop persist.adb.tcp.port 5555
     setprop service.adb.root 1
     setprop persist.service.adb.enable 1
+
+on post-fs-data
+    stop adbd
     start adbd
 
 on property:sys.boot_completed=1
@@ -119,7 +128,7 @@ start() {
     -name omnikali-cloud-android \
     -enable-kvm -m "$MEMORY_MB" -smp "$CPUS" -cpu host \
     -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd.img" \
-    -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 nomodeset HWACCEL=0' \
+    -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 androidboot.qemu=1 nomodeset HWACCEL=0' \
     -drive index=0,if=virtio,id=system,file="$RUNTIME/system.sfs",format=raw,readonly=on \
     -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk-cloud.img",format=raw,readonly=on \
     -drive index=2,if=virtio,id=data,file="$DATA",format=raw \
@@ -134,17 +143,23 @@ start() {
   alive || { cat "$LOG_DIR/qemu.log" >&2; fail "cloud Android QEMU exited"; }
   fi
 
-  if [ -s "$WS_PID" ]; then kill "$(cat "$WS_PID")" 2>/dev/null || true; fi
-  rm -f "$WS_PID" "$TOKEN_MAP" "$TOKEN_FILE" "$URL_FILE"
-  token="$(openssl rand -hex 32)"
-  printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
-  printf '%s\n' "$token" > "$TOKEN_FILE"
-  chmod 600 "$TOKEN_MAP" "$TOKEN_FILE"
+  if [ ! -s "$TOKEN_FILE" ]; then
+    token="$(openssl rand -hex 32)"
+    printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
+    printf '%s\n' "$token" > "$TOKEN_FILE"
+    chmod 600 "$TOKEN_MAP" "$TOKEN_FILE"
+  else
+    token="$(cat "$TOKEN_FILE")"
+    printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
+    chmod 600 "$TOKEN_MAP"
+  fi
 
-  "$WEBSOCKIFY_BIN" --token-plugin TokenFile --token-source "$TOKEN_MAP" \
-    --web "$WEB_ROOT" --heartbeat 30 "$LISTEN_ADDR:$WS_PORT" \
-    >"$LOG_DIR/websockify.log" 2>&1 &
-  echo $! > "$WS_PID"
+  if ! ws_alive; then
+    "$WEBSOCKIFY_BIN" --token-plugin TokenFile --token-source "$TOKEN_MAP" \
+      --web "$WEB_ROOT" --heartbeat 30 "$LISTEN_ADDR:$WS_PORT" \
+      >"$LOG_DIR/websockify.log" 2>&1 &
+    echo $! > "$WS_PID"
+  fi
 
   path="websockify?token=$token"
   encoded="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$path")"
@@ -169,6 +184,7 @@ status() {
   if alive; then echo "qemu=RUNNING pid=$(cat "$QEMU_PID")"; else echo "qemu=STOPPED"; fi
   [ -s "$TOKEN_FILE" ] && echo "token=PRESENT" || echo "token=ABSENT"
   [ -s "$URL_FILE" ] && echo "url_file=$URL_FILE"
+  ws_alive && echo "websockify=RUNNING pid=$(cat "$WS_PID")" || echo "websockify=STOPPED"
   ss -ltn 2>/dev/null | grep -E "127.0.0.1:($VNC_PORT|$WS_PORT|$ADB_PORT)\b" || true
 }
 
