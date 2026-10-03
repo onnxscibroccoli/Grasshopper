@@ -40,7 +40,7 @@ export class InstanceReconciler {
       }
       if (instance.state === "stopped" && instance.desired?.running === true) {
         const started = await provider.start(instance); if (started.ok === false) return this.fail(instanceId, "start failed");
-        return this.set(instanceId, "ready", { resourceId: started.resourceId, provider: started.provider, capabilities: started.capabilities });
+        await this.set(instanceId, "ready", { resourceId: started.resourceId, provider: started.provider, capabilities: started.capabilities }); return this.current(instanceId);
       }
       return instance;
     } catch (error) { return this.fail(instanceId, error instanceof Error ? error.message : String(error)); }
@@ -51,7 +51,7 @@ export class InstanceReconciler {
     if (instance.mode !== "ephemeral") throw new Error("persistent instance must be stopped, not destroyed");
     const provider = this.providerFor(instance); await this.set(instanceId, "destroying");
     const result = await provider.destroy(instance); if (result.ok === false) return this.fail(instanceId, "destroy failed");
-    return this.set(instanceId, "destroyed", { resourceId: result.resourceId, provider: result.provider });
+    await this.set(instanceId, "destroyed", { resourceId: result.resourceId, provider: result.provider }); return this.current(instanceId);
   }
   async stopInstance(instanceId) {
     const state = await this.controlPlane.store.load(); const instance = state.instances?.[instanceId];
@@ -59,7 +59,7 @@ export class InstanceReconciler {
     if (instance.state === "destroyed") return instance;
     const provider = this.providerFor(instance); const result = await provider.stop(instance);
     if (result.ok === false) return this.fail(instanceId, "stop failed");
-    return this.set(instanceId, "stopped", { resourceId: result.resourceId, provider: result.provider });
+    await this.set(instanceId, "stopped", { resourceId: result.resourceId, provider: result.provider }); return this.current(instanceId);
   }
   async set(instanceId, stateName, metadata = {}) {
     return this.controlPlane.store.update(state => {
@@ -69,5 +69,5 @@ export class InstanceReconciler {
       state.events.push({ id: "evt_" + crypto.randomUUID(), type: "instance.reconciled", at: now(), data: { instanceId, state: stateName, ...metadata } }); return state;
     });
   }
-  async fail(instanceId, reason) { return this.set(instanceId, "degraded", { error: reason }); }
+  async fail(instanceId, reason) { await this.set(instanceId, "degraded", { error: reason }); return this.current(instanceId); }
 }
