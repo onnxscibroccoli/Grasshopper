@@ -104,12 +104,7 @@ EOF
 
 start() {
   prepare
-  if alive; then
-    echo "PASS: cloud Android VM already running"
-    status
-    return
-  fi
-
+  if ! alive; then
   rm -f "$QEMU_PID" "$TOKEN_MAP" "$TOKEN_FILE" "$URL_FILE"
   "$QEMU_BIN" \
     -name omnikali-cloud-android \
@@ -129,6 +124,8 @@ start() {
   sleep 2
   alive || { cat "$LOG_DIR/qemu.log" >&2; fail "cloud Android QEMU exited"; }
 
+  if [ -s "$WS_PID" ]; then kill "$(cat "$WS_PID")" 2>/dev/null || true; fi
+  rm -f "$WS_PID" "$TOKEN_MAP" "$TOKEN_FILE" "$URL_FILE"
   token="$(openssl rand -hex 32)"
   printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
   printf '%s\n' "$token" > "$TOKEN_FILE"
