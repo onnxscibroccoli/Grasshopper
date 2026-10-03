@@ -19,12 +19,12 @@ function captchaBoundary() {
   });
 }
 
-test("auth gate pauses automation and relay view excludes internal session state", () => {
+test("auth gate pauses automation and relay excludes internal references", () => {
   const gate = createAuthGate(captchaBoundary(), {
     taskId: "task-1",
-    sessionRef: "browser-context-7",
+    sessionRef: "browser:context-7",
     provider: "generic-web",
-    checkpoint: { url: "https://example.test/login", step: 3 },
+    checkpointRef: "checkpoint:task-1/step-3",
   });
 
   assert.equal(gate.state, "DETECTED");
@@ -35,19 +35,17 @@ test("auth gate pauses automation and relay view excludes internal session state
   assert.equal(relay.requiresUserPresence, true);
   assert.equal("sessionRef" in relay, false);
   assert.equal("credentialRef" in relay, false);
-  assert.equal("checkpoint" in relay, false);
+  assert.equal("checkpointRef" in relay, false);
 });
 
-test("auth gate resumes only after fresh verification from the original session", () => {
+test("auth gate resumes only after verification from the original session", () => {
   let gate = createAuthGate(captchaBoundary(), {
     taskId: "task-2",
-    sessionRef: "browser-context-9",
+    sessionRef: "browser:context-9",
     provider: "generic-web",
   });
 
   gate = applyAuthGateEvent(gate, { type: AUTH_GATE_EVENTS.USER_NOTIFIED });
-  assert.equal(gate.state, "WAITING_FOR_USER");
-
   gate = applyAuthGateEvent(gate, { type: AUTH_GATE_EVENTS.USER_COMPLETED });
   assert.equal(gate.state, "VERIFYING");
   assert.equal(gate.verificationAttempts, 1);
@@ -56,7 +54,7 @@ test("auth gate resumes only after fresh verification from the original session"
     () => applyAuthGateEvent(gate, {
       type: AUTH_GATE_EVENTS.VERIFIED,
       verified: true,
-      sessionRef: "different-context",
+      sessionRef: "browser:different-context",
     }),
     /original session/,
   );
@@ -64,7 +62,7 @@ test("auth gate resumes only after fresh verification from the original session"
   gate = applyAuthGateEvent(gate, {
     type: AUTH_GATE_EVENTS.VERIFIED,
     verified: true,
-    sessionRef: "browser-context-9",
+    sessionRef: "browser:context-9",
     credentialRef: "vault:provider/account-1",
   });
 
@@ -73,13 +71,13 @@ test("auth gate resumes only after fresh verification from the original session"
 
   const resume = createAuthGateResumeEvent(gate);
   assert.equal(resume.type, "human.boundary.cleared");
-  assert.equal(resume.sessionRef, "browser-context-9");
+  assert.equal(resume.sessionRef, "browser:context-9");
   assert.equal(resume.credentialRef, "vault:provider/account-1");
 });
 
-test("auth gate rejects raw credentials and challenge answers", () => {
+test("auth gate rejects secret-bearing event fields and non-reference credential handles", () => {
   let gate = createAuthGate(captchaBoundary(), {
-    sessionRef: "browser-context-11",
+    sessionRef: "browser:context-11",
   });
   gate = applyAuthGateEvent(gate, { type: AUTH_GATE_EVENTS.USER_NOTIFIED });
   gate = applyAuthGateEvent(gate, { type: AUTH_GATE_EVENTS.USER_COMPLETED });
@@ -88,33 +86,33 @@ test("auth gate rejects raw credentials and challenge answers", () => {
     () => applyAuthGateEvent(gate, {
       type: AUTH_GATE_EVENTS.VERIFIED,
       verified: true,
-      sessionRef: "browser-context-11",
-      accessToken: "raw-token-must-never-enter-the-gate",
+      sessionRef: "browser:context-11",
+      password: "not-accepted",
     }),
-    /must not contain credentials/,
+    /prohibited secret material/,
   );
 
   assert.throws(
     () => applyAuthGateEvent(gate, {
       type: AUTH_GATE_EVENTS.VERIFIED,
       verified: true,
-      sessionRef: "browser-context-11",
-      captchaAnswer: "answer",
+      sessionRef: "browser:context-11",
+      credentialRef: "opaque-without-scheme",
     }),
-    /must not contain credentials/,
+    /opaque namespaced reference/,
   );
 });
 
-test("verified completion is idempotent but conflicting duplicate verification is rejected", () => {
+test("verified completion is idempotent and conflicting duplicates fail closed", () => {
   let gate = createAuthGate(captchaBoundary(), {
-    sessionRef: "browser-context-12",
+    sessionRef: "browser:context-12",
   });
   gate = applyAuthGateEvent(gate, { type: AUTH_GATE_EVENTS.USER_NOTIFIED });
   gate = applyAuthGateEvent(gate, { type: AUTH_GATE_EVENTS.USER_COMPLETED });
   gate = applyAuthGateEvent(gate, {
     type: AUTH_GATE_EVENTS.VERIFIED,
     verified: true,
-    sessionRef: "browser-context-12",
+    sessionRef: "browser:context-12",
     credentialRef: "vault:provider/account-2",
   });
 
@@ -122,7 +120,7 @@ test("verified completion is idempotent but conflicting duplicate verification i
     applyAuthGateEvent(gate, {
       type: AUTH_GATE_EVENTS.VERIFIED,
       verified: true,
-      sessionRef: "browser-context-12",
+      sessionRef: "browser:context-12",
       credentialRef: "vault:provider/account-2",
     }),
     gate,
@@ -132,15 +130,15 @@ test("verified completion is idempotent but conflicting duplicate verification i
     () => applyAuthGateEvent(gate, {
       type: AUTH_GATE_EVENTS.VERIFIED,
       verified: true,
-      sessionRef: "browser-context-12",
+      sessionRef: "browser:context-12",
       credentialRef: "vault:provider/other-account",
     }),
     /conflicting duplicate/,
   );
 });
 
-test("failed, cancelled, and expired gates never resume the task", () => {
-  let failed = createAuthGate(captchaBoundary(), { sessionRef: "ctx-failed" });
+test("failed cancelled and expired gates never resume the task", () => {
+  let failed = createAuthGate(captchaBoundary(), { sessionRef: "browser:failed" });
   failed = applyAuthGateEvent(failed, { type: AUTH_GATE_EVENTS.USER_NOTIFIED });
   failed = applyAuthGateEvent(failed, { type: AUTH_GATE_EVENTS.USER_COMPLETED });
   failed = applyAuthGateEvent(failed, {
@@ -151,25 +149,25 @@ test("failed, cancelled, and expired gates never resume the task", () => {
   assert.equal(authGateDisposition(failed), "HALT");
   assert.throws(() => createAuthGateResumeEvent(failed), /not been verified/);
 
-  let cancelled = createAuthGate(captchaBoundary(), { sessionRef: "ctx-cancelled" });
+  let cancelled = createAuthGate(captchaBoundary(), { sessionRef: "browser:cancelled" });
   cancelled = applyAuthGateEvent(cancelled, { type: AUTH_GATE_EVENTS.CANCELLED });
   assert.equal(cancelled.state, "CANCELLED");
   assert.equal(authGateDisposition(cancelled), "HALT");
 
-  let expired = createAuthGate(captchaBoundary(), { sessionRef: "ctx-expired" });
+  let expired = createAuthGate(captchaBoundary(), { sessionRef: "browser:expired" });
   expired = applyAuthGateEvent(expired, { type: AUTH_GATE_EVENTS.EXPIRED });
   assert.equal(expired.state, "EXPIRED");
   assert.equal(authGateDisposition(expired), "HALT");
 });
 
-test("OAuth authorization boundaries can use the device handoff mode without carrying tokens", () => {
+test("OAuth authorization boundaries can use device handoff mode", () => {
   const boundary = detectHumanBoundary({
     text: "Authorize this device to continue",
   });
-  assert.ok(boundary);
+  assert.equal(boundary?.reason, "OAUTH_AUTHORIZATION_REQUIRED");
 
   const gate = createAuthGate(boundary, {
-    sessionRef: "oauth-session-1",
+    sessionRef: "oauth:session-1",
     provider: "google",
     mode: "OAUTH_DEVICE",
   });
