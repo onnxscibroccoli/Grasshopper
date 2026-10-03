@@ -56,7 +56,7 @@ prepare() {
   actual="$(sha256sum "$ISO" | awk '{print $1}')"
   [ "$actual" = "$ISO_SHA256" ] || fail "Android ISO SHA-256 mismatch: $actual"
 
-  if [ ! -s "$RUNTIME/kernel" ] || [ ! -s "$RUNTIME/ramdisk.img" ] || [ ! -s "$RUNTIME/ramdisk.img" ] || [ ! -s "$RUNTIME/system.sfs" ]; then
+  if [ ! -s "$RUNTIME/kernel" ]  || [ ! -s "$RUNTIME/ramdisk.img" ] || [ ! -s "$RUNTIME/system.sfs" ]; then
     rm -rf "$RUNTIME" "$RAMDISK_EDIT"
     mkdir -p "$RUNTIME" "$RAMDISK_EDIT"
     7z e -y "$ISO" -o"$RUNTIME" kernel initrd.img ramdisk.img system.sfs >/dev/null
@@ -114,10 +114,10 @@ start() {
   "$QEMU_BIN" \
     -name omnikali-cloud-android \
     -enable-kvm -m "$MEMORY_MB" -smp "$CPUS" -cpu host \
-    -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/ramdisk-cloud.img" \
+    -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd.img" \
     -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 nomodeset HWACCEL=0' \
     -drive index=0,if=virtio,id=system,file="$RUNTIME/system.sfs",format=raw,readonly=on \
-    -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk.img",format=raw,readonly=on \
+    -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk-cloud.img",format=raw,readonly=on \
     -drive index=2,if=virtio,id=data,file="$DATA",format=raw \
     -netdev user,id=net0,hostfwd=tcp:"$LISTEN_ADDR":"$ADB_PORT"-:5555 \
     -device virtio-net-pci,netdev=net0 \
