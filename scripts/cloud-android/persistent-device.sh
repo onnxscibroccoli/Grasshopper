@@ -56,14 +56,14 @@ prepare() {
   actual="$(sha256sum "$ISO" | awk '{print $1}')"
   [ "$actual" = "$ISO_SHA256" ] || fail "Android ISO SHA-256 mismatch: $actual"
 
-  if [ ! -s "$RUNTIME/kernel" ] || [ ! -s "$RUNTIME/initrd.img" ] || [ ! -s "$RUNTIME/ramdisk.img" ] || [ ! -s "$RUNTIME/system.sfs" ]; then
+  if [ ! -s "$RUNTIME/kernel" ] || [ ! -s "$RUNTIME/ramdisk.img" ] || [ ! -s "$RUNTIME/ramdisk.img" ] || [ ! -s "$RUNTIME/system.sfs" ]; then
     rm -rf "$RUNTIME" "$RAMDISK_EDIT"
     mkdir -p "$RUNTIME" "$RAMDISK_EDIT"
     7z e -y "$ISO" -o"$RUNTIME" kernel initrd.img ramdisk.img system.sfs >/dev/null
   fi
 
   if [ ! -s "$RAMDISK_EDIT/init" ]; then
-    gzip -dc "$RUNTIME/initrd.img" | (cd "$RAMDISK_EDIT" && cpio -idm --no-absolute-filenames >/dev/null)
+    gzip -dc "$RUNTIME/ramdisk.img" | (cd "$RAMDISK_EDIT" && cpio -idm --no-absolute-filenames >/dev/null)
   fi
 
   cp "$ADB_KEY_FILE" "$RAMDISK_EDIT/adb_keys"
@@ -86,9 +86,9 @@ on property:sys.boot_completed=1
 EOF
   chmod 644 "$RAMDISK_EDIT/init.omnikali-cloud.rc"
 
-  rm -f "$RUNTIME/initrd-cloud.img.tmp"
-  (cd "$RAMDISK_EDIT" && find . -print0 | cpio --null -o -H newc 2>/dev/null | gzip -9 > "$RUNTIME/initrd-cloud.img.tmp")
-  mv "$RUNTIME/initrd-cloud.img.tmp" "$RUNTIME/initrd-cloud.img"
+  rm -f "$RUNTIME/ramdisk-cloud.img.tmp"
+  (cd "$RAMDISK_EDIT" && find . -print0 | cpio --null -o -H newc 2>/dev/null | gzip -9 > "$RUNTIME/ramdisk-cloud.img.tmp")
+  mv "$RUNTIME/ramdisk-cloud.img.tmp" "$RUNTIME/ramdisk-cloud.img"
 
   if [ ! -f "$DATA" ]; then
     truncate -s "$DATA_SIZE" "$DATA"
@@ -99,7 +99,7 @@ EOF
   echo "PASS: cloud Android artifacts prepared"
   echo "iso_sha256=$actual"
   echo "data=$DATA"
-  echo "initrd=$RUNTIME/initrd-cloud.img"
+  echo "ramdisk=$RUNTIME/ramdisk-cloud.img"
 }
 
 start() {
@@ -114,7 +114,7 @@ start() {
   "$QEMU_BIN" \
     -name omnikali-cloud-android \
     -enable-kvm -m "$MEMORY_MB" -smp "$CPUS" -cpu host \
-    -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd-cloud.img" \
+    -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/ramdisk-cloud.img" \
     -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 nomodeset HWACCEL=0' \
     -drive index=0,if=virtio,id=system,file="$RUNTIME/system.sfs",format=raw,readonly=on \
     -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk.img",format=raw,readonly=on \
