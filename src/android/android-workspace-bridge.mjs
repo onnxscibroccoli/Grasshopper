@@ -15,9 +15,8 @@ export class AndroidWorkspaceBridge {
 
   async launch(packageName, { displayId } = {}) {
     if (!/^[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+$/.test(packageName)) throw new Error("invalid Android package name");
-    const request = { action: "app.launch", package: packageName };
-    if (displayId != null) request.display_id = Number(displayId);
-    return this.action(request);
+    if (displayId != null) throw new Error("app.launch display targeting is not part of the bounded action contract");
+    return this.action({ action: "app.launch", package: packageName });
   }
 
   async tap(displayId, x, y) {
@@ -25,7 +24,7 @@ export class AndroidWorkspaceBridge {
   }
 
   async swipe(displayId, x1, y1, x2, y2, durationMs = 300) {
-    return this.action({ action: "swipe", display_id: Number(displayId), x1: Number(x1), y1: Number(y1), x2: Number(x2), y2: Number(y2), duration_ms: Number(durationMs) });
+    return this.action({ action: "swipe", display_id: Number(displayId), start: [Number(x1), Number(y1)], end: [Number(x2), Number(y2)], duration_ms: Number(durationMs) });
   }
 
   async text(displayId, value) {
