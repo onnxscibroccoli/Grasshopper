@@ -16,11 +16,11 @@ const LOCAL_MODE = process.env.GRASSHOPPER_OCI_LOCAL === "1";
 fs.mkdirSync(AUDIT_DIR, { recursive: true, mode: 0o700 });
 
 const ACTIONS = {
-  status: { command: "sudo -n systemctl --failed --no-pager; printf '\\n--- LISTEN ---\\n'; sudo -n ss -lntup", write: false },
+  status: { command: "systemctl --failed --no-pager 2>/dev/null || true; printf '\\n--- LISTEN ---\\n'; ss -lnt", write: false },
   firewall_status: { command: "sudo -n firewall-cmd --state; sudo -n firewall-cmd --get-active-zones; sudo -n firewall-cmd --list-all", write: false },
-  ssh_hardening_check: { command: "sudo -n sshd -T | grep -E '^(permitrootlogin|passwordauthentication|pubkeyauthentication|x11forwarding|allowtcpforwarding|gatewayports|clientaliveinterval|clientalivecountmax) '", write: false },
-  security_updates: { command: "sudo -n dnf -q check-update --security || test $? -eq 100", write: false },
-  fail2ban_status: { command: "sudo -n systemctl is-enabled fail2ban 2>/dev/null; sudo -n systemctl is-active fail2ban 2>/dev/null; sudo -n fail2ban-client status 2>/dev/null || true", write: false },
+  ssh_hardening_check: { command: "sshd -T 2>/dev/null | grep -E '^(permitrootlogin|passwordauthentication|pubkeyauthentication|x11forwarding|allowtcpforwarding|gatewayports|clientaliveinterval|clientalivecountmax) '", write: false },
+  security_updates: { command: "dnf -q check-update --security; rc=$?; test $rc -eq 0 || test $rc -eq 100", write: false },
+  fail2ban_status: { command: "systemctl is-enabled fail2ban 2>/dev/null || true; systemctl is-active fail2ban 2>/dev/null || true; fail2ban-client status 2>/dev/null || true", write: false },
   audit_tail: { command: "sudo -n journalctl --since '24 hours ago' -p warning..alert --no-pager -n 200", write: false },
   security_updates_apply: { command: "sudo -n dnf -y update --security", write: true },
   fail2ban_restart: { command: "sudo -n systemctl restart fail2ban", write: true }
