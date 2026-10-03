@@ -32,3 +32,17 @@ Broccoli Termux -> Rish with RISH_PRESERVE_ENV=0 printed uid=2000(shell) and SDK
 ## Canonical execution rule
 
 inspect -> establish provenance -> choose owner -> smallest change -> narrow test -> acceptance -> evidence -> graph update
+
+## Human authentication gate workstream — 2026-10-03
+
+**State:** PROPOSED / NOT_PROVEN until branch CI and end-to-end acceptance pass.
+
+Ownership:
+- Grasshopper: durable gate state, pause/resume semantics, checkpoint and credential references.
+- Helix: authenticated phone/browser handoff to the original remote session.
+- broccoli-core: Android-native UI detection/re-observation through the canonical Rish/accessibility transport.
+- Outside Agent: private sanitized notification/control surface only; never a credential or challenge-answer store.
+
+Invariant: human-only boundaries remain `HUMAN_REQUIRED`. A chat acknowledgement may request verification but cannot itself clear a gate. Resume requires fresh verification of the original browser/app session. Raw passwords, OTPs, CAPTCHA answers, cookies, bearer tokens, and provider access/refresh tokens must not enter the event stream, logs, prompts, Git, or Drive.
+
+Reference contract: `docs/AUTH_GATE_HANDOFF.md`.
