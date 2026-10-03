@@ -5,10 +5,6 @@ import path from 'node:path';
 
 const script = path.resolve(process.cwd(), 'scripts/cloud-android/persistent-device.sh');
 
-// Regression: BIST run 37149215506 (job 111279332196) failed at
-// test/cloud-android-persistence.test.mjs:10 because this script was 100644
-// on c7f13b954860ec2c4a75bf8ac71c8aee6e3f33a3. Checkout must stay 100755.
-
 test('cloud Android script exists and is executable', () => {
   const st = fs.statSync(script);
   assert.ok((st.mode & 0o111) !== 0);
@@ -19,8 +15,11 @@ test('cloud Android defaults to loopback and token-gated presentation', () => {
   assert.match(body, /set -Eeuo pipefail/);
   assert.match(body, /CLOUD_ANDROID_LISTEN_ADDR:-127\.0\.0\.1/);
   assert.match(body, /hostfwd=tcp:"\$LISTEN_ADDR":"\$ADB_PORT"-:5555/);
+  assert.match(body, /androidboot\.qemu=1/);
   assert.match(body, /--token-plugin TokenFile/);
   assert.match(body, /chmod 600 "\$TOKEN_MAP"/);
+  assert.match(body, /ws_alive\(\)/);
+  assert.match(body, /if \[ ! -s "\$TOKEN_FILE" \]/);
 });
 
 test('cloud Android pins Android-x86 9.0-r2 provenance', () => {
@@ -33,5 +32,9 @@ test('cloud Android injects only an operator public key', () => {
   const body = fs.readFileSync(script, 'utf8');
   assert.match(body, /CLOUD_ANDROID_ADB_PUBLIC_KEY_FILE/);
   assert.match(body, /adbkey\.pub/);
-  assert.doesNotMatch(body, /cp .*adbkey[^.]/);
+  assert.match(body, /ro\.adb\.secure=1/);
+  assert.match(body, /ro\.secure=0/);
+  assert.match(body, /service\.adb\.root 1/);
+  assert.match(body, /on post-fs-data/);
+  assert.doesNotMatch(body, /ro\.adb\.secure=0/);
 });
