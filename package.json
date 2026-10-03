@@ -37,6 +37,7 @@
     "bist": "node scripts/bist.mjs",
     "validate:bist-schema": "node scripts/validate-bist-schema.mjs report schemas/examples/bist-report.valid.json && node scripts/validate-bist-schema.mjs evidence schemas/examples/bist-evidence.valid.json",
     "test:bist-schema": "node --test test/bist-schema.test.mjs",
-    "test:security-phase": "node --test test/security-phase-verify.test.mjs"
+    "test:security-phase": "node --test test/security-phase-verify.test.mjs",
+    "mcp:oci-security": "node mcp/oci-security/server.mjs"
   }
 }
