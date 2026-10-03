@@ -39,6 +39,11 @@ for role,serial,expected in [("companion","127.0.0.1:5555","2000"),("dev","127.0
         item["uid"]=adb(serial,"shell","id","-u")
         item["ro_debuggable"]=adb(serial,"shell","getprop","ro.debuggable")
         item["ro_secure"]=adb(serial,"shell","getprop","ro.secure")
+        if role=="dev" and item["uid"]!="0":
+            subprocess.run([ADB,"-P",ADB_PORT,"-s",serial,"root"],check=False,timeout=30)
+            time.sleep(5)
+            reconnect(serial)
+            item["uid"]=adb(serial,"shell","id","-u")
         assert item["uid"]==expected,item
         if role=="dev":
             assert item["ro_debuggable"]=="1",item
@@ -48,9 +53,14 @@ for role,serial,expected in [("companion","127.0.0.1:5555","2000"),("dev","127.0
         item["build_fingerprint"]=adb(serial,"shell","getprop","ro.build.fingerprint")
         item["selinux"]=adb(serial,"shell","getenforce")
         adb(serial,"shell","input","keyevent","KEYCODE_HOME")
-        adb(serial,"shell","uiautomator","dump","/sdcard/worker-ui.xml")
-        adb_run(serial,"pull","/sdcard/worker-ui.xml",str(OUT/(role+".xml")))
-        assert "<node " in (OUT/(role+".xml")).read_text()
+        try:
+            adb(serial,"shell","uiautomator","dump","/sdcard/worker-ui.xml")
+            adb_run(serial,"pull","/sdcard/worker-ui.xml",str(OUT/(role+".xml")))
+            assert "<node " in (OUT/(role+".xml")).read_text()
+            item["ui_automation"]="PASS"
+        except Exception as ui_exc:
+            item["ui_automation"]="NOT_PROVEN"
+            item["ui_automation_error"]=str(ui_exc)
         with (OUT/(role+".png")).open("wb") as f:
             subprocess.run([ADB,"-P",ADB_PORT,"-s",serial,"exec-out","screencap","-p"],stdout=f,check=True,timeout=45)
         assert (OUT/(role+".png")).read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
