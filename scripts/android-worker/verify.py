@@ -9,13 +9,23 @@ def adb(serial,*args):
     return subprocess.check_output([ADB,"-P",ADB_PORT,"-s",serial,*args],timeout=45).decode().strip()
 def adb_run(serial,*args,timeout=45):
     return subprocess.run([ADB,"-P",ADB_PORT,"-s",serial,*args],check=True,timeout=timeout)
+def reconnect(serial):
+    subprocess.run([ADB,"-P",ADB_PORT,"disconnect",serial],check=False,timeout=15)
+    subprocess.run([ADB,"-P",ADB_PORT,"connect",serial],check=True,timeout=15)
+    deadline=time.monotonic()+60
+    while time.monotonic()<deadline:
+        try:
+            if adb(serial,"get-state")=="device": return
+        except (subprocess.SubprocessError,OSError): pass
+        time.sleep(3)
+    raise RuntimeError("ADB device did not return after reconnect")
 if os.environ.get("ROLE") not in ("companion","dev"): raise SystemExit("Set ROLE=companion or ROLE=dev")
 report={"schema":"grasshopper.android-worker/v1","timestamp":time.time(),"devices":{}}
 for role,serial,expected in [("companion","127.0.0.1:5555","2000"),("dev","127.0.0.1:5557","0")]:
     if role != os.environ.get("ROLE"): continue
     item={}
     try:
-        subprocess.run([ADB,"-P",ADB_PORT,"connect",serial],check=True,timeout=15)
+        reconnect(serial)
         deadline=time.monotonic()+480
         while time.monotonic()<deadline:
             try:
@@ -27,13 +37,7 @@ for role,serial,expected in [("companion","127.0.0.1:5555","2000"),("dev","127.0
         assert item["sdk"]=="35",item
         item["root_request"]=adb(serial,"root")
         time.sleep(5)
-        subprocess.run([ADB,"-P",ADB_PORT,"connect",serial],check=True,timeout=15)
-        deadline=time.monotonic()+60
-        while time.monotonic()<deadline:
-            try:
-                if adb(serial,"shell","getprop","sys.boot_completed")=="1": break
-            except (subprocess.SubprocessError,OSError): pass
-            time.sleep(3)
+        reconnect(serial)
         item["uid"]=adb(serial,"shell","id","-u")
         assert item["uid"]==expected,item
         item["build_fingerprint"]=adb(serial,"shell","getprop","ro.build.fingerprint")
