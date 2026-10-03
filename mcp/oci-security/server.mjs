@@ -22,8 +22,8 @@ const ACTIONS = {
   security_updates: { command: "dnf -q check-update --security; rc=$?; test $rc -eq 0 || test $rc -eq 100", write: false },
   fail2ban_status: { command: "systemctl is-enabled fail2ban 2>/dev/null || true; systemctl is-active fail2ban 2>/dev/null || true; fail2ban-client status 2>/dev/null || true", write: false },
   audit_tail: { command: "sudo -n journalctl --since '24 hours ago' -p warning..alert --no-pager -n 200", write: false },
-  security_updates_apply: { command: "sudo -n dnf -y update --security", write: true },
-  fail2ban_restart: { command: "sudo -n systemctl restart fail2ban", write: true }
+  security_updates_apply: { command: "sudo -n /usr/local/libexec/grasshopper-oci-security/apply-security-updates", write: true },
+  fail2ban_restart: { command: "sudo -n /usr/local/libexec/grasshopper-oci-security/restart-fail2ban", write: true }
 };
 
 function audit(entry) {
