@@ -3,6 +3,8 @@
 set -euo pipefail
 [[ "${EUID}" == 0 ]] || { echo "Run as root" >&2; exit 1; }
 [[ -f /etc/grasshopper-android-worker ]] || { echo "Worker marker missing" >&2; exit 1; }
+ROLE="${ROLE:?Set ROLE=companion or ROLE=dev}"
+case "$ROLE" in companion|dev) ;; *) exit 2;; esac
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y openjdk-17-jre-headless unzip curl python3 libgl1 libpulse0 libnss3 libx11-6 libxcb1 libxcomposite1 libxcursor1 libxi6 libxtst6 libxrandr2 libasound2t64 libxkbcommon-x11-0 xvfb x11vnc novnc websockify fluxbox nftables xauth openssl libxcb-cursor0
@@ -29,9 +31,9 @@ yes | "$SDK/sdkmanager" --sdk_root="$ANDROID_HOME" --licenses > /var/lib/grassho
 rc=${PIPESTATUS[1]}
 set -o pipefail
 [[ "$rc" == 0 ]]
-"$SDK/sdkmanager" --sdk_root="$ANDROID_HOME" 'platform-tools' 'emulator' 'system-images;android-35;google_apis_playstore;x86_64' 'system-images;android-35;default;x86_64'
+"$SDK/sdkmanager" --sdk_root="$ANDROID_HOME" 'platform-tools' 'emulator' "system-images;android-35;$(if [[ $ROLE == companion ]]; then echo google_apis_playstore; else echo default; fi);x86_64"
 chmod -R go-w /opt/android-sdk
-for role in companion dev; do
+for role in "$ROLE"; do
   id "android-$role" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash "android-$role"
   usermod -aG kvm "android-$role"
   chmod 700 "/home/android-$role"
@@ -77,7 +79,7 @@ Environment=HOME=/home/android-$role
 Environment=ANDROID_HOME=/opt/android-sdk
 Environment=DISPLAY=:$display
 Environment=QT_X11_NO_MITSHM=1
-ExecStart=/opt/android-sdk/emulator/emulator -avd $role -port $port -accel on -gpu swiftshader_indirect -no-audio -no-boot-anim -no-snapshot -camera-back none -camera-front none -no-metrics
+ExecStart=/opt/android-sdk/emulator/emulator -avd $role -memory 2048 -cores 1 -port $port -accel on -gpu swiftshader_indirect -no-audio -no-boot-anim -no-snapshot -camera-back none -camera-front none -no-metrics
 Restart=on-failure
 RestartSec=20
 TimeoutStopSec=90
@@ -119,25 +121,43 @@ UNIT
 done
 # Keep emulator processes from reaching instance credentials or other private hosts.
 # Block cross-instance emulator control connections; root/SSM operator is unaffected.
-cat > /etc/nftables.conf <<'NFT'
+cat > /etc/nftables.conf <<NFT
 #!/usr/sbin/nft -f
 flush ruleset
 table inet android_guard {
  chain output {
   type filter hook output priority 0; policy accept;
-  meta skuid { "android-companion", "android-dev" } ip daddr { 169.254.0.0/16, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } reject
-  meta skuid { "android-companion", "android-dev" } ip6 daddr { fe80::/10, fc00::/7 } reject
-  meta skuid "android-companion" tcp dport { 5556, 5557, 5911, 6081 } reject
-  meta skuid "android-dev" tcp dport { 5554, 5555, 5910, 6080 } reject
+  meta skuid "android-$ROLE" ip daddr { 169.254.0.0/16, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } reject
+  meta skuid "android-$ROLE" ip6 daddr { fe80::/10, fc00::/7 } reject
+  meta skuid "android-$ROLE" tcp dport 5038 reject
  }
 }
 NFT
 nft --check -f /etc/nftables.conf
 systemctl enable --now nftables
 systemctl daemon-reload
-for role in companion dev; do
+for role in "$ROLE"; do
   systemctl enable --now "android-display-$role" "android-$role" "android-vnc-$role" "android-web-$role"
 done
+cat > /etc/systemd/system/android-adb.service <<UNIT
+[Unit]
+Description=Private operator ADB on dedicated port
+After=android-$ROLE.service
+[Service]
+Environment=ADB_VENDOR_KEYS=/home/android-$ROLE/.android/adbkey
+ExecStartPre=/usr/bin/test -s /home/android-$ROLE/.android/adbkey
+ExecStart=/opt/android-sdk/platform-tools/adb -P 5038 nodaemon server
+Restart=on-failure
+RestartSec=10
+IPAddressDeny=any
+IPAddressAllow=localhost
+UMask=0077
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now android-adb
+systemctl disable --now ssh.socket ssh.service
 /opt/android-sdk/emulator/emulator -accel-check
 "$SDK/sdkmanager" --sdk_root="$ANDROID_HOME" --list_installed > /var/lib/grasshopper-android/packages.txt
 echo ANDROID_INSTALL_COMPLETE_ACCEPTANCE_PENDING

@@ -5,9 +5,11 @@ ADB="/opt/android-sdk/platform-tools/adb"
 OUT=pathlib.Path("/var/lib/grasshopper-android/evidence")
 OUT.mkdir(parents=True,exist_ok=True)
 def adb(serial,*args):
-    return subprocess.check_output([ADB,"-s",serial,*args],timeout=45).decode().strip()
+    return subprocess.check_output([ADB,"-P","5038","-s",serial,*args],timeout=45).decode().strip()
+if os.environ.get("ROLE") not in ("companion","dev"): raise SystemExit("Set ROLE=companion or ROLE=dev")
 report={"schema":"grasshopper.android-worker/v1","timestamp":time.time(),"devices":{}}
 for role,serial,expected in [("companion","emulator-5554","2000"),("dev","emulator-5556","0")]:
+    if role != os.environ.get("ROLE"): continue
     item={}
     try:
         deadline=time.monotonic()+480
