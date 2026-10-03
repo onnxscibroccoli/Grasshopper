@@ -24,6 +24,7 @@ export const AUTH_GATE_EVENTS = Object.freeze({
 const TERMINAL = new Set(["RESUMED", "FAILED", "CANCELLED", "EXPIRED"]);
 const FORBIDDEN_EVENT_KEY = /(?:^|_)(?:access|refresh|id)?_?token$|password|passwd|cookie|authorization|bearer|secret|otp|captcha.?answer|verification.?code/i;
 const MODES = new Set(["SAME_SESSION", "OAUTH_DEVICE"]);
+const REFERENCE_SCHEME = /^[a-z][a-z0-9+.-]{1,31}:/i;
 
 function iso(value = Date.now()) {
   const date = value instanceof Date ? value : new Date(value);
@@ -38,6 +39,15 @@ function text(value, name, { required = false, max = 512 } = {}) {
   }
   if (typeof value !== "string" || value.length > max) throw new TypeError("invalid " + name);
   return value;
+}
+
+function reference(value, name, { required = false } = {}) {
+  const result = text(value, name, { required });
+  if (result == null) return null;
+  if (!REFERENCE_SCHEME.test(result)) {
+    throw new TypeError(name + " must be an opaque namespaced reference");
+  }
+  return result;
 }
 
 function hasForbiddenKey(value) {
@@ -56,12 +66,13 @@ function freezeGate(gate) {
 }
 
 function transition(gate, state, eventType, extra = {}) {
+  const at = iso();
   return freezeGate({
     ...gate,
     ...extra,
     state,
-    updatedAt: iso(),
-    history: [...gate.history, { type: eventType, at: iso() }],
+    updatedAt: at,
+    history: [...gate.history, { type: eventType, at }],
   });
 }
 
@@ -77,7 +88,7 @@ export function createAuthGate(boundary, {
   sessionRef,
   provider = "generic",
   mode = "SAME_SESSION",
-  checkpoint = null,
+  checkpointRef = null,
   createdAt = Date.now(),
   expiresAt = Date.now() + 5 * 60 * 1000,
 } = {}) {
@@ -94,12 +105,12 @@ export function createAuthGate(boundary, {
     schema: SCHEMA,
     id: text(gateId, "gateId") || "gate_" + crypto.randomUUID(),
     taskId: text(taskId, "taskId"),
-    sessionRef: text(sessionRef, "sessionRef", { required: true }),
+    sessionRef: reference(sessionRef, "sessionRef", { required: true }),
     provider: text(provider, "provider", { required: true, max: 120 }),
     mode,
     reason: boundary.reason,
     state: "DETECTED",
-    checkpoint,
+    checkpointRef: reference(checkpointRef, "checkpointRef"),
     credentialRef: null,
     verificationAttempts: 0,
     createdAt: created,
@@ -117,7 +128,7 @@ export function applyAuthGateEvent(gate, event = {}) {
     throw new TypeError("auth gate event is required");
   }
   if (hasForbiddenKey(event)) {
-    throw new Error("auth gate events must not contain credentials, challenge answers, cookies, or raw tokens");
+    throw new Error("auth gate event contains prohibited secret material");
   }
 
   if (gate.state === "RESUMED" && event.type === AUTH_GATE_EVENTS.VERIFIED) {
@@ -152,12 +163,12 @@ export function applyAuthGateEvent(gate, event = {}) {
 
     case AUTH_GATE_EVENTS.VERIFIED: {
       if (gate.state !== "VERIFYING") throw new Error("verification requires VERIFYING");
-      const sessionRef = text(event.sessionRef, "event.sessionRef", { required: true });
+      const sessionRef = reference(event.sessionRef, "event.sessionRef", { required: true });
       if (sessionRef !== gate.sessionRef) {
         throw new Error("auth verification must come from the original session");
       }
       if (event.verified !== true) throw new Error("auth verification requires verified=true");
-      const credentialRef = text(event.credentialRef, "event.credentialRef");
+      const credentialRef = reference(event.credentialRef, "event.credentialRef");
       return transition(gate, "RESUMED", event.type, { credentialRef });
     }
 
@@ -216,7 +227,7 @@ export function createAuthGateResumeEvent(gate) {
     taskId: gate.taskId,
     sessionRef: gate.sessionRef,
     credentialRef: gate.credentialRef,
-    checkpoint: gate.checkpoint,
+    checkpointRef: gate.checkpointRef,
     verifiedAt: gate.updatedAt,
   });
 }
