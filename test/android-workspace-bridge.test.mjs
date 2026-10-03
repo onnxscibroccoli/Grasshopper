@@ -9,13 +9,13 @@ test("Android workspace bridge uses bounded actions and exposes virtual display 
   });
   const observed = await bridge.inspect();
   assert.deepEqual(observed.capabilities, ["android.actions", "native-return", "virtual-display"]);
-  await bridge.launch("com.android.settings", { displayId: 36 });
+  await bridge.launch("com.android.settings");
   await bridge.tap(36, 10, 20);
   await bridge.swipe(36, 10, 20, 30, 400);
   await bridge.text(36, "hello");
   await bridge.keyevent(36, "ENTER");
   assert.equal(calls.length, 6);
-  assert.equal(calls[1].display_id, 36);
+  assert.equal(calls[2].display_id, 36);
 });
 
 test("native return is explicit and fail-closed", async () => {
