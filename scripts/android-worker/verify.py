@@ -36,11 +36,15 @@ for role,serial,expected in [("companion","127.0.0.1:5555","2000"),("dev","127.0
         else: raise RuntimeError("boot-complete deadline exceeded")
         item["sdk"]=adb(serial,"shell","getprop","ro.build.version.sdk")
         assert item["sdk"]=="35",item
-        item["root_request"]=adb(serial,"root")
-        time.sleep(5)
-        reconnect(serial)
         item["uid"]=adb(serial,"shell","id","-u")
+        item["ro_debuggable"]=adb(serial,"shell","getprop","ro.debuggable")
+        item["ro_secure"]=adb(serial,"shell","getprop","ro.secure")
         assert item["uid"]==expected,item
+        if role=="dev":
+            assert item["ro_debuggable"]=="1",item
+            assert item["ro_secure"]=="1",item
+        else:
+            assert item["uid"]=="2000",item
         item["build_fingerprint"]=adb(serial,"shell","getprop","ro.build.fingerprint")
         item["selinux"]=adb(serial,"shell","getenforce")
         adb(serial,"shell","input","keyevent","KEYCODE_HOME")
