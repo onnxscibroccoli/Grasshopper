@@ -21,11 +21,11 @@ test("reconciler provisions and starts an instance idempotently", async () => {
   try {
     await cp.createInstance({ id: "i1", name: "chat", mode: "persistent", desired: { provider: "memory", running: true, capabilities: ["browser"] } });
     let instance = await reconciler.reconcileInstance("i1");
-    assert.equal(instance.instances.i1.state, "ready");
-    assert.equal(instance.instances.i1.provider, "memory");
-    assert.equal(instance.instances.i1.capabilities.includes("browser"), true);
+    assert.equal(instance.state, "ready");
+    assert.equal(instance.provider, "memory");
+    assert.equal(instance.capabilities.includes("browser"), true);
     instance = await reconciler.reconcileInstance("i1");
-    assert.equal(instance.instances.i1.state, "ready");
+    assert.equal(instance.state, "ready");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
