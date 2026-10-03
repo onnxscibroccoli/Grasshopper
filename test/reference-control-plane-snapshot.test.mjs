@@ -47,6 +47,7 @@ test("agentic control-plane verifier is fail-closed and does not claim productio
   const script = await readFile("scripts/verify-agentic-control-plane.sh", "utf8");
   assert.match(script, /git archive --format=tar/);
   assert.match(script, /working tree is dirty/);
+  assert.match(script, /--untracked-files=no/);
   assert.match(script, /production_credentials_required=false/);
   assert.match(script, /live_production_mutation_performed=false/);
   assert.match(script, /production_readiness_claimed=false/);
