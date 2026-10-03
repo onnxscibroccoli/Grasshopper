@@ -29,6 +29,7 @@ WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-/opt/noVNC/utils/websockify/run}
 
 fail() { echo "ERROR: $*" >&2; exit 2; }
 alive() { [ -s "$QEMU_PID" ] && kill -0 "$(cat "$QEMU_PID")" 2>/dev/null; }
+ws_alive() { [ -s "$WS_PID" ] && kill -0 "$(cat "$WS_PID")" 2>/dev/null; }
 
 require_tools() {
   [ -n "$QEMU_BIN" ] || fail "qemu-system-x86_64 is required"
@@ -56,18 +57,28 @@ prepare() {
   actual="$(sha256sum "$ISO" | awk '{print $1}')"
   [ "$actual" = "$ISO_SHA256" ] || fail "Android ISO SHA-256 mismatch: $actual"
 
-  if [ ! -s "$RUNTIME/kernel" ] || [ ! -s "$RUNTIME/initrd.img" ] || [ ! -s "$RUNTIME/ramdisk.img" ] || [ ! -s "$RUNTIME/system.sfs" ]; then
+  if [ ! -s "$RUNTIME/kernel" ]  || [ ! -s "$RUNTIME/ramdisk.img" ] || [ ! -s "$RUNTIME/system.sfs" ]; then
     rm -rf "$RUNTIME" "$RAMDISK_EDIT"
     mkdir -p "$RUNTIME" "$RAMDISK_EDIT"
     7z e -y "$ISO" -o"$RUNTIME" kernel initrd.img ramdisk.img system.sfs >/dev/null
   fi
 
   if [ ! -s "$RAMDISK_EDIT/init" ]; then
-    gzip -dc "$RUNTIME/initrd.img" | (cd "$RAMDISK_EDIT" && cpio -idm --no-absolute-filenames >/dev/null)
+    gzip -dc "$RUNTIME/ramdisk.img" | (cd "$RAMDISK_EDIT" && cpio -idm --no-absolute-filenames >/dev/null)
   fi
 
   cp "$ADB_KEY_FILE" "$RAMDISK_EDIT/adb_keys"
   chmod 600 "$RAMDISK_EDIT/adb_keys"
+  if grep -q '^ro.adb.secure=' "$RAMDISK_EDIT/default.prop"; then
+    sed -i 's/^ro.adb.secure=.*/ro.adb.secure=1/' "$RAMDISK_EDIT/default.prop"
+  else
+    printf '%s\n' 'ro.adb.secure=1' >> "$RAMDISK_EDIT/default.prop"
+  fi
+  if grep -q '^ro.secure=' "$RAMDISK_EDIT/default.prop"; then
+    sed -i 's/^ro.secure=.*/ro.secure=0/' "$RAMDISK_EDIT/default.prop"
+  else
+    printf '%s\n' 'ro.secure=0' >> "$RAMDISK_EDIT/default.prop"
+  fi
 
   if ! grep -q '^import /init.omnikali-cloud.rc$' "$RAMDISK_EDIT/init.rc"; then
     sed -i '1i import /init.omnikali-cloud.rc' "$RAMDISK_EDIT/init.rc"
@@ -77,18 +88,25 @@ prepare() {
 on boot
     setprop service.adb.tcp.port 5555
     setprop persist.adb.tcp.port 5555
+    setprop service.adb.root 1
+    setprop persist.service.adb.enable 1
+
+on post-fs-data
+    stop adbd
     start adbd
 
 on property:sys.boot_completed=1
     setprop service.adb.tcp.port 5555
     setprop persist.adb.tcp.port 5555
+    setprop service.adb.root 1
+    setprop persist.service.adb.enable 1
     restart adbd
 EOF
   chmod 644 "$RAMDISK_EDIT/init.omnikali-cloud.rc"
 
-  rm -f "$RUNTIME/initrd-cloud.img.tmp"
-  (cd "$RAMDISK_EDIT" && find . -print0 | cpio --null -o -H newc 2>/dev/null | gzip -9 > "$RUNTIME/initrd-cloud.img.tmp")
-  mv "$RUNTIME/initrd-cloud.img.tmp" "$RUNTIME/initrd-cloud.img"
+  rm -f "$RUNTIME/ramdisk-cloud.img.tmp"
+  (cd "$RAMDISK_EDIT" && find . -print0 | cpio --null -o -H newc 2>/dev/null | gzip -9 > "$RUNTIME/ramdisk-cloud.img.tmp")
+  mv "$RUNTIME/ramdisk-cloud.img.tmp" "$RUNTIME/ramdisk-cloud.img"
 
   if [ ! -f "$DATA" ]; then
     truncate -s "$DATA_SIZE" "$DATA"
@@ -99,25 +117,20 @@ EOF
   echo "PASS: cloud Android artifacts prepared"
   echo "iso_sha256=$actual"
   echo "data=$DATA"
-  echo "initrd=$RUNTIME/initrd-cloud.img"
+  echo "ramdisk=$RUNTIME/ramdisk-cloud.img"
 }
 
 start() {
   prepare
-  if alive; then
-    echo "PASS: cloud Android VM already running"
-    status
-    return
-  fi
-
+  if ! alive; then
   rm -f "$QEMU_PID" "$TOKEN_MAP" "$TOKEN_FILE" "$URL_FILE"
   "$QEMU_BIN" \
     -name omnikali-cloud-android \
     -enable-kvm -m "$MEMORY_MB" -smp "$CPUS" -cpu host \
-    -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd-cloud.img" \
-    -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 nomodeset HWACCEL=0' \
+    -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd.img" \
+    -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 androidboot.qemu=1 nomodeset HWACCEL=0' \
     -drive index=0,if=virtio,id=system,file="$RUNTIME/system.sfs",format=raw,readonly=on \
-    -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk.img",format=raw,readonly=on \
+    -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk-cloud.img",format=raw,readonly=on \
     -drive index=2,if=virtio,id=data,file="$DATA",format=raw \
     -netdev user,id=net0,hostfwd=tcp:"$LISTEN_ADDR":"$ADB_PORT"-:5555 \
     -device virtio-net-pci,netdev=net0 \
@@ -128,16 +141,25 @@ start() {
 
   sleep 2
   alive || { cat "$LOG_DIR/qemu.log" >&2; fail "cloud Android QEMU exited"; }
+  fi
 
-  token="$(openssl rand -hex 32)"
-  printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
-  printf '%s\n' "$token" > "$TOKEN_FILE"
-  chmod 600 "$TOKEN_MAP" "$TOKEN_FILE"
+  if [ ! -s "$TOKEN_FILE" ]; then
+    token="$(openssl rand -hex 32)"
+    printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
+    printf '%s\n' "$token" > "$TOKEN_FILE"
+    chmod 600 "$TOKEN_MAP" "$TOKEN_FILE"
+  else
+    token="$(cat "$TOKEN_FILE")"
+    printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
+    chmod 600 "$TOKEN_MAP"
+  fi
 
-  "$WEBSOCKIFY_BIN" --token-plugin TokenFile --token-source "$TOKEN_MAP" \
-    --web "$WEB_ROOT" --heartbeat 30 "$LISTEN_ADDR:$WS_PORT" \
-    >"$LOG_DIR/websockify.log" 2>&1 &
-  echo $! > "$WS_PID"
+  if ! ws_alive; then
+    "$WEBSOCKIFY_BIN" --token-plugin TokenFile --token-source "$TOKEN_MAP" \
+      --web "$WEB_ROOT" --heartbeat 30 "$LISTEN_ADDR:$WS_PORT" \
+      >"$LOG_DIR/websockify.log" 2>&1 &
+    echo $! > "$WS_PID"
+  fi
 
   path="websockify?token=$token"
   encoded="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$path")"
@@ -162,6 +184,7 @@ status() {
   if alive; then echo "qemu=RUNNING pid=$(cat "$QEMU_PID")"; else echo "qemu=STOPPED"; fi
   [ -s "$TOKEN_FILE" ] && echo "token=PRESENT" || echo "token=ABSENT"
   [ -s "$URL_FILE" ] && echo "url_file=$URL_FILE"
+  ws_alive && echo "websockify=RUNNING pid=$(cat "$WS_PID")" || echo "websockify=STOPPED"
   ss -ltn 2>/dev/null | grep -E "127.0.0.1:($VNC_PORT|$WS_PORT|$ADB_PORT)\b" || true
 }
 
