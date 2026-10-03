@@ -52,7 +52,7 @@ for role,serial,expected in [("companion","127.0.0.1:5555","2000"),("dev","127.0
         marker=OUT/(role+"-expected-marker")
         if not marker.exists():
             marker.write_text(str(uuid.uuid4()))
-            adb(serial,"shell","sh","-c","echo "+marker.read_text()+" > /sdcard/grasshopper-persistence")
+            adb_run(serial,"push",str(marker),"/sdcard/grasshopper-persistence")
         item["marker"]=adb(serial,"shell","cat","/sdcard/grasshopper-persistence")
         assert item["marker"]==marker.read_text()
         item["status"]="PASS"
