@@ -68,6 +68,11 @@ prepare() {
 
   cp "$ADB_KEY_FILE" "$RAMDISK_EDIT/adb_keys"
   chmod 600 "$RAMDISK_EDIT/adb_keys"
+  if grep -q '^ro.adb.secure=' "$RAMDISK_EDIT/default.prop"; then
+    sed -i 's/^ro.adb.secure=.*/ro.adb.secure=0/' "$RAMDISK_EDIT/default.prop"
+  else
+    printf '%s\n' 'ro.adb.secure=0' >> "$RAMDISK_EDIT/default.prop"
+  fi
 
   if ! grep -q '^import /init.omnikali-cloud.rc$' "$RAMDISK_EDIT/init.rc"; then
     sed -i '1i import /init.omnikali-cloud.rc' "$RAMDISK_EDIT/init.rc"
@@ -77,11 +82,15 @@ prepare() {
 on boot
     setprop service.adb.tcp.port 5555
     setprop persist.adb.tcp.port 5555
+    setprop service.adb.root 1
+    setprop persist.service.adb.enable 1
     start adbd
 
 on property:sys.boot_completed=1
     setprop service.adb.tcp.port 5555
     setprop persist.adb.tcp.port 5555
+    setprop service.adb.root 1
+    setprop persist.service.adb.enable 1
     restart adbd
 EOF
   chmod 644 "$RAMDISK_EDIT/init.omnikali-cloud.rc"
