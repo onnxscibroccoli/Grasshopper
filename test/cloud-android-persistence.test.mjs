@@ -5,6 +5,10 @@ import path from 'node:path';
 
 const script = path.resolve(process.cwd(), 'scripts/cloud-android/persistent-device.sh');
 
+// Regression: BIST run 37149215506 (job 111279332196) failed at
+// test/cloud-android-persistence.test.mjs:10 because this script was 100644
+// on c7f13b954860ec2c4a75bf8ac71c8aee6e3f33a3. Checkout must stay 100755.
+
 test('cloud Android script exists and is executable', () => {
   const st = fs.statSync(script);
   assert.ok((st.mode & 0o111) !== 0);
