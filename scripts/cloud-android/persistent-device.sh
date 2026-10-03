@@ -123,6 +123,7 @@ start() {
 
   sleep 2
   alive || { cat "$LOG_DIR/qemu.log" >&2; fail "cloud Android QEMU exited"; }
+  fi
 
   if [ -s "$WS_PID" ]; then kill "$(cat "$WS_PID")" 2>/dev/null || true; fi
   rm -f "$WS_PID" "$TOKEN_MAP" "$TOKEN_FILE" "$URL_FILE"
