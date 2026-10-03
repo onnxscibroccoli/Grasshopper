@@ -32,9 +32,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          CHAIN_REASON: ${{ inputs.reason || 'schedule' }}
         run: |
           set -eu
-          echo "event=${GITHUB_EVENT_NAME} reason=${{ inputs.reason || 'schedule' }}"
+          echo "event=${GITHUB_EVENT_NAME} reason=${CHAIN_REASON}"
           # Same-repo only. Default GITHUB_TOKEN cannot dispatch other repos.
           # Never dispatch k3s-live-desktop.yml or k3s-agentic-trigger.yml.
           gh workflow run bist.yml --ref main

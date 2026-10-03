@@ -1,6 +1,71 @@
 #!/usr/bin/env bash
 # Read-only security phase contract verifier.
+# Default invocation stays fail-closed. --self-test proves both the
+# missing-input failure and a non-secret fixture pass without reading
+# production backup evidence.
 set -Eeuo pipefail
+
+self_test() {
+  local dir missing_status fixture_status
+  dir="$(mktemp -d)"
+  cat >"$dir/ss" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' 'LISTEN 127.0.0.1:18789' 'LISTEN 127.0.0.1:11434'
+EOF
+  chmod +x "$dir/ss"
+
+  set +e
+  env -u GRASSHOPPER_SECURITY_PHASE \
+    GRASSHOPPER_BACKUP_STATUS=NOT_PROVEN \
+    GRASSHOPPER_RESTORE_STATUS=NOT_PROVEN \
+    GRASSHOPPER_PERMISSIVE=0 \
+    GRASSHOPPER_BROAD_OPERATOR_SCOPES=0 \
+    GRASSHOPPER_ALLOW_PUBLIC_GATEWAY=0 \
+    GRASSHOPPER_SANDBOX_ID= \
+    PATH="$dir:$PATH" \
+    bash "$0" >"$dir/missing.out" 2>&1
+  missing_status=$?
+  env GRASSHOPPER_SECURITY_PHASE=DEV_SANDBOX \
+    GRASSHOPPER_BACKUP_STATUS=PASS \
+    GRASSHOPPER_RESTORE_STATUS=PASS \
+    GRASSHOPPER_PERMISSIVE=0 \
+    GRASSHOPPER_BROAD_OPERATOR_SCOPES=0 \
+    GRASSHOPPER_ALLOW_PUBLIC_GATEWAY=0 \
+    GRASSHOPPER_SANDBOX_ID=self-test \
+    PATH="$dir:$PATH" \
+    bash "$0" >"$dir/fixture.out" 2>&1
+  fixture_status=$?
+  set -e
+
+  if [[ "$missing_status" -eq 0 ]]; then
+    echo "SELF_TEST missing=UNEXPECTED_PASS"
+    cat "$dir/missing.out"
+    return 1
+  fi
+  if ! grep -q 'FAIL security.phase.missing' "$dir/missing.out"; then
+    echo "SELF_TEST missing output lacked FAIL security.phase.missing"
+    cat "$dir/missing.out"
+    return 1
+  fi
+  if [[ "$fixture_status" -ne 0 ]]; then
+    echo "SELF_TEST fixture=UNEXPECTED_FAIL"
+    cat "$dir/fixture.out"
+    return 1
+  fi
+  if ! grep -q 'SECURITY_PHASE_VERIFY=PASS' "$dir/fixture.out"; then
+    echo "SELF_TEST fixture output lacked SECURITY_PHASE_VERIFY=PASS"
+    cat "$dir/fixture.out"
+    return 1
+  fi
+  echo "SELF_TEST missing=FAIL"
+  echo "SELF_TEST fixture=PASS"
+  echo "SECURITY_PHASE_SELF_TEST=PASS"
+}
+
+if [[ "${1:-}" == "--self-test" ]]; then
+  self_test
+  exit 0
+fi
 
 pass(){ printf 'PASS %s\n' "$1"; }
 fail(){ printf 'FAIL %s\n' "$1"; FAILED=1; }
