@@ -8,10 +8,11 @@ def adb(serial,*args):
     return subprocess.check_output([ADB,"-P","5038","-s",serial,*args],timeout=45).decode().strip()
 if os.environ.get("ROLE") not in ("companion","dev"): raise SystemExit("Set ROLE=companion or ROLE=dev")
 report={"schema":"grasshopper.android-worker/v1","timestamp":time.time(),"devices":{}}
-for role,serial,expected in [("companion","emulator-5554","2000"),("dev","emulator-5556","0")]:
+for role,serial,expected in [("companion","127.0.0.1:5555","2000"),("dev","127.0.0.1:5557","0")]:
     if role != os.environ.get("ROLE"): continue
     item={}
     try:
+        subprocess.run([ADB,"-P","5038","connect",serial],check=True,timeout=15)
         deadline=time.monotonic()+480
         while time.monotonic()<deadline:
             try:
