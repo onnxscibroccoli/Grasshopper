@@ -15,7 +15,7 @@ test("Android workspace bridge uses bounded actions and exposes virtual display 
   await bridge.text(36, "hello");
   await bridge.keyevent(36, "ENTER");
   assert.equal(calls.length, 7);
-  assert.equal(calls[2].display_id, 36);
+  assert.equal(calls[3].display_id, 36);
 });
 
 test("native return is explicit and fail-closed", async () => {
