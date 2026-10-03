@@ -123,3 +123,11 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+## Human authentication gate
+
+Grasshopper now carries a reference contract for pausing automation at human-only authentication boundaries such as CAPTCHA, MFA, passkeys/WebAuthn, biometrics, OAuth authorization, consent, and payment authorization.
+
+The gate is deliberately **token-free**: chat/notification surfaces never receive passwords, challenge answers, cookies, bearer tokens, or serialized browser state. The original browser/app session is re-verified after user action, and provider credentials are represented only by a vault-backed `credentialRef`.
+
+See [`docs/AUTH_GATE_HANDOFF.md`](docs/AUTH_GATE_HANDOFF.md).
