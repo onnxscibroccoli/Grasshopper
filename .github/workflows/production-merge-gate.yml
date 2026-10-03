@@ -109,12 +109,33 @@ jobs:
           printf '%s\n' "$runs"
           exit 1
 
+      # Regression: run 37147833604 / job 111275326515 (PR #136, sha
+      # fa26572cb0a842537a24705652d7b858b20428e7) passed npm test, recovery
+      # docs, and required contract workflows, then failed only on
+      # enablePullRequestAutoMerge: "Protected branch rules not configured
+      # for this branch". That is a repository setting, not a contract failure.
       - name: Enable auto-merge only after every gate passes
         if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr merge "${{ github.event.pull_request.number }}"             --repo "${{ github.repository }}"             --auto             --squash             --delete-branch
+          set +e
+          out="$(gh pr merge "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --auto \
+            --squash \
+            --delete-branch 2>&1)"
+          status=$?
+          printf '%s\n' "$out"
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          if printf '%s\n' "$out" | grep -q "Protected branch rules not configured"; then
+            echo "Auto-merge not enabled: protected branch rules are not configured for enablePullRequestAutoMerge."
+            echo "Contract checks already passed. Not failing the gate."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Report manual-dispatch gate result
         if: github.event_name == 'workflow_dispatch'
