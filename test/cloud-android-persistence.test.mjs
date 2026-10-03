@@ -17,6 +17,8 @@ test('cloud Android defaults to loopback and token-gated presentation', () => {
   assert.match(body, /hostfwd=tcp:"\$LISTEN_ADDR":"\$ADB_PORT"-:5555/);
   assert.match(body, /--token-plugin TokenFile/);
   assert.match(body, /chmod 600 "\$TOKEN_MAP"/);
+  assert.match(body, /ws_alive\(\)/);
+  assert.match(body, /if \[ ! -s "\$TOKEN_FILE" \]/);
 });
 
 test('cloud Android pins Android-x86 9.0-r2 provenance', () => {
@@ -29,5 +31,9 @@ test('cloud Android injects only an operator public key', () => {
   const body = fs.readFileSync(script, 'utf8');
   assert.match(body, /CLOUD_ANDROID_ADB_PUBLIC_KEY_FILE/);
   assert.match(body, /adbkey\.pub/);
-  assert.doesNotMatch(body, /cp .*adbkey[^.]/);
+  assert.match(body, /ro\.adb\.secure=1/);
+  assert.match(body, /ro\.secure=0/);
+  assert.match(body, /service\.adb\.root 1/);
+  assert.match(body, /on post-fs-data/);
+  assert.doesNotMatch(body, /ro\.adb\.secure=0/);
 });
