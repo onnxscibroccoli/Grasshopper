@@ -33,7 +33,7 @@ Before changing a shared host, record listeners, routes, container/network state
 
 ## OCI workstation
 
-The OCI workstation is experimental and disposable. It may install agent CLIs and build/test tooling. It must not be used as a trust dependency of the AWS production base.
+OCI is the persistent enforcement and development target for the Android worker. Preserve the working cloud chat and its storage. Screenshots, tunnel hostnames, and historical implementations do not authorize changing the target architecture. Use OCI and Remote Desktop Commander for this repair; do not access AWS unless the user explicitly reauthorizes it. Do not reset or replace a working Android session to repair its viewer. The OCI environment must not become a hidden trust dependency of the protected AWS production base.
 
 The canonical convergence path is:
 
