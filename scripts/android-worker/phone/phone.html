@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><title>Android phone viewer</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#111;color:white;font:16px system-ui;overflow:hidden}
+#view{position:fixed;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:6px;padding:6px;flex:none;background:#20242b}#status{flex:1;font-size:14px}
+button,summary{font:inherit;min-height:44px;padding:8px;cursor:pointer}button{border:1px solid #777;border-radius:8px;background:#303844;color:white}
+#screen{flex:1;min-height:0;min-width:0;overflow:hidden;touch-action:none}
+#menu{position:absolute;z-index:3;top:56px;right:8px;max-width:calc(100% - 16px);width:320px;max-height:calc(100% - 64px);overflow:auto;background:#20242b;border:1px solid #888;border-radius:10px}
+#menu>summary{list-style:none}#menu:not([open]){width:auto}#controls{padding:8px;display:grid;gap:8px}
+textarea{width:100%;font:16px system-ui;min-height:80px;resize:vertical}.row{display:flex;flex-wrap:wrap;gap:6px}p{font-size:14px}
+</style></head><body><main id="view">
+<header><span id="status" role="status">Connecting…</span><button id="fit">Fit screen</button><button id="reconnect">Reconnect</button></header>
+<section id="screen" aria-label="Remote Android screen"></section>
+<details id="menu"><summary>Controls</summary><div id="controls">
+<button id="fullscreen">Fullscreen</button><label for="draft">Type with your phone keyboard</label>
+<textarea id="draft" autocomplete="off" autocapitalize="sentences" placeholder="Tap the remote text field first, then compose here."></textarea>
+<button id="type" disabled>Type text</button><p id="notice" role="status">Text is sent only when you press Type text.</p>
+<div class="row"><button data-key="65307">Escape / hide keyboard</button><button data-key="65288">Backspace</button><button data-key="65289">Tab</button><button data-key="65293">Enter</button></div>
+<p>Enter may submit the focused remote form. Reconnect changes only the viewer connection.</p>
+</div></details></main><script type="module" src="./phone.mjs"></script></body></html>

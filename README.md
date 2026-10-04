@@ -134,6 +134,13 @@ boot, identity, UI artifacts and persistence markers. Repeat after restart.
 Private noVNC is SSM-only; native phone access and local hardware handoff remain
 NOT_PROVEN. This does not upgrade the production readiness claim.
 
+## Oracle phone viewer
+
+The phone viewer adds automatic fit, collapsible controls, and explicit local
+text composition. Deploy with `bash scripts/android-worker/phone/install.sh`.
+See [deployment, recovery, and remaining gates](docs/android-worker/phone-ui.md).
+OCI is the target Android environment; compute migration remains to be verified.
+
 ## Android companion streaming test
 
 The existing companion worker can be viewed through Grasshopper's temporary
