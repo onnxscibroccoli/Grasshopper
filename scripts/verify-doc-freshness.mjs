@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 export function readSnapshotDate(readme) {
   const match = String(readme).match(/(?:Documentation snapshot|Documentation status)[^0-9]*(\d{4}-\d{2}-\d{2})/i);
@@ -27,21 +29,26 @@ export function evaluateSnapshot({ readme, now = Date.now(), maxAgeHours }) {
   return { ok: true, code: 0, reason: "docs.readme.snapshot_fresh", snapshotDate, ageHours };
 }
 
-const maxAgeHours = Number(process.env.DOC_FRESHNESS_MAX_HOURS || "72");
-const readme = fs.readFileSync("README.md", "utf8");
-const result = evaluateSnapshot({ readme, maxAgeHours });
+function main() {
+  const maxAgeHours = Number(process.env.DOC_FRESHNESS_MAX_HOURS || "72");
+  const readme = fs.readFileSync("README.md", "utf8");
+  const result = evaluateSnapshot({ readme, maxAgeHours });
 
-if (result.reason === "invalid_max_age") {
-  console.error("DOC_FRESHNESS_MAX_HOURS must be a positive number");
-  process.exit(2);
+  if (result.reason === "invalid_max_age") {
+    console.error("DOC_FRESHNESS_MAX_HOURS must be a positive number");
+    process.exit(2);
+  }
+  if (result.snapshotDate) {
+    console.log(`DOC_SNAPSHOT_DATE=${result.snapshotDate}`);
+    console.log(`DOC_SNAPSHOT_AGE_HOURS=${result.ageHours.toFixed(1)}`);
+    console.log(`DOC_FRESHNESS_MAX_HOURS=${maxAgeHours}`);
+  }
+  if (!result.ok) {
+    console.error(`FAIL ${result.reason}`);
+    process.exit(result.code);
+  }
+  console.log(`PASS ${result.reason}`);
 }
-if (result.snapshotDate) {
-  console.log(`DOC_SNAPSHOT_DATE=${result.snapshotDate}`);
-  console.log(`DOC_SNAPSHOT_AGE_HOURS=${result.ageHours.toFixed(1)}`);
-  console.log(`DOC_FRESHNESS_MAX_HOURS=${maxAgeHours}`);
-}
-if (!result.ok) {
-  console.error(`FAIL ${result.reason}`);
-  process.exit(result.code);
-}
-console.log(`PASS ${result.reason}`);
+
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+if (invokedDirectly) main();
