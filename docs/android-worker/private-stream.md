@@ -70,7 +70,16 @@ Provision access-token removal before advertising a test link.
 - Frame: 486x964. PNG SHA256:
   0ee28460f3191184521c59924e91e5f8b89d3dbb4c103c25c232cc193d55ef11.
 - Service active; frame obtained after reconnect through the new adapter.
-- Physical-phone playback and gestures still require the user's test.
+- Physical-phone visual playback confirmed by the user's Galaxy A14 screenshot
+  at approximately 15:55 Eastern on 2026-10-04. It displays the remote Android
+  Chrome session through noVNC, including the emulator toolbar. The screenshot
+  establishes playback, not touch/scroll correctness or native resolution.
+- Follow-up capture at approximately 20:00 UTC passed: 486x964, PNG SHA256
+  012530e8c892a68a9e7cb4bd9afc572f4af1867838691ef55a75902cf675e4ae.
+  The stream adapter remained active. Capture shows Android Chrome and worker
+  side-panel pixels; worker framing is the source of the extra controls.
+- Physical-phone gestures still require verification. The phone's RDC device
+  was offline during follow-up, so actual DPI and font scale remain unread.
 - Exact display-density match, native-resolution canvas, dev viewer,
   camera/SMS routing and post-reboot service health remain unproven.
 - The available AWS host role denied ssm:SendCommand and

@@ -139,5 +139,6 @@ NOT_PROVEN. This does not upgrade the production readiness claim.
 The existing companion worker can be viewed through Grasshopper's temporary
 token-protected HTTPS viewer. The new loopback adapter preserves Android
 state across viewer disconnects. Live external frame capture and the adapter
-tests passed on 2026-10-04; phone playback and exact display matching remain
+tests passed on 2026-10-04. A Galaxy A14 screenshot confirms phone playback;
+phone gestures, removal of worker framing, and exact display matching remain
 acceptance gates. See [private streaming evidence and recovery](docs/android-worker/private-stream.md).
