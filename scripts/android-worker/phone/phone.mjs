@@ -1,13 +1,28 @@
 import RFB from './core/rfb.js';
-import Keyboard from './core/input/keyboard.js';
+import * as KeyboardUtil from './core/input/util.js';
 import {inputDelta,viewportBox} from './input.mjs?v=2';
 const $=id=>document.getElementById(id),input=$('native-input');
 let rfb,connected=false,last='',composing=false,keyboardActive=false;
 function reset(){input.value='_'.repeat(32);last=input.value;input.setSelectionRange(last.length,last.length);}
 function layout(){const v=viewportBox(window.visualViewport||{width:innerWidth,height:innerHeight});Object.assign($('view').style,{width:v.width+'px',height:v.height+'px',top:v.top+'px',left:v.left+'px'});}
 layout();window.addEventListener('resize',layout);window.visualViewport?.addEventListener('resize',layout);window.visualViewport?.addEventListener('scroll',layout);
-const keyboard=new Keyboard(input);
-keyboard.onkeyevent=(key,code,down)=>{if(connected)rfb.sendKey(key,code,down);};keyboard.grab();
+// IME keydown events (229/Process/Unidentified) must retain their browser
+// default action. Cancelling them can prevent the subsequent input event.
+const held=new Map();
+input.addEventListener('keydown',event=>{
+ if(event.isComposing||event.keyCode===229||['Process','Unidentified'].includes(event.key))return;
+ const modified=event.ctrlKey||event.altKey||event.metaKey;
+ if(!modified&&(Array.from(event.key).length===1||['Backspace','Enter'].includes(event.key)))return;
+ const key=KeyboardUtil.getKeysym(event);if(!key)return;
+ event.preventDefault();
+ if(connected){rfb.sendKey(key,event.code,true);held.set(event.code,key);}
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','Tab'].includes(event.key))reset();
+});
+input.addEventListener('keyup',event=>{
+ const key=held.get(event.code);if(!key)return;
+ event.preventDefault();if(connected)rfb.sendKey(key,event.code,false);held.delete(event.code);
+});
+input.addEventListener('blur',()=>{for(const [code,key] of held)if(connected)rfb.sendKey(key,code,false);held.clear();});
 reset();
 input.addEventListener('compositionstart',()=>{composing=true;});
 input.addEventListener('compositionend',()=>{composing=false;forward();});

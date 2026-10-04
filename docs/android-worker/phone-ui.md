@@ -26,3 +26,9 @@ The three static viewer files are served from /srv/grasshopper/android/viewer on
 The installer remains scripts/android-worker/phone/install.sh. No Android storage, runtime, or account state is replaced by this viewer change. Evidence includes native-repair-frame.png, input-s-probe.png, viewer-mobile-layout.png, and native-viewer-tests.txt under /srv/grasshopper/android/evidence/. Physical screenshots are in /storage/emulated/0/Download/grasshopper-viewer-test.png on the phone.
 
 This is an incomplete UI repair, not production acceptance or proof of completed compute migration. Persistence, automation-loop verification, and Grasshopper/Broccoli integration remain separate acceptance gates.
+
+## Native composition follow-up, 17:33 Eastern
+
+The user confirmed that the physical keyboard opens but text does not arrive remotely. A real-browser regression probe found the imported noVNC Keyboard handler cancelling keydown events with keyCode 229 / Unidentified. The viewer now leaves IME and printable key events to the browser and forwards their input deltas. Navigation and modifier keys have explicit paired handling, including release on blur. This removes an observed browser-side defect; it does not establish that every downstream input defect is fixed.
+
+Run scripts/android-worker/phone/verify-native.mjs with PLAYWRIGHT_MODULE pointing to an installed Playwright module. It verifies uncancelled composition/printable events and collapsible panels at three viewport sizes without typing into the remote session. All checks pass. Physical delivery remains pending because RDC calls stalled again after the local restart. No AWS access occurred after the user's OCI/RDC-only correction.
