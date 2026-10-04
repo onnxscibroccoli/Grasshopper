@@ -4,7 +4,7 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;background:#111;color:white;font:16px system-ui;overflow:hidden}
 #view{position:fixed;overflow:hidden}#screen{position:absolute;inset:0;overflow:hidden;touch-action:none}
-#native-input{position:fixed;left:-10000px;top:0;width:2px;height:2px;opacity:.01;font-size:16px;pointer-events:none}
+#native-input{position:fixed;left:50%;top:50%;width:2px;height:2px;opacity:.01;background:transparent;color:transparent;border:0;outline:0;padding:0;margin:0;z-index:20;font-size:16px}
 #toolbar{position:absolute;z-index:10;right:max(8px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 #toolbar>button,#toolbar>div{font:inherit;min-height:44px;border:1px solid #777;border-radius:10px;background:#20242be8;color:#fff;padding:9px 12px;box-shadow:0 2px 10px #0008}
 #toolbar>button{cursor:pointer}#toolbar>div{display:none;max-width:min(92vw,340px);gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -12,16 +12,12 @@
 @media(pointer:coarse){#toolbar{gap:8px}#toolbar>button,#toolbar>div{min-height:48px;padding:10px 13px}}
 </style></head><body><main id="view">
 <section id="screen" aria-label="Remote Android screen"></section>
-<textarea id="native-input" aria-label="Native phone keyboard input" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" tabindex="-1"></textarea>
+<textarea id="native-input" aria-label="Native phone keyboard input" inputmode="text" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" tabindex="0"></textarea>
 <nav id="toolbar" aria-label="Viewer controls">
-<button id="menu" type="button" aria-label="Viewer controls">⋮</button>
-<div>
+<button id="menu" type="button" aria-label="Viewer controls">⋮</button><div>
 <span id="status" role="status">Connecting…</span>
-<button id="keyboard" type="button">Keyboard</button>
-<button id="keyboard-close" type="button">Release keyboard</button>
-<button id="fit" type="button">Fit</button>
-<button id="fullscreen" type="button">Fullscreen</button>
-<button id="reconnect" type="button">Reconnect</button>
-<button id="ctrl-alt-del" type="button">Ctrl+Alt+Del</button>
+<button id="keyboard" type="button">Keyboard</button><button id="keyboard-close" type="button">Release keyboard</button>
+<button id="fit" type="button">Fit</button><button id="fullscreen" type="button">Fullscreen</button>
+<button id="reconnect" type="button">Reconnect</button><button id="ctrl-alt-del" type="button">Ctrl+Alt+Del</button>
 </div></nav></main>
-<script type="module" src="./phone.mjs?v=4"></script></body></html>
+<script type="module" src="./phone.mjs?v=6"></script></body></html>
