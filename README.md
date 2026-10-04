@@ -123,3 +123,17 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+## Adaptive workstation capabilities
+
+Run `npm run inventory:workstation` to discover PATH and user-local agent tools,
+classify failed probes, and try discovered browser executables until a real DOM
+click produces `GRASSHOPPER_DOM_OK`. The bootstrap saves the report under
+`~/.grasshopper/audit/capabilities.json`. From another directory, invoke Node
+with the absolute path to `scripts/workstation-capabilities.mjs`.
+
+Reports distinguish installed tools from verified browser behavior and leave
+authentication unproven. Failed browser candidates remain in the evidence.
+The next-action recommendation adapts to the current probe; observations never
+authorize command replay. This is discovery and a recovery recommendation, not
+an automatic installer or proof of complete production acceptance.
