@@ -133,3 +133,11 @@ Run `python3 scripts/android-worker/verify.py` on the dedicated worker to collec
 boot, identity, UI artifacts and persistence markers. Repeat after restart.
 Private noVNC is SSM-only; native phone access and local hardware handoff remain
 NOT_PROVEN. This does not upgrade the production readiness claim.
+
+## Android companion streaming test
+
+The existing companion worker can be viewed through Grasshopper's temporary
+token-protected HTTPS viewer. The new loopback adapter preserves Android
+state across viewer disconnects. Live external frame capture and the adapter
+tests passed on 2026-10-04; phone playback and exact display matching remain
+acceptance gates. See [private streaming evidence and recovery](docs/android-worker/private-stream.md).
