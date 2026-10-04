@@ -2,7 +2,9 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-01 00:30 UTC
+**Documentation snapshot:** 2026-10-04 17:30 UTC
+
+Regression: Production merge gate [run 37220484557](https://github.com/onnxscibroccoli/Grasshopper/actions/runs/37220484557) failed because Documentation freshness [run 37220484522](https://github.com/onnxscibroccoli/Grasshopper/actions/runs/37220484522) reported `DOC_SNAPSHOT_DATE=2026-10-01`, `DOC_SNAPSHOT_AGE_HOURS=89.4`, `DOC_FRESHNESS_MAX_HOURS=72` (`FAIL docs.readme.snapshot_stale`). This line is a date refresh only. It does not change production ingress.
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
