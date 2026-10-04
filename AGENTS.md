@@ -1,5 +1,22 @@
 # Grasshopper agent operating contract
 
+## Ownership (OMNIKALI-MODULARIZATION-2026-10-04)
+
+Grasshopper owns task lifecycle (`PENDING -> RUNNING -> COMPLETED|FAILED`), workers, leases, recovery, and the reference control plane.
+
+Grasshopper does **not** own:
+
+- Android Rish transport — [`broccoli-rish`](https://github.com/onnxscibroccoli/broccoli-rish)
+- live Helix gateway / hypervisor — `helix`
+- public discovery door — `omnikali`
+- K8s isolated desktops — `grasshopper-kubernetes` (never public origin)
+
+`src/android/` consumes broccoli-rish. Do not copy Broccoli historical scripts into this repo. Do not add a second `rish_run.sh`.
+
+Do not split this control plane. Internal packages only.
+
+---
+
 This repository is the clean reference/control-plane project for OmniKali. Existing production systems are evidence, not a reason to bypass reproducibility.
 
 ## Safety boundary
@@ -86,6 +103,8 @@ If post-merge validation fails, the response must use the documented revert/rest
 ## Broccoli degradation guard
 
 Read `docs/DEGRADATION_LESSONS.md` and `docs/PORTABILITY_AND_EXECUTION_BOUNDARIES.md` before adding a transport, a script, or a status claim.
+
+Canonical Android transport owner is now [`broccoli-rish`](https://github.com/onnxscibroccoli/broccoli-rish). Edit that repo for `rish_run.sh` / `RishTransport`. Do not edit broccoli-core wrappers because a Grasshopper caller failed.
 
 Do not repeat these:
 
