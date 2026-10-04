@@ -1,6 +1,10 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 
+// Transport owner: onnxscibroccoli/broccoli-rish (lib/rish_run.sh, RishTransport).
+// This client still shells to broccoli-core/tools/android_action_cli.py until that
+// CLI is extracted. Do not add a second Rish wrapper here.
+
 export const ANDROID_ACTIONS = Object.freeze([
   "device.identity",
   "display.list",
@@ -74,7 +78,7 @@ export async function executeAndroidAction(action, {
       const evidence = {
         ...result,
         returncode: result.returncode ?? code,
-        transport: "Grasshopper->broccoli-core CLI->Rish->Shizuku->Android-shell",
+        transport: "Grasshopper->broccoli-core CLI->broccoli-rish RishTransport->Rish->Shizuku->Android-shell",
         stderr: [result.stderr, stderr].filter(Boolean).join(""),
       };
 
