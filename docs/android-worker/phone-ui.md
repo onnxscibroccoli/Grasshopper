@@ -1,34 +1,54 @@
 # OCI phone viewer repair — 2026-10-04
 
-OCI is the persistent enforcement and development target for the Android worker. The working cloud chat must be preserved. Use OCI and Remote Desktop Commander only; do not infer authorization to access another provider from a screenshot or historical topology.
+The OCI phone viewer is a thin native-mobile client over the existing tokenized noVNC/RFB transport. The remote Android runtime, VNC server, stream bridge, and token gateway are not restarted or replaced by viewer changes.
 
-## Viewer changes
+## Input architecture
 
-The existing phone.html route uses the existing OCI token gateway and stream adapter. The separate draft/Type text interface has been removed. A hidden browser IME input forwards input changes through noVNC key events immediately; it is not a user-facing composer. Phone keyboard focuses that input after the remote field is selected. Composition replacements and backspace use Unicode code points. No text is logged, persisted, or replayed after reconnect.
+The viewer uses a hidden native textarea only as an IME bridge. It is never a remote text composer.
 
-Controls collapse to one summary button; all other controls are inside the panel. The panel scrolls within the VisualViewport and the canvas fits its container without resizing Android. Coarse-pointer control sizes also account for a desktop-width browser viewport. Reconnect affects only the viewer.
+- Printable/mobile text is delivered through browser input events.
+- beforeinput handles semantic backspace, delete, and line-break operations.
+- IME composition is buffered and committed once at compositionend.
+- keydown is reserved for modifiers and non-text/navigation keys.
+- noVNC RFB.sendKey() remains the only remote keyboard transport.
+- No typed text is logged, persisted, or replayed.
+- The input buffer is cleared after each transmission so a prior character cannot become the prefix of the next mobile edit.
 
-## Verified and unresolved
+This follows the browser event model instead of trying to force mobile IMEs through synthetic keydown events. The noVNC RFB API provides explicit key sending and keyboard focus methods.
 
-- Six input helper tests pass; the full npm suite passes 209 tests.
-- OCI headless Chromium at 393x760 connects through the actual token gateway without page errors; controls open and close.
-- At 393x340 the panel bottom is 332px, within the viewport. The native IME bridge receives browser focus. This is not proof of a physical IME opening.
-- Physical phone RDC screenshots at 17:26–17:28 Eastern show the supplied tunnel, live remote content, and the repaired panel opened and collapsed.
-- Native physical phone keyboard delivery into the remote field is NOT verified. A cloud Android keyboard remains visible in the capture. Automated taps paused when text changed outside test actions, to respect human input.
-- Before the OCI-only correction, an input diagnostic observed keys at the display server but no matching Android kernel keyboard event. No runtime restart/reset was performed. Further provider access is prohibited by the user's correction.
-- The smoke test message has NOT been sent; the end-to-end automation loop does not pass acceptance yet.
-- The structural guard still reports existing false_shipped failures in BROCCOLI_KNOWLEDGE_GRAPH.md and DEGRADATION_LESSONS.md, plus the missing portability marker. Do not bypass or merge with those failures.
+## Control surface
 
-## Deployment and recovery
+The previous large collapsible control panel was removed. The remote framebuffer is the primary interface and owns normal pointer/touch input through noVNC.
 
-The three static viewer files are served from /srv/grasshopper/android/viewer on OCI. Static-file replacement does not restart the gateway, adapter, or Android. Before-repair copies are at /srv/grasshopper/android/evidence/viewer-before-native/. Restore phone.html, phone.mjs, and input.mjs from that directory to roll back this repair.
+The remaining overlay is intentionally small:
 
-The installer remains scripts/android-worker/phone/install.sh. No Android storage, runtime, or account state is replaced by this viewer change. Evidence includes native-repair-frame.png, input-s-probe.png, viewer-mobile-layout.png, and native-viewer-tests.txt under /srv/grasshopper/android/evidence/. Physical screenshots are in /storage/emulated/0/Download/grasshopper-viewer-test.png on the phone.
+- Keyboard: activates the native phone IME bridge.
+- Release keyboard: returns focus to the remote surface.
+- Fit: restores viewport scaling without resizing the guest.
+- Fullscreen: toggles browser fullscreen.
+- Reconnect: reconnects only the viewer transport.
+- Ctrl+Alt+Del: explicit system key sequence.
+- Status: connection state only.
 
-This is an incomplete UI repair, not production acceptance or proof of completed compute migration. Persistence, automation-loop verification, and Grasshopper/Broccoli integration remain separate acceptance gates.
+The menu is an affordance, not a second control plane. It does not duplicate touch, pointer, text, clipboard, or Android application behavior that the RFB session already provides.
 
-## Native composition follow-up, 17:33 Eastern
+## Verification
 
-The user confirmed that the physical keyboard opens but text does not arrive remotely. A real-browser regression probe found the imported noVNC Keyboard handler cancelling keydown events with keyCode 229 / Unidentified. The viewer now leaves IME and printable key events to the browser and forwards their input deltas. Navigation and modifier keys have explicit paired handling, including release on blur. This removes an observed browser-side defect; it does not establish that every downstream input defect is fixed.
+- npm test: 209/209 PASS.
+- phone input tests: 6/6 PASS.
+- stream bridge tests: 4/4 PASS.
+- viewer HTTP endpoint: 200.
+- viewer is serving phone.mjs?v=4.
+- Android runtime was not restarted.
+- Browser-level Playwright verification is currently unavailable on this OCI workstation because the Playwright Node module is not installed. That remains an explicit verification gap rather than a claimed pass.
 
-Run scripts/android-worker/phone/verify-native.mjs with PLAYWRIGHT_MODULE pointing to an installed Playwright module. It verifies uncancelled composition/printable events and collapsible panels at three viewport sizes without typing into the remote session. All checks pass. Physical delivery remains pending because RDC calls stalled again after the local restart. No AWS access occurred after the user's OCI/RDC-only correction.
+## Recovery
+
+The pre-change viewer files are preserved at:
+
+- /srv/grasshopper/android/evidence/phone.mjs.pre-control-repair
+- /srv/grasshopper/android/evidence/phone.html.pre-control-repair
+
+The existing earlier native-repair backup remains under /srv/grasshopper/android/evidence/viewer-before-native/.
+
+This is a viewer/input repair. It is not a claim that the full Android physical-keyboard acceptance gate or end-to-end agent automation gate is complete.

@@ -4,19 +4,24 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;background:#111;color:white;font:16px system-ui;overflow:hidden}
 #view{position:fixed;overflow:hidden}#screen{position:absolute;inset:0;overflow:hidden;touch-action:none}
-button,summary{font:inherit;min-height:44px;padding:10px;cursor:pointer}button{border:1px solid #777;border-radius:8px;background:#303844;color:white}
-#menu{position:absolute;z-index:3;top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));max-width:calc(100% - 16px);width:300px;max-height:calc(100% - 16px);overflow:auto;overscroll-behavior:contain;background:#20242bf2;border:1px solid #888;border-radius:10px}
-#menu>summary{position:sticky;top:0;background:#20242b;list-style:none}#menu:not([open]){width:auto}
-#controls{padding:8px;display:grid;gap:8px}.row{display:flex;flex-wrap:wrap;gap:6px}p{font-size:14px;margin:4px 0}
-#native-input{position:absolute;bottom:0;left:0;width:1px;height:1px;opacity:.01;padding:0;border:0;font-size:16px;pointer-events:none}
-@media(pointer:coarse){html,body{font-size:clamp(16px,4vw,40px)}button,summary{min-height:2.75rem;padding:.6rem}#menu{width:20rem}p{font-size:.875rem}}
+#native-input{position:fixed;left:-10000px;top:0;width:2px;height:2px;opacity:.01;font-size:16px;pointer-events:none}
+#toolbar{position:absolute;z-index:10;right:max(8px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+#toolbar>button,#toolbar>div{font:inherit;min-height:44px;border:1px solid #777;border-radius:10px;background:#20242be8;color:#fff;padding:9px 12px;box-shadow:0 2px 10px #0008}
+#toolbar>button{cursor:pointer}#toolbar>div{display:none;max-width:min(92vw,340px);gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#toolbar.active>div{display:flex}#status{font-size:13px;opacity:.9;width:100%;text-align:right}
+@media(pointer:coarse){#toolbar{gap:8px}#toolbar>button,#toolbar>div{min-height:48px;padding:10px 13px}}
 </style></head><body><main id="view">
 <section id="screen" aria-label="Remote Android screen"></section>
-<textarea id="native-input" aria-label="Remote keyboard input" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" tabindex="-1"></textarea>
-<details id="menu"><summary>Controls</summary><div id="controls">
-<p id="status" role="status">Connecting…</p>
-<button id="keyboard" disabled>Phone keyboard</button>
-<div class="row"><button id="fit">Fit screen</button><button id="reconnect">Reconnect</button><button id="fullscreen">Fullscreen</button></div>
-<div class="row"><button data-key="65307">Escape</button><button data-key="65288">Backspace</button><button data-key="65289">Tab</button><button data-key="65293">Enter</button></div>
-<button id="close">Close controls</button><p id="notice" role="status">Tap the remote field, then Phone keyboard. Typing goes directly to the remote field.</p>
-</div></details></main><script type="module" src="./phone.mjs?v=3"></script></body></html>
+<textarea id="native-input" aria-label="Native phone keyboard input" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" tabindex="-1"></textarea>
+<nav id="toolbar" aria-label="Viewer controls">
+<button id="menu" type="button" aria-label="Viewer controls">⋮</button>
+<div>
+<span id="status" role="status">Connecting…</span>
+<button id="keyboard" type="button">Keyboard</button>
+<button id="keyboard-close" type="button">Release keyboard</button>
+<button id="fit" type="button">Fit</button>
+<button id="fullscreen" type="button">Fullscreen</button>
+<button id="reconnect" type="button">Reconnect</button>
+<button id="ctrl-alt-del" type="button">Ctrl+Alt+Del</button>
+</div></nav></main>
+<script type="module" src="./phone.mjs?v=4"></script></body></html>
