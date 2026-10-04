@@ -7,8 +7,11 @@ command -v npm >/dev/null 2>&1 || { echo "npm is required" >&2; exit 1; }
 NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]')
 [ "$NODE_MAJOR" -ge 20 ] || { echo "Node.js 20+ is required; found $(node --version)" >&2; exit 1; }
 cd "$ROOT"
-if [ -n "$(git status --porcelain)" ]; then
+# Ignore untracked install artifacts (node_modules, package-lock.json).
+# Reproduction uses git archive of HEAD, so untracked files are not source.
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   echo "working tree is dirty; commit the canonical source before control-plane reproduction" >&2
+  git status --porcelain --untracked-files=no >&2 || true
   exit 1
 fi
 COMMIT=$(git rev-parse HEAD)
