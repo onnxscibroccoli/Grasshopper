@@ -25,7 +25,7 @@ URL_FILE="$STATE_DIR/session-url"
 LOG_DIR="$STATE_DIR/logs"
 ADB_KEY_FILE="${CLOUD_ANDROID_ADB_PUBLIC_KEY_FILE:-$HOME/.android/adbkey.pub}"
 QEMU_BIN="$(command -v qemu-system-x86_64 || true)"
-WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-/opt/noVNC/utils/websockify/run}"
+WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-$(command -v websockify || true)}"
 
 fail() { echo "ERROR: $*" >&2; exit 2; }
 alive() { [ -s "$QEMU_PID" ] && kill -0 "$(cat "$QEMU_PID")" 2>/dev/null; }
