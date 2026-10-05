@@ -133,7 +133,7 @@ start() {
     -name omnikali-cloud-android \
     -enable-kvm -m "$MEMORY_MB" -smp "$CPUS" -cpu host \
     -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd.img" \
-    -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 androidboot.qemu=1 nomodeset HWACCEL=0' \
+    -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 qemu=1 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 androidboot.qemu=1 nomodeset HWACCEL=0' \
     -drive index=0,if=virtio,id=system,file="$RUNTIME/system.sfs",format=raw,readonly=on \
     -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk-cloud.img",format=raw,readonly=on \
     -drive index=2,if=virtio,id=data,file="$DATA",format=raw \
