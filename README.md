@@ -2,7 +2,9 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-01 00:30 UTC
+**Documentation snapshot:** 2026-10-05 21:10 UTC
+
+Regression note: `scripts/verify-doc-freshness.mjs` fails closed (`docs.readme.snapshot_stale`) when this snapshot date is older than `DOC_FRESHNESS_MAX_HOURS` (default 72). Run [37374026420](https://github.com/onnxscibroccoli/Grasshopper/actions/runs/37374026420) failed at 117.1 hours on snapshot 2026-10-01 after `b5dd3a3` added the durable rebuild queue without refreshing the stamp. This stamp only records that review; it does not change architecture claims.
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
