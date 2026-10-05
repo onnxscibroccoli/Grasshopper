@@ -2,9 +2,9 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-05 13:52 UTC
+**Documentation snapshot:** 2026-10-05 16:45 UTC
 
-Regression note: `scripts/verify-doc-freshness.mjs` fails closed (`docs.readme.snapshot_stale`) when this snapshot date is older than `DOC_FRESHNESS_MAX_HOURS` (default 72). Run [37319951661](https://github.com/onnxscibroccoli/Grasshopper/actions/runs/37319951661) failed at 109.8 hours on snapshot 2026-10-01 after `0811a5ae` recorded the x86 Cloud Android host architecture decision. This stamp only records that review; it does not change architecture claims.
+Regression note: `scripts/verify-doc-freshness.mjs` fails closed (`docs.readme.snapshot_stale`) when this snapshot date is older than `DOC_FRESHNESS_MAX_HOURS` (default 72). Run [37343180158](https://github.com/onnxscibroccoli/Grasshopper/actions/runs/37343180158) failed at 112.7 hours on snapshot 2026-10-01 after `efc482e` defined the always-free agentic deployment contract without refreshing the stamp. This stamp only records that review; it does not change architecture claims.
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
