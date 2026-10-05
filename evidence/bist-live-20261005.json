@@ -1,0 +1,115 @@
+{
+  "schema": "omnikali-bist/v1",
+  "timestamp": "2026-10-05T21:33:33.966Z",
+  "checks": [
+    {
+      "id": "runtime.node",
+      "status": "PASS",
+      "detail": "Node.js v24.21.0",
+      "blocking": true
+    },
+    {
+      "id": "source.required.IMPLEMENTATION_SEED.md",
+      "status": "PASS",
+      "detail": "required artifact present",
+      "blocking": true
+    },
+    {
+      "id": "source.required.BASE_SYSTEM_PROTECTION.md",
+      "status": "PASS",
+      "detail": "required artifact present",
+      "blocking": true
+    },
+    {
+      "id": "source.required.docs/PRODUCTION_LIVE_EVIDENCE.md",
+      "status": "PASS",
+      "detail": "required artifact present",
+      "blocking": true
+    },
+    {
+      "id": "source.required.docs/ARCHITECTURE_VERIFICATION_2026-09-29.md",
+      "status": "PASS",
+      "detail": "required artifact present",
+      "blocking": true
+    },
+    {
+      "id": "source.required.scripts/verify-agentic-reproducibility.sh",
+      "status": "PASS",
+      "detail": "required artifact present",
+      "blocking": true
+    },
+    {
+      "id": "source.required.scripts/verify-live-acceptance.mjs",
+      "status": "PASS",
+      "detail": "required artifact present",
+      "blocking": true
+    },
+    {
+      "id": "source.clean",
+      "status": "NOT_APPLICABLE",
+      "detail": "clean-checkout enforcement is separate; set OMNIKALI_BIST_REQUIRE_CLEAN=1 to require it",
+      "blocking": false
+    },
+    {
+      "id": "local.unit-tests",
+      "status": "NOT_APPLICABLE",
+      "detail": "local unit tests skipped by BIST caller; set includeLocal=true and omit OMNIKALI_BIST_SKIP_LOCAL=1 to run",
+      "blocking": false
+    },
+    {
+      "id": "local.reference-verification",
+      "status": "NOT_APPLICABLE",
+      "detail": "local reference verification skipped by BIST caller; set includeLocal=true and omit OMNIKALI_BIST_SKIP_LOCAL=1 to run",
+      "blocking": false
+    },
+    {
+      "id": "reconstruction.dryrun",
+      "status": "NOT_PROVEN",
+      "detail": "clean-host reconstruction remains explicitly blocked; static dry-run is fail-closed",
+      "blocking": false
+    },
+    {
+      "id": "production.gateway.health",
+      "status": "NOT_PROVEN",
+      "detail": "public probe disabled; BIST never authenticates or mutates production",
+      "blocking": true
+    },
+    {
+      "id": "production.database",
+      "status": "NOT_PROVEN",
+      "detail": "authorized database acceptance evidence; no valid acceptance evidence supplied",
+      "blocking": true
+    },
+    {
+      "id": "production.worker-recovery",
+      "status": "NOT_PROVEN",
+      "detail": "authorized failure-injection acceptance evidence; no valid acceptance evidence supplied",
+      "blocking": true
+    },
+    {
+      "id": "production.executor-side-effects",
+      "status": "NOT_PROVEN",
+      "detail": "command-type-specific executor acceptance evidence; no valid acceptance evidence supplied",
+      "blocking": true
+    },
+    {
+      "id": "production.remote-desktop",
+      "status": "NOT_PROVEN",
+      "detail": "authenticated browser-to-intended-guest acceptance evidence; no valid acceptance evidence supplied",
+      "blocking": true
+    },
+    {
+      "id": "production.kubernetes",
+      "status": "NOT_APPLICABLE",
+      "detail": "Kubernetes is an isolated prototype, not the current public production path",
+      "blocking": false
+    }
+  ],
+  "summary": {
+    "pass": 7,
+    "fail": 0,
+    "not_proven": 6,
+    "not_applicable": 4
+  },
+  "overall": "PASS_WITH_NOT_PROVEN"
+}
