@@ -89,6 +89,7 @@ service adbd /system/bin/adbd --root_seclabel=u:r:su:s0
     class core
     socket adbd stream 660 system system
     disabled
+    seclabel u:r:adbd:s0
 
 on boot
     setprop service.adb.tcp.port 5555
@@ -96,7 +97,7 @@ on boot
     setprop service.adb.root 1
     setprop persist.service.adb.enable 1
 
-on post-fs-data
+on property:ro.kernel.qemu=1
     start adbd
 
 on property:sys.boot_completed=1
