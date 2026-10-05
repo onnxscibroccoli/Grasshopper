@@ -92,18 +92,22 @@ The screen plane independently provides the user-drivable framebuffer.
 
 ## Current evidence boundary
 
-The Android framebuffer has been booted and visually verified on the cloud host.
+The live cloud host has now proven the lower screen/input path independently:
 
-During the initial bring-up, the ADB transport remained offline. The implementation therefore treats the Android agent gate as NOT_PROVEN until the ADB handshake is verified end-to-end.
+- QEMU boots the Android-x86 guest.
+- The VNC server answers the RFB handshake.
+- Token-gated websockify serves noVNC.
+- VNC keyboard events can switch the guest from the stale SeaBIOS framebuffer to the Android graphical surface.
+- VNC pointer events reach the Android graphical surface.
+- Restarting websockify preserves the QEMU guest and the bearer token; the Android session continues independently of the WebSocket transport.
 
-The next live verification is:
+The current implementation therefore does **not** treat the screen transport as broken.
 
-1. boot with androidboot.qemu=1;
-2. verify adbd starts after post-fs-data;
-3. verify the operator public key is accepted;
-4. require adb devices state device;
-5. execute id, a UI input, and a screenshot;
-6. reconnect the noVNC browser;
-7. verify the same Android application/session state survives.
+The ADB agent plane remains **BROKEN_NEEDS_REIMPLEMENTATION**. Live `adb connect 127.0.0.1:5555` remains `offline` even after aligning the guest ramdisk with the Android-x86/AOSP `adbd` service and QEMU boot-property conventions. The goal remains authenticated ADB/MCP control of the same persistent Android session. The next implementation must prove the guest-side daemon lifecycle before any higher-level MCP automation is promoted.
 
-This keeps the user-drivable and agent-drivable paths separate while making them converge on the same persistent Android instance.
+The current live guest data image has a stable pre-change backup at:
+`/root/.cloud-android/backups/data.img.pre-adbd-20261005`
+
+The backup hash recorded after guest shutdown was:
+`f74a5f939ac0a450e6ad0e001e2b30a48193f94ecc6002247896093e81b173bf`
+
