@@ -85,6 +85,11 @@ prepare() {
   fi
 
   cat > "$RAMDISK_EDIT/init.omnikali-cloud.rc" <<'EOF'
+service adbd /system/bin/adbd --root_seclabel=u:r:su:s0
+    class core
+    socket adbd stream 660 system system
+    disabled
+
 on boot
     setprop service.adb.tcp.port 5555
     setprop persist.adb.tcp.port 5555
@@ -92,7 +97,6 @@ on boot
     setprop persist.service.adb.enable 1
 
 on post-fs-data
-    stop adbd
     start adbd
 
 on property:sys.boot_completed=1
