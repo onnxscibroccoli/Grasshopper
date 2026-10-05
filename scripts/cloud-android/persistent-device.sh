@@ -95,6 +95,7 @@ on boot
     setprop persist.adb.tcp.port 5555
     setprop service.adb.root 1
     setprop persist.service.adb.enable 1
+    start adbd
 
 on property:ro.kernel.qemu=1
     start adbd
