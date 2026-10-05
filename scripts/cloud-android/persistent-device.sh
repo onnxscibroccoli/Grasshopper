@@ -6,7 +6,7 @@ VNC_PORT="${CLOUD_ANDROID_VNC_PORT:-5903}"
 WS_PORT="${CLOUD_ANDROID_WS_PORT:-6082}"
 ADB_PORT="${CLOUD_ANDROID_ADB_PORT:-5555}"
 LISTEN_ADDR="${CLOUD_ANDROID_LISTEN_ADDR:-127.0.0.1}"
-WEB_ROOT="${CLOUD_ANDROID_WEB_ROOT:-/opt/noVNC}"
+WEB_ROOT="${CLOUD_ANDROID_WEB_ROOT:-/usr/share/novnc}"
 MEMORY_MB="${CLOUD_ANDROID_MEMORY_MB:-1024}"
 CPUS="${CLOUD_ANDROID_CPUS:-1}"
 DATA_SIZE="${CLOUD_ANDROID_DATA_SIZE:-3G}"
@@ -25,7 +25,7 @@ URL_FILE="$STATE_DIR/session-url"
 LOG_DIR="$STATE_DIR/logs"
 ADB_KEY_FILE="${CLOUD_ANDROID_ADB_PUBLIC_KEY_FILE:-$HOME/.android/adbkey.pub}"
 QEMU_BIN="$(command -v qemu-system-x86_64 || true)"
-WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-/opt/noVNC/utils/websockify/run}"
+WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-$(command -v websockify || true)}"
 
 fail() { echo "ERROR: $*" >&2; exit 2; }
 alive() { [ -s "$QEMU_PID" ] && kill -0 "$(cat "$QEMU_PID")" 2>/dev/null; }
@@ -162,8 +162,17 @@ start() {
   fi
 
   path="websockify?token=$token"
+  public_base="${CLOUD_ANDROID_PUBLIC_BASE_URL:-}"
+  if [ -n "$public_base" ]; then
+    public_path="${CLOUD_ANDROID_PUBLIC_PATH:-/vnc.html}"
+  else
+    public_path="/vnc.html"
+  fi
   encoded="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "$path")"
-  printf '/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1500&resize=scale&path=%s\n' "$encoded" > "$URL_FILE"
+  printf '%s?autoconnect=true&reconnect=true&reconnect_delay=1500&resize=scale&path=%s\n' "$public_path" "$encoded" > "$URL_FILE"
+  if [ -n "$public_base" ]; then
+    printf '%s%s?autoconnect=true&reconnect=true&reconnect_delay=1500&resize=scale&path=%s\n' "${public_base%/}" "$public_path" "$encoded" > "$URL_FILE"
+  fi
   chmod 600 "$URL_FILE"
 
   sleep 2
