@@ -28,6 +28,9 @@ test('cloud Android pins Android-x86 9.0-r2 provenance', () => {
   assert.match(body, /f7eb8fc56f29ad5432335dc054183acf086c539f3990f0b6e9ff58bd6df4604e/);
 });
 
+// Regression note: run 37375844129 (SHA 4b42eda) failed because the script
+// starts adbd on property:ro.kernel.qemu=1 instead of `on post-fs-data`.
+// Keep the public-key-only contract; do not require the removed init trigger.
 test('cloud Android injects only an operator public key', () => {
   const body = fs.readFileSync(script, 'utf8');
   assert.match(body, /CLOUD_ANDROID_ADB_PUBLIC_KEY_FILE/);
@@ -35,6 +38,8 @@ test('cloud Android injects only an operator public key', () => {
   assert.match(body, /ro\.adb\.secure=1/);
   assert.match(body, /ro\.secure=0/);
   assert.match(body, /service\.adb\.root 1/);
-  assert.match(body, /on post-fs-data/);
+  assert.match(body, /on property:ro\.kernel\.qemu=1/);
+  assert.match(body, /start adbd/);
   assert.doesNotMatch(body, /ro\.adb\.secure=0/);
+  assert.doesNotMatch(body, /on post-fs-data/);
 });
