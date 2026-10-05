@@ -20,6 +20,14 @@ test('cloud Android defaults to loopback and token-gated presentation', () => {
   assert.match(body, /chmod 600 "\$TOKEN_MAP"/);
   assert.match(body, /ws_alive\(\)/);
   assert.match(body, /if \[ ! -s "\$TOKEN_FILE" \]/);
+  assert.match(body, /service adbd \/system\/bin\/adbd/);
+  assert.match(body, /on property:ro\.kernel\.qemu=1/);
+  assert.match(body, /on property:persist\.service\.adb\.enable=1/);
+  assert.match(body, /on property:ro\.secure=0/);
+  assert.match(body, /start adbd/);
+  assert.match(body, /qemu=1/);
+  assert.match(body, /command -v websockify/);
+  assert.match(body, /WEB_ROOT:-\/usr\/share\/novnc/);
 });
 
 test('cloud Android pins Android-x86 9.0-r2 provenance', () => {
