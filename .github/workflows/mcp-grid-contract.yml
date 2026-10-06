@@ -1,0 +1,27 @@
+name: mcp-grid-contract
+
+on:
+  push:
+    branches:
+      - feat/mcp-grid-foundation-20261006
+  pull_request:
+    paths:
+      - "scripts/mcp-grid/**"
+      - "docs/architecture/mcp-grid.md"
+      - "test/mcp-grid-contract.test.mjs"
+      - "package.json"
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm install --ignore-scripts
+      - run: node --test test/mcp-grid-contract.test.mjs
+      - run: node --check scripts/mcp-grid/server.mjs
