@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/server";
 import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
+import * as z from "zod/v4";
 import { randomUUID } from "node:crypto";
 
 const nodeId = process.env.OMNIKALI_NODE_ID || "unregistered-node";
@@ -22,10 +23,9 @@ function evidence(status, detail, extra = {}) {
   };
 }
 
-server.tool(
+server.registerTool(
   "node.status",
-  "Return node-local MCP capability evidence without mutating the node.",
-  {},
+  { description: "Return node-local MCP capability evidence without mutating the node.", inputSchema: z.object({}) },
   async () => ({
     content: [{ type: "text", text: JSON.stringify(evidence("PASS_WITH_NOT_PROVEN",
       "MCP stdio control-plane prototype is running; node capabilities are not promoted until individually proven.",
@@ -46,30 +46,27 @@ server.tool(
   })
 );
 
-server.tool(
+server.registerTool(
   "gui.capture",
-  "Capture a node-local framebuffer only after a registered GUI provider is installed.",
-  { session_id: { type: "string" }, max_bytes: { type: "number" } },
+  { description: "Capture a node-local framebuffer only after a registered GUI provider is installed.", inputSchema: z.object({ session_id: z.string(), max_bytes: z.number() }) },
   async () => ({
     content: [{ type: "text", text: JSON.stringify(evidence("NOT_PROVEN",
       "No GUI provider is registered in the prototype. No fallback transport is attempted.")) }]
   })
 );
 
-server.tool(
+server.registerTool(
   "gui.input",
-  "Inject typed GUI input through a registered node-local provider.",
-  { session_id: { type: "string" }, action: { type: "string" } },
+  { description: "Inject typed GUI input through a registered node-local provider.", inputSchema: z.object({ session_id: z.string(), action: z.string() }) },
   async () => ({
     content: [{ type: "text", text: JSON.stringify(evidence("NOT_PROVEN",
       "No GUI input provider is registered in the prototype. ADB/Rish are not assumed healthy.")) }]
   })
 );
 
-server.tool(
+server.registerTool(
   "system.exec",
-  "Execute a typed, policy-approved node operation. Arbitrary shell strings are intentionally unsupported.",
-  { operation: { type: "string" } },
+  { description: "Execute a typed, policy-approved node operation. Arbitrary shell strings are intentionally unsupported.", inputSchema: z.object({ operation: z.string() }) },
   async () => ({
     content: [{ type: "text", text: JSON.stringify(evidence("NOT_PROVEN",
       "No system executor is registered. Arbitrary shell execution is disabled by contract.")) }]
