@@ -21,7 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
+          # Regression: do not set cache: npm until package-lock.json exists.
+          # Run 37499997075 failed: lock file not found (package-lock.json, npm-shrinkwrap.json, yarn.lock).
       - run: npm install --ignore-scripts
       - run: node --test test/mcp-grid-contract.test.mjs
       - run: node --check scripts/mcp-grid/server.mjs
