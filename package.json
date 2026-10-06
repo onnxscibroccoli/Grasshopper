@@ -41,6 +41,7 @@
     "mcp:grid": "node scripts/mcp-grid/server.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/server": "^1.26.0"
+    "@modelcontextprotocol/server": "^2.0.0",
+    "zod": "^4.2.0"
   }
 }
