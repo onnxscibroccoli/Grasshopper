@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 
+// Regression note (run 37450102719, job 112224337447, SHA b5dd3a3d):
+// FAIL docs.readme.snapshot_stale when README "Documentation snapshot" is older
+// than DOC_FRESHNESS_MAX_HOURS (default 72). Observed DOC_SNAPSHOT_DATE=2026-10-01
+// at DOC_SNAPSHOT_AGE_HOURS=130.5. Repro: node scripts/verify-doc-freshness.mjs
+// must print PASS docs.readme.snapshot_fresh for a snapshot within the window.
+
 const maxAgeHours = Number(process.env.DOC_FRESHNESS_MAX_HOURS || "72");
 if (!Number.isFinite(maxAgeHours) || maxAgeHours <= 0) {
   console.error("DOC_FRESHNESS_MAX_HOURS must be a positive number");
