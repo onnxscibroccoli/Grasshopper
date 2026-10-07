@@ -2,18 +2,18 @@
   "schema": "omnikali.implementation-state/v1",
   "workflow": "bidirectional-screen-control",
   "version": "1.0.0",
-  "current_stage": 0,
+  "current_stage": 1,
   "stages": [
     {
       "id": 0,
       "name": "clean-cloud-android",
-      "status": "pending",
+      "status": "complete",
       "doorway": "clean device + identity + resource admission proven"
     },
     {
       "id": 1,
       "name": "screen-acquisition",
-      "status": "locked",
+      "status": "pending",
       "doorway": "real screen data is available through screen-control-v1"
     },
     {
@@ -55,17 +55,27 @@
   ],
   "evidence": {
     "stage0": {
-      "captured_at": "2026-10-07T20:34:23Z",
-      "host": "ip-172-31-8-59",
-      "source_sha": "3c7e9ab64c1c94e9e7e386549c7823b88204ecbb",
+      "captured_at": "2026-10-07T21:04:00Z",
+      "host": "grasshopper-workstation",
+      "provider": "oracle-cloud",
+      "region": "us-ashburn-1",
+      "source_sha": "fdbd7f244be8094571f8a9426b8c2ccd9b01b259",
       "benchmark_ref": "salvage/cloud-android-agentic-device-20261005",
       "benchmark_sha": "99340b37b8eca1cbb8a7ac29a8a5388d4980edb8",
-      "admission": "FAIL",
-      "reason": "insufficient_host_memory",
+      "admission": "PASS",
+      "admission_requested_mb": 1536,
+      "launch_profile": "2048 MiB / 2 vCPU / TCG multi-thread",
       "clean_state_created": true,
-      "new_qemu_started": false,
+      "fresh_data_image": true,
+      "android_identity": "Detecting Android-x86 + interactive console",
+      "new_qemu_started": true,
       "live_sessions_modified": false,
-      "next_action": "obtain resource-admitted disposable host or capacity slot before clean boot"
+      "known_good_artifact_preserved": true,
+      "viewer_http": 200,
+      "screen_frame_captured": true,
+      "screen_frame_sha256": "c2d3cabb82e19d5673de68dfe4ae65c74cec062964913b3761acea9a15e2b2f8",
+      "screen_frame_note": "Frame is real but visually blank; Stage 1 remains pending until usable screen data is proven.",
+      "next_action": "resolve screen acquisition/display initialization without replacing the clean-device foundation"
     }
   },
   "rule": "completed stage unlocks the next stage; failures remain in the current stage"

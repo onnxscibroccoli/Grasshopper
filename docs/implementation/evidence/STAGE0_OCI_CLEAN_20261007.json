@@ -1,0 +1,57 @@
+{
+  "schema": "omnikali.implementation-evidence/v1",
+  "workflow": "bidirectional-screen-control",
+  "stage": 0,
+  "captured_at": "2026-10-07T21:04:00Z",
+  "environment": {
+    "provider": "oracle-cloud",
+    "region": "us-ashburn-1",
+    "host": "grasshopper-workstation",
+    "instance_shape": "VM.Standard.A1.Flex",
+    "host_arch": "aarch64",
+    "cpu_count": 2,
+    "mem_total_mb": 10898,
+    "kvm": "ABSENT",
+    "accelerator": "tcg"
+  },
+  "benchmark": {
+    "ref": "salvage/cloud-android-agentic-device-20261005",
+    "sha": "99340b37b8eca1cbb8a7ac29a8a5388d4980edb8"
+  },
+  "admission": {
+    "requested_mb": 1536,
+    "host_reserve_mb": 2048,
+    "launch_overhead_mb": 512,
+    "capacity_required_mb": 4096,
+    "mem_available_mb": 7763,
+    "swap_free_mb": 2674,
+    "decision": "PASS"
+  },
+  "clean_state": {
+    "state_dir": "/srv/grasshopper/android/development/stage0-clean-20261007",
+    "iso_sha256": "f7eb8fc56f29ad5432335dc054183acf086c539f3990f0b6e9ff58bd6df4604e",
+    "fresh_data_img_sha256": "bddd4acdac432a6f92311a8703a203882b2f33e87689eefc31696ca5757974b5",
+    "known_good_data_backup_sha256": "e5eeb72a1bb3cb2cb729d1f25140d852f1afa6e3e421db100690d9227a9d4b4f",
+    "live_instance_count": 1,
+    "memory_mb": 2048,
+    "cpus": 2,
+    "tcg_threads": "multi"
+  },
+  "identity": {
+    "serial_marker": "Detecting Android-x86... found at /dev/vda",
+    "interactive_console_marker": "console:/ #",
+    "interpretation": "Android-x86 guest reached an interactive Android console on a freshly created data volume."
+  },
+  "transport": {
+    "viewer_http": 200,
+    "vnc_frame": "1024x768",
+    "frame_sha256": "c2d3cabb82e19d5673de68dfe4ae65c74cec062964913b3761acea9a15e2b2f8",
+    "note": "A real framebuffer was acquired, but the captured frame is visually blank. Screen acquisition remains the next unresolved doorway."
+  },
+  "safety": {
+    "aws_cloud_android": "stopped",
+    "aws_helix_kali": "untouched",
+    "known_good_artifact_preserved": true,
+    "clean_disposable_state": true
+  }
+}
