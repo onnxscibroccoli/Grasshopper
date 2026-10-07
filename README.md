@@ -140,3 +140,7 @@ The repository defines a custom Antigravity worker named `martian`; run `agy --a
 OCI development networking now has fresh authenticated ADB evidence after
 a guest restart: [network contract and runtime settings](docs/OCI_TCG_R2_2026-10-07.md#contract-oci-tcg-network-20261007-02).
 Boot and interactive R2 acceptance remain pending in the integration map.
+
+## OCI Google Cloud CLI environment
+
+The user-scoped [Google Cloud CLI interpreter setup](scripts/cli/setup-gcloud-python.sh) preserves OS Python and SDK authentication. See [repair evidence and recovery](docs/OCI_GCLOUD_CLI_2026-10-07.md); OCI CLI execution passes, while OCI cloud authentication remains unavailable.
