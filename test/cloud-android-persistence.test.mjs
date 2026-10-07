@@ -5,6 +5,10 @@ import path from 'node:path';
 
 const script = path.resolve(process.cwd(), 'scripts/cloud-android/persistent-device.sh');
 
+// Regression note: Reference tests run 37643349526 (SHA 1e75cad8, not the
+// current branch tip) failed because persistent-device.sh was mode 100644.
+// assert.ok((st.mode & 0o111) !== 0) is the gate. Do not drop the git
+// executable bit when rewriting this script; tip 99340b37 is 100755.
 test('cloud Android script exists and is executable', () => {
   const st = fs.statSync(script);
   assert.ok((st.mode & 0o111) !== 0);
