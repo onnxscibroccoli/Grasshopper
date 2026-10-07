@@ -23,11 +23,15 @@ else
   echo "WAKE_LOCK_API=NOT_PROVEN"
 fi
 
-if command -v rish >/dev/null 2>&1; then
-  echo "RISH_EXECUTABLE=PASS"
+# Availability is not live transport acceptance. Never fall back to raw rish.
+BROCCOLI_ROOT="${BROCCOLI_ROOT:-$HOME/broccoli-core}"
+CANONICAL_RISH_WRAPPER="$BROCCOLI_ROOT/lib/rish_run.sh"
+if [ -f "$CANONICAL_RISH_WRAPPER" ] && [ -r "$CANONICAL_RISH_WRAPPER" ]; then
+  echo "RISH_CANONICAL_WRAPPER=AVAILABLE"
 else
-  echo "RISH_EXECUTABLE=NOT_PROVEN"
+  echo "RISH_CANONICAL_WRAPPER=NOT_PROVEN"
 fi
+echo "RISH_TRANSPORT_HEALTH=NOT_PROVEN"
 
 if [ -f "$HOME/broccoli-core/runtime-supervisor.pid" ] && kill -0 "$(cat "$HOME/broccoli-core/runtime-supervisor.pid" 2>/dev/null)" 2>/dev/null; then
   echo "SUPERVISOR=PASS"
