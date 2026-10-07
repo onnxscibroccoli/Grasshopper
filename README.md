@@ -2,8 +2,8 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-07 20:10 UTC  
-**Freshness regression:** `docs.readme.snapshot_stale` fails when this date is older than `DOC_FRESHNESS_MAX_HOURS` (default 72). After a substantive README review, update this date and run `node scripts/verify-doc-freshness.mjs`.
+**Documentation snapshot:** 2026-10-07 20:30 UTC  
+**Freshness regression:** `docs.readme.snapshot_stale` fails when this date is older than `DOC_FRESHNESS_MAX_HOURS` (default 72). Evidence: Documentation freshness run 37681935690 reported snapshot 2026-10-01 at 164.4h. After a substantive README review, update this date and run `node scripts/verify-doc-freshness.mjs`.
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
