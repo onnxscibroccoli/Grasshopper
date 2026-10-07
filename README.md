@@ -130,3 +130,13 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+## OCI Android software emulation
+
+Set `CLOUD_ANDROID_ACCELERATOR=tcg` on the canonical cloud Android launcher for development without KVM. See [the OCI TCG contract](docs/OCI_TCG_R2_2026-10-07.md) and [integration map](docs/OCI_TCG_INTEGRATION_MAP.json) for runtime identity, validation, recovery and pending R2 gates.
+
+The repository defines a custom Antigravity worker named `martian`; run `agy --agent martian` from this checkout. It keeps development execution gated on fresh R2 evidence. This does not install the separate Martian model gateway or imply an always-running multi-device loop.
+
+OCI development networking now has fresh authenticated ADB evidence after
+a guest restart: [network contract and runtime settings](docs/OCI_TCG_R2_2026-10-07.md#contract-oci-tcg-network-20261007-02).
+Boot and interactive R2 acceptance remain pending in the integration map.

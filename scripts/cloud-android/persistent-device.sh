@@ -11,6 +11,8 @@ LISTEN_ADDR="${CLOUD_ANDROID_LISTEN_ADDR:-127.0.0.1}"
 WEB_ROOT="${CLOUD_ANDROID_WEB_ROOT:-/usr/share/novnc}"
 MEMORY_MB="${CLOUD_ANDROID_MEMORY_MB:-1024}"
 CPUS="${CLOUD_ANDROID_CPUS:-1}"
+ACCELERATOR="${CLOUD_ANDROID_ACCELERATOR:-kvm}"
+TCG_THREADS="${CLOUD_ANDROID_TCG_THREADS:-single}"
 DATA_SIZE="${CLOUD_ANDROID_DATA_SIZE:-3G}"
 ISO_URL="${CLOUD_ANDROID_ISO_URL:-https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso}"
 ISO_SHA256="${CLOUD_ANDROID_ISO_SHA256:-f7eb8fc56f29ad5432335dc054183acf086c539f3990f0b6e9ff58bd6df4604e}"
@@ -25,6 +27,8 @@ TOKEN_MAP="$STATE_DIR/token-map"
 TOKEN_FILE="$STATE_DIR/current-token"
 URL_FILE="$STATE_DIR/session-url"
 LOG_DIR="$STATE_DIR/logs"
+STATIC_NETWORK="${CLOUD_ANDROID_STATIC_NETWORK:-0}"
+BOOT_DEX_FILTER="${CLOUD_ANDROID_BOOT_DEX_FILTER:-}"
 ADB_KEY_FILE="${CLOUD_ANDROID_ADB_PUBLIC_KEY_FILE:-$HOME/.android/adbkey.pub}"
 QEMU_BIN="$(command -v qemu-system-x86_64 || true)"
 WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-$(command -v websockify || true)}"
@@ -32,6 +36,17 @@ WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-$(command -v websockify || true)
 fail() { echo "ERROR: $*" >&2; exit 2; }
 alive() { [ -s "$QEMU_PID" ] && kill -0 "$(cat "$QEMU_PID")" 2>/dev/null; }
 ws_alive() { [ -s "$WS_PID" ] && kill -0 "$(cat "$WS_PID")" 2>/dev/null; }
+
+accelerator_args() {
+  case "$ACCELERATOR" in
+    kvm) QEMU_ACCEL_ARGS=(-enable-kvm -cpu host) ;;
+    tcg)
+      case "$TCG_THREADS" in single|multi) ;; *) fail "TCG threads must be single or multi" ;; esac
+      QEMU_ACCEL_ARGS=(-accel "tcg,thread=$TCG_THREADS" -cpu max)
+      ;;
+    *) fail "unsupported accelerator: $ACCELERATOR (use kvm or tcg)" ;;
+  esac
+}
 
 require_tools() {
   [ -n "$QEMU_BIN" ] || fail "qemu-system-x86_64 is required"
@@ -123,6 +138,36 @@ on property:sys.boot_completed=1
     setprop persist.service.adb.enable 1
     restart adbd
 EOF
+  case "$BOOT_DEX_FILTER" in
+    "") ;;
+    verify|extract)
+      cat >> "$RAMDISK_EDIT/init.omnikali-cloud.rc" <<EOF_DEX
+
+on early-init
+    setprop pm.dexopt.boot $BOOT_DEX_FILTER
+    setprop pm.dexopt.first-boot $BOOT_DEX_FILTER
+EOF_DEX
+      ;;
+    *) fail "CLOUD_ANDROID_BOOT_DEX_FILTER must be verify or extract" ;;
+  esac
+  if [ "$STATIC_NETWORK" = 1 ]; then
+    cp "$SCRIPT_DIR/guest-network.sh" "$RAMDISK_EDIT/cloud-network.sh"
+    chmod 755 "$RAMDISK_EDIT/cloud-network.sh"
+    cat >> "$RAMDISK_EDIT/init.omnikali-cloud.rc" <<'EOF_NETWORK'
+
+service cloud_network /system/bin/sh /cloud-network.sh
+    class core
+    user root
+    group root
+    disabled
+    oneshot
+
+on boot
+    start cloud_network
+EOF_NETWORK
+  elif [ "$STATIC_NETWORK" != 0 ]; then
+    fail "CLOUD_ANDROID_STATIC_NETWORK must be 0 or 1"
+  fi
   chmod 644 "$RAMDISK_EDIT/init.omnikali-cloud.rc"
 
   rm -f "$RUNTIME/ramdisk-cloud.img.tmp"
@@ -142,6 +187,7 @@ EOF
 }
 
 start() {
+  accelerator_args
   if ! alive; then
     admission || fail "host memory admission rejected cloud Android launch"
   fi
@@ -150,15 +196,17 @@ start() {
   rm -f "$QEMU_PID" "$TOKEN_MAP" "$TOKEN_FILE" "$URL_FILE"
   "$QEMU_BIN" \
     -name omnikali-cloud-android \
-    -enable-kvm -m "$MEMORY_MB" -smp "$CPUS" -cpu host \
+    "${QEMU_ACCEL_ARGS[@]}" -m "$MEMORY_MB" -smp "$CPUS" \
     -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd.img" \
     -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 qemu=1 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 androidboot.qemu=1 nomodeset HWACCEL=0' \
     -drive index=0,if=virtio,id=system,file="$RUNTIME/system.sfs",format=raw,readonly=on \
     -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk-cloud.img",format=raw,readonly=on \
     -drive index=2,if=virtio,id=data,file="$DATA",format=raw \
     -netdev user,id=net0,hostfwd=tcp:"$LISTEN_ADDR":"$ADB_PORT"-:5555 \
-    -device virtio-net-pci,netdev=net0 \
+    -device virtio-net-pci,netdev=net0,mac=52:54:00:12:34:56 \
     -device qemu-xhci,id=xhci -device usb-tablet,bus=xhci.0 \
+    -chardev "socket,id=androidserial,path=$STATE_DIR/serial.sock,server=on,wait=off,logfile=$LOG_DIR/serial.log" \
+    -serial chardev:androidserial \
     -vga std -vnc "$LISTEN_ADDR:3" \
     -daemonize -pidfile "$QEMU_PID" \
     >"$LOG_DIR/qemu.log" 2>&1
@@ -220,6 +268,7 @@ adb_cmd() {
 
 arg="${1-status}"
 case "$arg" in
+  accelerator) accelerator_args; printf '%s\n' "${QEMU_ACCEL_ARGS[@]}" ;;
   admission) admission ;;
   prepare) prepare ;;
   start) start ;;
@@ -227,5 +276,5 @@ case "$arg" in
   status) status ;;
   restart) stop || true; start ;;
   adb) shift; adb_cmd "$@" ;;
-  *) echo "Usage: $0 {admission|prepare|start|stop|status|restart|adb ...}" >&2; exit 64 ;;
+  *) echo "Usage: $0 {accelerator|admission|prepare|start|stop|status|restart|adb ...}" >&2; exit 64 ;;
 esac
