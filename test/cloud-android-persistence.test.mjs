@@ -54,3 +54,12 @@ test('cloud Android injects only an operator public key', () => {
   assert.doesNotMatch(body, /ro\.adb\.secure=0/);
   assert.doesNotMatch(body, /on post-fs-data/);
 });
+
+// Exercise the real launcher selection without requiring a guest or KVM.
+test('software emulation is explicit and rejects unknown accelerators', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const run = value => execFileSync('bash', [script, 'accelerator'], {env: {...process.env, CLOUD_ANDROID_ACCELERATOR: value}, encoding: 'utf8'});
+  assert.equal(run('tcg').trim(), '-accel\ntcg,thread=single\n-cpu\nmax');
+  assert.equal(run('kvm').trim(), '-enable-kvm\n-cpu\nhost');
+  assert.throws(() => run('invalid'));
+});

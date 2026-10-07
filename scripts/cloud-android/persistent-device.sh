@@ -11,6 +11,7 @@ LISTEN_ADDR="${CLOUD_ANDROID_LISTEN_ADDR:-127.0.0.1}"
 WEB_ROOT="${CLOUD_ANDROID_WEB_ROOT:-/usr/share/novnc}"
 MEMORY_MB="${CLOUD_ANDROID_MEMORY_MB:-1024}"
 CPUS="${CLOUD_ANDROID_CPUS:-1}"
+ACCELERATOR="${CLOUD_ANDROID_ACCELERATOR:-kvm}"
 DATA_SIZE="${CLOUD_ANDROID_DATA_SIZE:-3G}"
 ISO_URL="${CLOUD_ANDROID_ISO_URL:-https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso}"
 ISO_SHA256="${CLOUD_ANDROID_ISO_SHA256:-f7eb8fc56f29ad5432335dc054183acf086c539f3990f0b6e9ff58bd6df4604e}"
@@ -32,6 +33,14 @@ WEBSOCKIFY_BIN="${CLOUD_ANDROID_WEBSOCKIFY_BIN:-$(command -v websockify || true)
 fail() { echo "ERROR: $*" >&2; exit 2; }
 alive() { [ -s "$QEMU_PID" ] && kill -0 "$(cat "$QEMU_PID")" 2>/dev/null; }
 ws_alive() { [ -s "$WS_PID" ] && kill -0 "$(cat "$WS_PID")" 2>/dev/null; }
+
+accelerator_args() {
+  case "$ACCELERATOR" in
+    kvm) QEMU_ACCEL_ARGS=(-enable-kvm -cpu host) ;;
+    tcg) QEMU_ACCEL_ARGS=(-accel tcg,thread=single -cpu max) ;;
+    *) fail "unsupported accelerator: $ACCELERATOR (use kvm or tcg)" ;;
+  esac
+}
 
 require_tools() {
   [ -n "$QEMU_BIN" ] || fail "qemu-system-x86_64 is required"
@@ -142,6 +151,7 @@ EOF
 }
 
 start() {
+  accelerator_args
   if ! alive; then
     admission || fail "host memory admission rejected cloud Android launch"
   fi
@@ -150,7 +160,7 @@ start() {
   rm -f "$QEMU_PID" "$TOKEN_MAP" "$TOKEN_FILE" "$URL_FILE"
   "$QEMU_BIN" \
     -name omnikali-cloud-android \
-    -enable-kvm -m "$MEMORY_MB" -smp "$CPUS" -cpu host \
+    "${QEMU_ACCEL_ARGS[@]}" -m "$MEMORY_MB" -smp "$CPUS" \
     -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd.img" \
     -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 qemu=1 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 androidboot.qemu=1 nomodeset HWACCEL=0' \
     -drive index=0,if=virtio,id=system,file="$RUNTIME/system.sfs",format=raw,readonly=on \
@@ -159,6 +169,7 @@ start() {
     -netdev user,id=net0,hostfwd=tcp:"$LISTEN_ADDR":"$ADB_PORT"-:5555 \
     -device virtio-net-pci,netdev=net0 \
     -device qemu-xhci,id=xhci -device usb-tablet,bus=xhci.0 \
+    -serial "file:$LOG_DIR/serial.log" \
     -vga std -vnc "$LISTEN_ADDR:3" \
     -daemonize -pidfile "$QEMU_PID" \
     >"$LOG_DIR/qemu.log" 2>&1
@@ -220,6 +231,7 @@ adb_cmd() {
 
 arg="${1-status}"
 case "$arg" in
+  accelerator) accelerator_args; printf '%s\n' "${QEMU_ACCEL_ARGS[@]}" ;;
   admission) admission ;;
   prepare) prepare ;;
   start) start ;;
@@ -227,5 +239,5 @@ case "$arg" in
   status) status ;;
   restart) stop || true; start ;;
   adb) shift; adb_cmd "$@" ;;
-  *) echo "Usage: $0 {admission|prepare|start|stop|status|restart|adb ...}" >&2; exit 64 ;;
+  *) echo "Usage: $0 {accelerator|admission|prepare|start|stop|status|restart|adb ...}" >&2; exit 64 ;;
 esac

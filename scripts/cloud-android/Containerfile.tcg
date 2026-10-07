@@ -1,0 +1,7 @@
+FROM docker.io/library/alpine@sha256:2e1a7aa4cbc4e9e5222bb4c24a839aa1a6170ea5492d644777ce7b178824e44f
+RUN apk add --no-cache qemu-system-x86_64 qemu-img android-tools bash 7zip openssl cpio gzip nodejs curl e2fsprogs python3 py3-pip \
+ && python3 -m venv /opt/stream \
+ && /opt/stream/bin/pip install websockify==0.13.0
+ENV CLOUD_ANDROID_ACCELERATOR=tcg
+ENV CLOUD_ANDROID_WEBSOCKIFY_BIN=/opt/stream/bin/websockify
+ENTRYPOINT ["bash"]
