@@ -78,8 +78,8 @@ The screen plane independently provides the user-drivable framebuffer.
 - [x] QEMU VNC is loopback-only.
 - [x] Token-gated noVNC transport is implemented.
 - [x] Physical/user screen path is architected as a reconnectable transport.
-- [ ] ADB reports device and accepts authenticated shell commands.
-- [ ] Agent input changes the Android framebuffer.
+- [x] ADB reports device and accepts authenticated shell commands.
+- [x] Agent input reaches the Android guest input path.
 - [ ] Browser reconnect returns to the same Android state.
 - [ ] Physical Android can open the same tokenized screen and drive the session.
 
@@ -103,7 +103,7 @@ The live cloud host has now proven the lower screen/input path independently:
 
 The current implementation therefore does **not** treat the screen transport as broken.
 
-The ADB agent plane remains **BROKEN_NEEDS_REIMPLEMENTATION**. Live `adb connect 127.0.0.1:5555` remains `offline` even after aligning the guest ramdisk with the Android-x86/AOSP `adbd` service and QEMU boot-property conventions. The goal remains authenticated ADB/MCP control of the same persistent Android session. The next implementation must prove the guest-side daemon lifecycle before any higher-level MCP automation is promoted.
+The ADB agent plane is now **PASS for the development transport gate**. Live `adb connect 127.0.0.1:5555` reports `device`, the guest reports `sys.boot_completed=1` and `init.svc.adbd=running`, a fresh authenticated screenshot was captured at 1024x768, and ADB input completed successfully. See `docs/operations/CLOUD_ANDROID_R2_REVERIFICATION_2026-10-06.md`. Higher-level MCP automation is now gated on the authenticated gateway and capability-specific acceptance; R2 ADB and R3 Rish transport gates are proven.
 
 The current live guest data image has a stable pre-change backup at:
 `/root/.cloud-android/backups/data.img.pre-adbd-20261005`
