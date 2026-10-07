@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "omnikali.screen-control/v1",
+  "title": "OmniKali bidirectional screen control message",
+  "type": "object",
+  "required": ["version", "session_id", "direction", "type", "sequence", "payload"],
+  "properties": {
+    "version": { "const": "1" },
+    "session_id": { "type": "string", "minLength": 1 },
+    "direction": { "enum": ["workstation-to-android", "android-to-workstation"] },
+    "type": { "enum": ["screen.frame", "screen.delta", "input.touch", "input.key", "input.text", "device.state", "human_gate", "ack", "error"] },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "payload": { "type": "object" },
+    "ack_for": { "type": ["integer", "null"] }
+  }
+}
