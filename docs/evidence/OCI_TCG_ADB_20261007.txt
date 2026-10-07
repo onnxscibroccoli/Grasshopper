@@ -1,0 +1,18 @@
+2026-10-07T19:30:50Z
+grasshopper-workstation
+aarch64
+uid=0(root) gid=0(root) groups=0(root),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid) context=u:r:shell:s0
+28
+1
+49076928-7271-474b-80f7-9123186628f3
+wifi_eth         UP             10.0.2.15/24 fec0::5054:ff:fe12:3456/64 fe80::5054:ff:fe12:3456/64 
+0:	from all lookup local 
+10000:	from all fwmark 0xc0000/0xd0000 lookup legacy_system 
+13000:	from all fwmark 0x10063/0x1ffff iif lo lookup local_network 
+15000:	from all fwmark 0x0/0x10000 lookup legacy_system 
+16000:	from all fwmark 0x0/0x10000 lookup legacy_network 
+17000:	from all fwmark 0x0/0x10000 lookup local_network 
+18000:	from all lookup main 
+32000:	from all unreachable
+extract
+
