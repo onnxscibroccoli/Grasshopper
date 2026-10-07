@@ -92,7 +92,13 @@ npm test
 node bin/omnikali.mjs status
 ```
 
-Agentic reproducibility can then be exercised with the repository's dedicated verification commands.
+Agentic reproducibility can then be exercised with:
+
+```bash
+npm run verify:agentic-reproducibility
+```
+
+A PASS writes commit-bound JSON evidence to `~/.grasshopper/audit/reproducibility/` (plus `latest.json`) without dirtying the source checkout. Python bytecode/cache debris is ignored so generated local caches cannot invalidate an otherwise canonical tree.
 
 Production acceptance requires the appropriate credentials and authorized infrastructure and must not be simulated by local fixture tests.
 

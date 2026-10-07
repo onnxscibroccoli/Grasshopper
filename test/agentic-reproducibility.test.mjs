@@ -8,4 +8,6 @@ test("agentic reproducibility verifier is fail-closed and production-independent
   assert.match(script, /working tree is dirty/);
   assert.match(script, /production_credentials_required=false/);
   assert.match(script, /live_production_mutation_performed=false/);
+  assert.match(script, /\.grasshopper\/audit\/reproducibility/);
+  assert.match(script, /emit-agentic-reproducibility-evidence\.mjs/);
 });

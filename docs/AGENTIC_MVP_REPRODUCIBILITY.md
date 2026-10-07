@@ -14,6 +14,8 @@ npm run verify:agentic-reproducibility
 
 The exact `HEAD` revision is archived with Git, reconstructed in a new temporary directory, checked for carried state/private-key material, bootstrapped, tested, reference-verified, and checked for the expected durable agent/resource state. The report records the exact canonical commit.
 
+A successful run also writes a machine-readable evidence artifact outside the checkout under `~/.grasshopper/audit/reproducibility/` and refreshes `latest.json`. The artifact is mode 0600, records the canonical commit and runtime versions, and redacts credentials from the configured Git origin before persisting it. Override the destination only with `GRASSHOPPER_REPRO_EVIDENCE_DIR`.
+
 This is the MVP reproducibility gate. It is intentionally independent of production-only blockers such as RDS retention, live secret cutover, production source lineage, and live acceptance.
 
 ## PASS does not mean
