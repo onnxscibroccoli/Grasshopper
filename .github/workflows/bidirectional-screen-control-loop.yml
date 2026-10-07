@@ -1,0 +1,34 @@
+name: Bidirectional Screen Control Iterative Loop
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "docs/implementation/**"
+      - "schemas/screen-control-v1.json"
+      - "deploy/cloud-android/**"
+      - "scripts/cloud-android/**"
+      - "scripts/implementation-checklist.mjs"
+permissions:
+  contents: read
+jobs:
+  doorway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate resumable doorway state
+        run: node scripts/implementation-checklist.mjs
+      - name: Run existing contract suite
+        run: |
+          npm test
+          npm run verify:environment
+      - name: Confirm required control stages exist
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const s=JSON.parse(fs.readFileSync('docs/implementation/BIDIRECTIONAL_SCREEN_CONTROL_STATE.json'));
+          const required=['clean-cloud-android','screen-acquisition','workstation-input-acknowledgement','physical-android-rdc-input-acknowledgement','reconnect','persistent-session','simultaneous-control-arbitration'];
+          const names=s.stages.map(x=>x.name);
+          for(const n of required) if(!names.includes(n)) throw new Error('missing stage: '+n);
+          console.log('All seven implementation doorways are present.');
+          console.log('A completed stage unlocks further development; failures remain bounded to the current stage.');
+          NODE
