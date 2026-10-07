@@ -1,6 +1,6 @@
 {
   "schema": "grasshopper.integration-map/v1",
-  "captured_at": "2026-10-07T18:31:28.327630+00:00",
+  "captured_at": "2026-10-07T18:42:40.341507+00:00",
   "source_baseline": "99340b37b8eca1cbb8a7ac29a8a5388d4980edb8",
   "physical_rish_artifact": "PASS",
   "oci_qemu_tcg": "PASS",
@@ -10,7 +10,13 @@
   "keyboard_pointer": "NOT_PROVEN",
   "reconnect": "NOT_PROVEN",
   "r2": "NOT_PROVEN",
-  "martian": "NOT_PROVEN",
+  "martian": "CUSTOM_ANTIGRAVITY_WORKER_RESPONDED",
   "development_execution_transition": "PENDING_R2",
-  "evidence_document": "docs/OCI_TCG_R2_2026-10-07.md"
+  "evidence_document": "docs/OCI_TCG_R2_2026-10-07.md",
+  "launcher_sha256": "e759d142cea4f8799833cb804c5d1bc51a7a8b3bb11b6a0c9437a82f8bf2cbaf",
+  "serial_console_identity": "PASS",
+  "android_boot_completed": "NOT_PROVEN",
+  "martian_definition": ".agents/agents/martian/agent.md",
+  "next_contract": "R2 authenticated ADB identity and boot completion",
+  "contract_id": "OCI-TCG-R2-20261007-01"
 }

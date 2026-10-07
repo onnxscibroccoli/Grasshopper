@@ -134,3 +134,5 @@ Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/pr
 ## OCI Android software emulation
 
 Set `CLOUD_ANDROID_ACCELERATOR=tcg` on the canonical cloud Android launcher for development without KVM. See [the OCI TCG contract](docs/OCI_TCG_R2_2026-10-07.md) and [integration map](docs/OCI_TCG_INTEGRATION_MAP.json) for runtime identity, validation, recovery and pending R2 gates.
+
+The repository defines a custom Antigravity worker named `martian`; run `agy --agent martian` from this checkout. It keeps development execution gated on fresh R2 evidence. This does not install the separate Martian model gateway or imply an always-running multi-device loop.

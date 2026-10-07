@@ -169,7 +169,8 @@ start() {
     -netdev user,id=net0,hostfwd=tcp:"$LISTEN_ADDR":"$ADB_PORT"-:5555 \
     -device virtio-net-pci,netdev=net0 \
     -device qemu-xhci,id=xhci -device usb-tablet,bus=xhci.0 \
-    -serial "file:$LOG_DIR/serial.log" \
+    -chardev "socket,id=androidserial,path=$STATE_DIR/serial.sock,server=on,wait=off,logfile=$LOG_DIR/serial.log" \
+    -serial chardev:androidserial \
     -vga std -vnc "$LISTEN_ADDR:3" \
     -daemonize -pidfile "$QEMU_PID" \
     >"$LOG_DIR/qemu.log" 2>&1
