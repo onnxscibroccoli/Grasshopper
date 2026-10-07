@@ -1,0 +1,314 @@
+{
+  "schema": "grasshopper.physical-rish-repository-audit/v1",
+  "captured_at": "2026-10-07T20:03:01.732144+00:00",
+  "source": "account tracked-file audit.json from RDC OCI development checkout",
+  "repository_count": 30,
+  "scope": "Physical public launcher retirement; remote Android transport remains configurable.",
+  "limitations": [
+    "Candidate counts are substring matches, not executable consumer counts.",
+    "Changes are proposed branches/draft PRs, not merged defaults or production deployment.",
+    "Audit does not establish physical or OCI transport acceptance."
+  ],
+  "repositories": [
+    {
+      "repository": "onnxscibroccoli/Grasshopper",
+      "scanned_default_commit": "6df6eb072299e6b637aaea7b86f47ba94ee0e293",
+      "candidate_file_count": 25,
+      "classification": "ACTIVE_AUDIT_FIX_PROPOSED",
+      "rollout_status": "PROPOSED_PENDING_PR",
+      "action": "REVIEW_REQUIRED",
+      "draft_pull_request": null,
+      "reason": "Lifecycle raw-driver false PASS removed; canonical policy and tests added."
+    },
+    {
+      "repository": "onnxscibroccoli/broccoli-core",
+      "scanned_default_commit": "95041af6e0acb75e5c03363e2becf13b959d0e96",
+      "candidate_file_count": 1713,
+      "classification": "CANONICAL_IMPLEMENTATION_UPDATE_PROPOSED",
+      "rollout_status": "PROPOSED_PENDING_PR",
+      "action": "REVIEW_REQUIRED",
+      "draft_pull_request": null,
+      "reason": "Core owns wrapper and internal driver; implementation retirement review delegated."
+    },
+    {
+      "repository": "onnxscibroccoli/omnikali",
+      "scanned_default_commit": "c29ef9210354008f1b77ed77c770bd30158cfd81",
+      "candidate_file_count": 2,
+      "classification": "POLICY_DOCUMENTATION_PROPOSED",
+      "rollout_status": "PROPOSED_UNMERGED",
+      "action": "REVIEW_REQUIRED",
+      "draft_pull_request": "https://github.com/onnxscibroccoli/omnikali/pull/7",
+      "reason": "Public door references canonical physical policy; watchdog refusal retained."
+    },
+    {
+      "repository": "onnxscibroccoli/GPTOmniKali-full-stack",
+      "scanned_default_commit": "46349f264ffac5574aedb22b6113477589cad385",
+      "candidate_file_count": 9,
+      "classification": "CONSUMER_UPDATE_PROPOSED",
+      "rollout_status": "PROPOSED_UNMERGED",
+      "action": "REVIEW_REQUIRED",
+      "draft_pull_request": "https://github.com/onnxscibroccoli/GPTOmniKali-full-stack/pull/7",
+      "reason": "Delegated consumer canonical-launcher update."
+    },
+    {
+      "repository": "onnxscibroccoli/helix",
+      "scanned_default_commit": "8f687036344e1c09c592b9fbfb9f8036b07614c0",
+      "candidate_file_count": 1,
+      "classification": "FALSE_SUBSTRING_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "English word flourish in UI design guidance, not a Rish launch."
+    },
+    {
+      "repository": "onnxscibroccoli/grasshopper-kubernetes",
+      "scanned_default_commit": "5d77c5dc0accd1fb75903e364faba89f1faa3fc2",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/omn-kali-knowledge-graph-master",
+      "scanned_default_commit": "b22ba6d22a9cc39c937bb871f7f3fde9333859d7",
+      "candidate_file_count": 18,
+      "classification": "HISTORICAL_SUPERSESSION_PROPOSED",
+      "rollout_status": "PROPOSED_UNMERGED",
+      "action": "REVIEW_REQUIRED",
+      "draft_pull_request": "https://github.com/onnxscibroccoli/omn-kali-knowledge-graph-master/pull/11",
+      "reason": "Dated evidence annotated; preflight separates internal driver from launcher."
+    },
+    {
+      "repository": "onnxscibroccoli/broccoli-rish",
+      "scanned_default_commit": "0218a9a39a33ae0b5343c1051c537ffa36544819",
+      "candidate_file_count": 11,
+      "classification": "LEGACY_PUBLIC_LAUNCHER_RETIREMENT_PROPOSED",
+      "rollout_status": "PROPOSED_PENDING_PR",
+      "action": "REVIEW_REQUIRED",
+      "draft_pull_request": null,
+      "reason": "Legacy public launcher migration review delegated."
+    },
+    {
+      "repository": "onnxscibroccoli/kiln",
+      "scanned_default_commit": "fed47797e3cbde14fee7b0634bb688f7125f0081",
+      "candidate_file_count": 2,
+      "classification": "CONSUMER_UPDATE_PROPOSED",
+      "rollout_status": "PROPOSED_UNMERGED",
+      "action": "REVIEW_REQUIRED",
+      "draft_pull_request": "https://github.com/onnxscibroccoli/kiln/pull/2",
+      "reason": "Delegated consumer canonical-launcher update."
+    },
+    {
+      "repository": "onnxscibroccoli/kali-node",
+      "scanned_default_commit": "6e3db0e92997f89e1f30231d0709d5bf8809d216",
+      "candidate_file_count": 5,
+      "classification": "CONSUMER_UPDATE_PROPOSED",
+      "rollout_status": "PROPOSED_UNMERGED",
+      "action": "REVIEW_REQUIRED",
+      "draft_pull_request": "https://github.com/onnxscibroccoli/kali-node/pull/41",
+      "reason": "Delegated consumer canonical-launcher update."
+    },
+    {
+      "repository": "onnxscibroccoli/dectalk-live",
+      "scanned_default_commit": "a8d5a67d13a53518ab345c97d6ac52c6b902fe0f",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/morphe-desktop",
+      "scanned_default_commit": "9bc059777b21b5f33fa8323b0b364bc92222b637",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/morphe-patches-template",
+      "scanned_default_commit": "57538a3b85ccd3c9a24ed3cc06ec722787563879",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/morphe-manager",
+      "scanned_default_commit": "2d9e7f65af9e03370650d7840d20a47096def3be",
+      "candidate_file_count": 1,
+      "classification": "FALSE_SUBSTRING_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Uzbek translation strings contain rish as a substring, not a Rish launch."
+    },
+    {
+      "repository": "onnxscibroccoli/oauth2-proxy",
+      "scanned_default_commit": "bea3f04bf87b93f5354f392fe2216a88e6031350",
+      "candidate_file_count": 1,
+      "classification": "FALSE_SUBSTRING_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Historical changelog contributor @rishi1111, not a Rish launch."
+    },
+    {
+      "repository": "onnxscibroccoli/morphe-patches",
+      "scanned_default_commit": "18ffc1f7b30219a70a4ab4f5d4d05b156b4a3fe3",
+      "candidate_file_count": 1,
+      "classification": "FALSE_SUBSTRING_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Obfuscated identifier gEAvkRISHQsK, not a Rish launch."
+    },
+    {
+      "repository": "onnxscibroccoli/omnikali-link",
+      "scanned_default_commit": "98d8124791eca8530756c8302e7832981386c1a3",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/ara-github-write-test",
+      "scanned_default_commit": "bb93800e72f01e31e10ca29e8ee7760afe07408c",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/ara-github-write-test-2",
+      "scanned_default_commit": "1a39b497f29ee6cbba6fc5251b5629b5dbacd396",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/shizuku-virtual-mic",
+      "scanned_default_commit": "615687a46d7c1c1682d5326d9c6c06aa5df2aea9",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/android-virtual-mic-shizuku",
+      "scanned_default_commit": "e737a3c8d6d69be4822ab7c50bc2db5dc631da17",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/shizuku-silent-mic",
+      "scanned_default_commit": "6fe4ad8801e6e6537e51096166812d3366a3ec8f",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/onnxscibroccoli.github.io",
+      "scanned_default_commit": "40de96bfd1071c5de77d31dcec386a91f65647d4",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/newsroom-desk",
+      "scanned_default_commit": "ebe418d02e9051eaeff95f834bedfe94d8993120",
+      "candidate_file_count": 2,
+      "classification": "HISTORICAL_NONEXECUTABLE_REFERENCE",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Editorial package records existing rish_display.py evidence; no public launcher or executable consumer."
+    },
+    {
+      "repository": "onnxscibroccoli/lattice",
+      "scanned_default_commit": "0a2f53bb9105c4151e9d7667a7b627ff7fa58c2e",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/half-a-mile",
+      "scanned_default_commit": "9ccd14f49228f8d9ab64427b4023924cd4a9aa1c",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/lattice-audit",
+      "scanned_default_commit": "858d6d4fc5f5f34f6e3823161ef70bfb43749483",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/noVNC",
+      "scanned_default_commit": "acca57b997f206683d27796829ee1f72da37002a",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/Morphe-Patches-2",
+      "scanned_default_commit": "fb52a3e46a7bf6aadef9e2a648bdea2131951f39",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    },
+    {
+      "repository": "onnxscibroccoli/morphe-patches-1",
+      "scanned_default_commit": "d60e85c68ab6c268b497f849000645da263c3b4d",
+      "candidate_file_count": 0,
+      "classification": "NO_RISH_MATCH",
+      "rollout_status": "AUDITED_NO_CHANGE",
+      "action": "NONE",
+      "draft_pull_request": null,
+      "reason": "Tracked-file candidate scan found no Rish reference requiring retirement."
+    }
+  ]
+}

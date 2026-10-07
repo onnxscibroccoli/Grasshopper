@@ -18,6 +18,10 @@ An authorized agent should eventually be able to reproduce the platform from sou
 
 The repository therefore emphasizes provenance, reproducibility, durable execution, recovery, security boundaries, and explicit acceptance evidence.
 
+## Physical Android launcher
+
+Use broccoli-core `lib/rish_run.sh` or its delegating `bin/broccoli-rish` entry point; direct raw-Rish launchers are retired. See [the current launcher policy](docs/PHYSICAL_ANDROID_LAUNCHER_POLICY_2026-10-07.md) and [all-repository audit](docs/PHYSICAL_RISH_REPOSITORY_AUDIT_2026-10-07.md). Lifecycle wrapper availability is not transport health. Remote Android remains explicitly configurable.
+
 ## Current implementation
 
 The local reference control plane implements:

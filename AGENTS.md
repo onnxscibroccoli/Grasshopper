@@ -99,3 +99,8 @@ Do not repeat these:
 - treating a transport identity proof as end-to-end RDC or desktop proof
 
 Run `node scripts/verify-no-broccoli-degradation.mjs` after structural changes. `npm test` includes `test/degradation-guard.test.mjs`.
+
+
+## Physical Android launcher retirement
+
+Use broccoli-core `lib/rish_run.sh` (or its delegating `bin/broccoli-rish` entry point) for physical Android automation. Raw Rish is an internal driver, never a fallback public launcher. Read `docs/PHYSICAL_ANDROID_LAUNCHER_POLICY_2026-10-07.md`; historical launch examples retain provenance but do not override this policy. Keep remote Android transports customizable and separately verified. Wrapper availability is AVAILABLE, never live-health PASS.
