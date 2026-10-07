@@ -1,0 +1,8 @@
+{
+  "schema": "grasshopper.environment/v1",
+  "context": "unknown",
+  "executeAutomatically": false,
+  "controlDirections": [],
+  "requiredEvidence": ["unambiguous execution context"],
+  "fallbackToPhysicalOrCloud": false
+}

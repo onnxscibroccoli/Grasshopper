@@ -18,6 +18,16 @@ An authorized agent should eventually be able to reproduce the platform from sou
 
 The repository therefore emphasizes provenance, reproducibility, durable execution, recovery, security boundaries, and explicit acceptance evidence.
 
+## Environment architecture (development)
+
+Core policy, environment profiles, and deployment guidance now have separate
+`core/`, `config/environments/`, and `deployment/` boundaries. Run
+`npm run context:detect` to inspect the current context; unknown identity exits 78.
+See [deployment and release guidance](deployment/README.md) and
+[bounded contract evidence](docs/ENVIRONMENT_CONTRACT_2026-10-07.md).
+This first migration preserves existing admission imports. Live device control,
+R2 acceptance, and the remaining directory migrations are still pending.
+
 ## Current implementation
 
 The local reference control plane implements:

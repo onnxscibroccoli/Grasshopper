@@ -1,0 +1,9 @@
+{
+  "schema": "grasshopper.environment/v1",
+  "context": "cloud-android",
+  "executeAutomatically": false,
+  "controlDirections": ["cloud-android-local-agent"],
+  "localExecutor": "deployment-selected Android adapter",
+  "requiredEvidence": ["guest-identity", "boot-completion", "responsive-screen", "input-artifact"],
+  "physicalRishRequired": false
+}

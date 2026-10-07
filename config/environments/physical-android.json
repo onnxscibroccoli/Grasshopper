@@ -1,0 +1,11 @@
+{
+  "schema": "grasshopper.environment/v1",
+  "context": "physical-android",
+  "executeAutomatically": false,
+  "controlDirections": ["physical-android-to-cloud-android"],
+  "localExecutor": "broccoli-core/lib/rish_run.sh",
+  "localExecutorRootSource": "BROCCOLI_ROOT or Termux home/broccoli-core",
+  "remoteTransport": "authenticated cloud control adapter",
+  "requiredEvidence": ["physical-identity", "canonical-rish-artifact", "remote-target-identity", "keyboard-pointer", "reconnect"],
+  "rawRishFallback": false
+}

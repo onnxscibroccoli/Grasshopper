@@ -17,8 +17,29 @@
   "serial_console_identity": "PASS",
   "android_boot_completed": "NOT_PROVEN",
   "martian_definition": ".agents/agents/martian/agent.md",
-  "next_contract": "R2 boot completion, keyboard/pointer and reconnect proof",
+  "next_contract": "Reverify current OCI QEMU identity/configuration and isolate CPU saturation before fresh same-source R2 input/reconnect acceptance",
   "contract_id": "OCI-TCG-NETWORK-20261007-02",
   "oci_guest_network": "PASS_AFTER_RESTART",
-  "adb_evidence": "docs/evidence/OCI_TCG_ADB_20261007.txt"
+  "adb_evidence": "docs/evidence/OCI_TCG_ADB_20261007.txt",
+  "architecture_contract": {
+    "id": "GH-ENV-20261007-01",
+    "source_baseline": "fdbd7f244be8094571f8a9426b8c2ccd9b01b259",
+    "status": "LOCAL_TESTED_LIVE_QUALIFICATION_PENDING",
+    "evidence": "docs/ENVIRONMENT_CONTRACT_2026-10-07.md",
+    "profiles": [
+      "oci-workstation",
+      "physical-android",
+      "cloud-android",
+      "unknown"
+    ]
+  },
+  "latest_observation": {
+    "date": "2026-10-07",
+    "oci_qemu_pid": 1054022,
+    "oci_qemu_cpu_percent": 188,
+    "physical_phone": "OFFLINE",
+    "rdc_followup": "HTTP_504_TIMEOUT",
+    "prior_passes": "Historical evidence above; not refreshed by this contract",
+    "r2": "NOT_PROVEN"
+  }
 }
