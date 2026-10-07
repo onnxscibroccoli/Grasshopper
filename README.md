@@ -2,7 +2,9 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-01 00:30 UTC
+**Documentation snapshot:** 2026-10-07 10:23 UTC
+
+Regression note: scheduled Documentation freshness run [37607067313](https://github.com/onnxscibroccoli/Grasshopper/actions/runs/37607067313) failed with `FAIL docs.readme.snapshot_stale` because the README snapshot was `2026-10-01` (age 154.4h, max 72h). This line records that review. It is not a setup-node/npm-cache failure; pull request #88 is already merged.
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
