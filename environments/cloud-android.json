@@ -1,0 +1,8 @@
+{
+  "schema": "omnikali.environment/v1",
+  "kind": "cloud-android",
+  "version": "1.0.0",
+  "execution": { "interactive": true, "persistent": true, "privileged_android_shell": false },
+  "control": { "screen": true, "input": true, "adb": true, "human_gate": true, "bidirectional": true },
+  "parameters": { "transport": "adb+vnc+websocket", "display": "qemu-vnc", "rebuild_source": "legacy-known-good" }
+}

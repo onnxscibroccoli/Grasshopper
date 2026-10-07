@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "omnikali.environment/v1",
+  "type": "object",
+  "required": ["schema", "kind", "version", "execution", "control", "parameters"],
+  "properties": {
+    "schema": { "const": "omnikali.environment/v1" },
+    "kind": { "enum": ["grasshopper-workstation", "cloud-android", "physical-android"] },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "execution": { "type": "object", "required": ["interactive", "persistent"] },
+    "control": { "type": "object", "required": ["screen", "input", "human_gate"] },
+    "parameters": { "type": "object" }
+  }
+}
