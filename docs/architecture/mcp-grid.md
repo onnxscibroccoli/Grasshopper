@@ -4,12 +4,17 @@ Status vocabulary is authoritative: PASS, PASS_WITH_NOT_PROVEN, NOT_PROVEN, BROK
 
 ## Design boundary
 
-The MCP control plane is independent of the Cloud Android display plane and independent of the Cloud Android ADB recovery.
+The MCP control plane is independent of the Cloud Android display plane and independent of the Cloud Android transport implementation.
 
-- R2 screen plane remains the preserved user plane.
-- R2 ADB remains BROKEN_NEEDS_REIMPLEMENTATION until live `adb get-state=device` and an authenticated shell artifact are proven.
-- R3 Rish remains NOT_PROVEN until the canonical uid=2000 artifact is generated.
-- MCP tools must return explicit evidence state rather than pretending an unavailable transport works.
+- R2 Cloud Android development transport is PASS. Fresh evidence proves authenticated ADB `device`, screenshot capture, input, persistence, and loopback-only listeners.
+- R3 RDC -> Termux -> Rish transport is PASS. Fresh evidence proves the canonical uid=2000 shell artifact through the existing `lib/rish_run.sh` with `RISH_PRESERVE_ENV=0`.
+- MCP tools must return explicit evidence state rather than pretending an unavailable capability works.
+- Higher-level capabilities remain individually gated. Passing the transport does not automatically prove browser automation, Ruto, physical screen reconnect, or production gateway deployment.
+
+Evidence:
+
+- `docs/operations/CLOUD_ANDROID_R2_REVERIFICATION_2026-10-06.md`
+- `docs/operations/R3_RISH_REVERIFICATION_2026-10-06.md`
 
 ## Node topology
 
@@ -25,7 +30,8 @@ AI provider
    | OAuth2/OIDC or short-lived service credential
    v
 Authenticated MCP Grid Gateway
-   |-- policy / scope / audit / rate limit
+   |-- authentication / policy / scope / audit / rate limit
+   |-- replay-safe request identity
    |-- mTLS to node gateways where supported
    |
    +--> Kali MCP node
@@ -33,20 +39,21 @@ Authenticated MCP Grid Gateway
    +--> Physical Android MCP node
 ```
 
-Remote transport: Streamable HTTP is the primary transport. HTTP+SSE is compatibility-only. Local integrations use stdio. The current prototype intentionally exposes stdio only and binds no TCP listener.
+Remote transport: Streamable HTTP is the primary transport. HTTP+SSE is compatibility-only. Local integrations use stdio. The current gateway prototype is loopback-only and uses a development bearer verifier; it is not production OAuth/OIDC.
 
 ## Authentication and authorization
 
-1. Remote clients authenticate at the gateway using OAuth2/OIDC or short-lived service credentials.
-2. Gateway issues a narrowly scoped node capability token.
-3. Node-to-gateway transport uses mTLS where supported.
-4. Every tool call carries an audit identity, node identity, capability scope, request id, and policy decision.
-5. No shell command is accepted as an arbitrary string.
-6. System execution is represented by typed, allowlisted operations with explicit resource scopes.
-7. GUI input is constrained by node/session identifiers and bounded coordinate/key/text schemas.
-8. Browser control is constrained to registered browser sessions and approved origins.
-9. Screenshots are local artifacts by default. Upload/export is an explicit separate capability.
-10. Failure to authenticate, authorize, resolve a session, or prove a transport returns a hard error or NOT_PROVEN result. It never falls back to unauthenticated execution.
+1. Remote clients authenticate at the gateway using OAuth2/OIDC or short-lived service credentials in the production design.
+2. The current development gateway uses a static development bearer token only to prove the HTTP authentication boundary. It refuses to start without that token and is explicitly marked non-production.
+3. Gateway issues a narrowly scoped node capability token in the production design.
+4. Node-to-gateway transport uses mTLS where supported.
+5. Every tool call carries an audit identity, node identity, capability scope, request id, and policy decision.
+6. No shell command is accepted as an arbitrary string.
+7. System execution is represented by typed, allowlisted operations with explicit resource scopes.
+8. GUI input is constrained by node/session identifiers and bounded coordinate/key/text schemas.
+9. Browser control is constrained to registered browser sessions and approved origins.
+10. Screenshots are local artifacts by default. Upload/export is an explicit separate capability.
+11. Failure to authenticate, authorize, resolve a session, or prove a transport returns a hard error or NOT_PROVEN result. It never falls back to unauthenticated execution.
 
 ## Initial tool contract
 
@@ -90,17 +97,21 @@ Initial prototype exposes this tool as NOT_PROVEN until a node-specific executor
 
 Returns current capability evidence without mutating the node.
 
+### gateway.status
+
+Returns authenticated gateway evidence without mutating a node. It reports the authentication mode and deliberately does not claim node execution.
+
 ## Transport promotion gates
 
-- Prototype stdio: IN_PROGRESS
-- Streamable HTTP node transport: OPEN
-- OAuth/OIDC gateway: OPEN
-- mTLS node links: OPEN
-- Physical Android node: BLOCKED on R3
-- Cloud Android agent plane: BLOCKED on R2 ADB
-- Kali workstation node: OPEN pending local capability inventory
+- Prototype stdio: PASS for the local fail-closed foundation.
+- Streamable HTTP gateway transport: IN_PROGRESS. The development gateway is executable, authenticated, loopback-only, and covered by contract tests.
+- OAuth/OIDC production gateway: OPEN. The development verifier must be replaced by the real authorization-server verifier before production promotion.
+- mTLS node links: OPEN.
+- Physical Android node: OPEN for R3 transport, higher-level GUI capability still separate.
+- Cloud Android agent plane: PASS for R2 development transport, higher-level MCP capability still separate.
+- Kali workstation node: OPEN pending local capability inventory and registration.
 
-No production MCP endpoint is promoted until authentication, authorization, audit logging, and replay-safe request identity are proven.
+No production MCP endpoint is promoted until authentication, authorization, audit logging, replay-safe request identity, node admission, and capability-specific live acceptance are proven.
 
 ## Local LLM boundary
 

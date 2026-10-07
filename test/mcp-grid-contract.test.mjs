@@ -5,9 +5,10 @@ import fs from "node:fs";
 const doc = fs.readFileSync("docs/architecture/mcp-grid.md", "utf8");
 const server = fs.readFileSync("scripts/mcp-grid/server.mjs", "utf8");
 
-test("MCP grid remains decoupled from Cloud Android ADB recovery", () => {
-  assert.match(doc, /R2 ADB remains BROKEN_NEEDS_REIMPLEMENTATION/);
-  assert.match(doc, /R3 Rish remains NOT_PROVEN/);
+test("MCP grid records proven R2 and R3 transport gates without overclaiming higher capabilities", () => {
+  assert.match(doc, /R2 Cloud Android development transport is PASS/);
+  assert.match(doc, /R3 RDC -> Termux -> Rish transport is PASS/);
+  assert.match(doc, /higher-level MCP capability still separate|higher-level MCP capability/);
   assert.match(server, /No fallback transport is attempted/);
 });
 
