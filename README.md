@@ -31,7 +31,8 @@ The local reference control plane implements:
 - deterministic export/import;
 - authenticated Grok control-plane client;
 - MCP facade;
-- executor boundaries.
+- executor boundaries;
+- resource-aware Cloud Android launch admission with machine-readable evidence.
 
 Key source files:
 

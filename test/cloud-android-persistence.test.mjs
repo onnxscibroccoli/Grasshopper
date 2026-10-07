@@ -28,6 +28,9 @@ test('cloud Android defaults to loopback and token-gated presentation', () => {
   assert.match(body, /qemu=1/);
   assert.match(body, /command -v websockify/);
   assert.match(body, /WEB_ROOT:-\/usr\/share\/novnc/);
+  assert.match(body, /admission-check\.mjs/);
+  assert.match(body, /host memory admission rejected cloud Android launch/);
+  assert.match(body, /admission\) admission/);
 });
 
 test('cloud Android pins Android-x86 9.0-r2 provenance', () => {

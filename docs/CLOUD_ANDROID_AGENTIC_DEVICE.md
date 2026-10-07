@@ -17,6 +17,9 @@ The reproducible seed is Android-x86 9.0-r2.
 
 The runtime script:
 
+- runs a fail-closed host-memory admission check before creating a new Android QEMU process;
+- records machine-readable admission evidence under `~/.grasshopper/audit/cloud-android/admission/`;
+- accounts for MemAvailable, swap headroom, existing QEMU RSS/count, requested guest memory, launch overhead, and a protected host reserve;
 - verifies the pinned ISO SHA-256 before use;
 - extracts the kernel, initrd, Android ramdisk, and system squashfs;
 - builds a small cloud-specific ramdisk;
@@ -72,6 +75,7 @@ The screen plane independently provides the user-drivable framebuffer.
 
 ### Development transport
 
+- [x] Host-memory admission contract is implemented and fail-closed.
 - [x] Android-x86 seed pinned and checksum verified.
 - [x] Persistent data image exists.
 - [x] Android GUI boots on KVM.

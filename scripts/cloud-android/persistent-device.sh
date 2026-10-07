@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+ADMISSION_CHECK="$SCRIPT_DIR/admission-check.mjs"
 STATE_DIR="${CLOUD_ANDROID_STATE_DIR:-$HOME/.cloud-android}"
 VNC_PORT="${CLOUD_ANDROID_VNC_PORT:-5903}"
 WS_PORT="${CLOUD_ANDROID_WS_PORT:-6082}"
@@ -38,10 +40,18 @@ require_tools() {
   command -v cpio >/dev/null || fail "cpio is required"
   command -v gzip >/dev/null || fail "gzip is required"
   command -v sha256sum >/dev/null || fail "sha256sum is required"
+  command -v node >/dev/null || fail "node is required for host admission checks"
+  [ -x "$ADMISSION_CHECK" ] || fail "admission checker is not executable: $ADMISSION_CHECK"
   command -v 7z >/dev/null || fail "7z is required"
   [ -x "$WEBSOCKIFY_BIN" ] || fail "websockify runner is not executable: $WEBSOCKIFY_BIN"
   [ -d "$WEB_ROOT" ] || fail "noVNC web root does not exist: $WEB_ROOT"
   [ -r "$ADB_KEY_FILE" ] || fail "ADB public key is not readable: $ADB_KEY_FILE"
+}
+
+admission() {
+  command -v node >/dev/null || fail "node is required for host admission checks"
+  [ -x "$ADMISSION_CHECK" ] || fail "admission checker is not executable: $ADMISSION_CHECK"
+  node "$ADMISSION_CHECK" --requested-mb "$MEMORY_MB"
 }
 
 prepare() {
@@ -132,6 +142,9 @@ EOF
 }
 
 start() {
+  if ! alive; then
+    admission || fail "host memory admission rejected cloud Android launch"
+  fi
   prepare
   if ! alive; then
   rm -f "$QEMU_PID" "$TOKEN_MAP" "$TOKEN_FILE" "$URL_FILE"
@@ -207,11 +220,12 @@ adb_cmd() {
 
 arg="${1-status}"
 case "$arg" in
+  admission) admission ;;
   prepare) prepare ;;
   start) start ;;
   stop) stop ;;
   status) status ;;
   restart) stop || true; start ;;
   adb) shift; adb_cmd "$@" ;;
-  *) echo "Usage: $0 {prepare|start|stop|status|restart|adb ...}" >&2; exit 64 ;;
+  *) echo "Usage: $0 {admission|prepare|start|stop|status|restart|adb ...}" >&2; exit 64 ;;
 esac
