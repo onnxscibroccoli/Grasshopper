@@ -89,16 +89,21 @@ start() {
   token="$(openssl rand -hex 32 2>/dev/null || true)"
   [ -n "$token" ] || fail "openssl is required for session tokens"
   printf '%s\n' "$token" > "$TOKEN_FILE"
-  printf '%s: 127.0.0.1:5906\n' "$token" > "$TOKEN_MAP"
+  printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
   chmod 600 "$TOKEN_FILE" "$TOKEN_MAP"
 
   podman_cmd run -d --name "$CONTAINER" --network host \
     -v "$STATE_DIR:/state:Z" \
     -e CLOUD_ANDROID_MEMORY_MB="$MEMORY_MB" \
     -e CLOUD_ANDROID_CPUS="$CPUS" \
+    -e CLOUD_ANDROID_VNC_PORT="$VNC_PORT" \
+    -e CLOUD_ANDROID_WS_PORT="$WS_PORT" \
+    -e CLOUD_ANDROID_ADB_PORT="$ADB_PORT" \
+    -e CLOUD_ANDROID_LISTEN_ADDR="$LISTEN_ADDR" \
     "$IMAGE" \
     sh -ec '
       apk add --no-cache qemu-system-aarch64 qemu-hw-display-virtio-gpu-pci websockify novnc >/dev/null
+      VNC_DISPLAY=$((CLOUD_ANDROID_VNC_PORT - 5900))
       qemu-system-aarch64 \
         -name grasshopper-cloud-android-arm64 \
         -machine virt,gic-version=max \
@@ -111,21 +116,21 @@ start() {
         -device virtio-blk-pci,drive=vda,bootindex=0 \
         -drive if=none,id=vdb,file=/state/LineageOS_on_arm64.utm/Data/vdb.qcow2,format=qcow2,discard=unmap,detect-zeroes=unmap \
         -device virtio-blk-pci,drive=vdb,bootindex=1 \
-        -netdev user,id=net0,hostfwd=tcp:127.0.0.1:16555-:5555 \
+        -netdev user,id=net0,hostfwd=tcp:${CLOUD_ANDROID_LISTEN_ADDR}:${CLOUD_ANDROID_ADB_PORT}-:5555 \
         -device virtio-net-pci,netdev=net0 \
         -device virtio-rng-pci \
         -device qemu-xhci,id=xhci \
         -device usb-kbd,bus=xhci.0 \
         -device usb-tablet,bus=xhci.0 \
         -device virtio-gpu-pci \
-        -vnc 127.0.0.1:6 \
+        -vnc ${CLOUD_ANDROID_LISTEN_ADDR}:$VNC_DISPLAY \
         -serial file:/state/run/serial.log \
         -monitor unix:/state/run/mon.sock,server=on,wait=off \
         > /state/logs/qemu.log 2>&1 &
       qemu_pid=$!
       printf "%s\n" "$qemu_pid" > /state/run/qemu-container-pid
       websockify --token-plugin TokenFile --token-source /state/token-map \
-        --web /usr/share/novnc --heartbeat 30 127.0.0.1:6083 \
+        --web /usr/share/novnc --heartbeat 30 ${CLOUD_ANDROID_LISTEN_ADDR}:${CLOUD_ANDROID_WS_PORT} \
         > /state/logs/websockify.log 2>&1 &
       ws_pid=$!
       printf "%s\n" "$ws_pid" > /state/run/websockify-container-pid
