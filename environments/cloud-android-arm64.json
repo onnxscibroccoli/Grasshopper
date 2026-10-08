@@ -27,7 +27,7 @@
     "release": "jqssun/android-lineage-qemu:v2026.07.09",
     "execution_script": "scripts/cloud-android/arm64-device.sh",
     "resource_profile": {
-      "memory_mb": 1536,
+      "memory_mb": 2048,
       "cpus": 2,
       "acceleration": "tcg",
       "host_architecture": "aarch64",
