@@ -12,6 +12,7 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /virtio-gpu-pci/);
   assert.match(script, /usb-kbd/);
   assert.match(script, /usb-tablet/);
+  assert.match(script, /fs1:\\EFI\\BOOT\\BOOTAA64\\.EFI/);
   assert.doesNotMatch(script, /qemu-system-x86_64/);
   assert.doesNotMatch(script, /-enable-kvm/);
 });
