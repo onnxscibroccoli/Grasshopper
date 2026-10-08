@@ -123,3 +123,7 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+## ARM64 Android control evidence
+
+The [2026-10-08 bounded observations](docs/OCI_ARM64_CONTROL_2026-10-08.md) record serial-proven boot completion, Android 16 trade-in mode as the expected cause of closed normal-shell requests, a stalled admitted helper downstream of ADB, a Setup Wizard ANR, and compositor-visible pointer acknowledgement over RFB. Browser reconnect, authenticated normal-shell control, semantic UI recovery and R2 remain **NOT_PROVEN**. Preserve the live original guest; see the [scoped integration map](docs/OCI_ARM64_CONTROL_INTEGRATION_MAP.json).

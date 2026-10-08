@@ -1,0 +1,50 @@
+{
+  "contract_id": "OCI-ARM64-TIM-20261008-03",
+  "previous_contract_id": "OCI-ARM64-CONTROL-20261008-02",
+  "observed_utc": "2026-10-08T07:47:04Z",
+  "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
+  "source_pr": 168,
+  "node": {
+    "name": "grasshopper-workstation",
+    "architecture": "aarch64",
+    "shape": "VM.Standard.A1.Flex",
+    "transport": "RDC",
+    "device_id": "0852e6f4-2507-4d0f-9d62-f6eda8cdd169"
+  },
+  "guest": {
+    "pid": 1123620,
+    "started_utc": "2026-10-08T01:37:50Z",
+    "vcpus": 2,
+    "memory_mib": 2048,
+    "restarted": false
+  },
+  "acceptance": {
+    "adb_handshake": "PASS_DEVICE",
+    "adb_shell": "EXPECTED_CLOSED_ANDROID16_TRADE_IN_MODE",
+    "tradeinmode_activation_cause": "PROVEN_PLATFORM_SETUP_WIZARD_BEHAVIOR",
+    "tradeinmode_helper": "ADMITTED_BUT_TIMEOUT_NO_SUCCESS",
+    "boot_completed": "PASS_SERIAL_INIT_ACTION",
+    "framebuffer": "PASS_1280x800_SETUP_WIZARD_ANR",
+    "keyboard_home": "DELIVERED_NO_VISIBLE_CHANGE_ANR_FOCUS",
+    "pointer": "PASS_VISUAL_ACK_SEMANTIC_RECOVERY_UNPROVEN",
+    "rfb_command_client_reconnect": "PASS",
+    "browser_reconnect": "NOT_PROVEN",
+    "bidirectional_control": "NOT_PROVEN",
+    "r2": "NOT_PROVEN"
+  },
+  "evidence": {
+    "before_framebuffer_path": "/srv/grasshopper/android/development/arm64-observation-20261008/home-before-20261008T065031Z.png",
+    "before_sha256": "2ed8bfb826576a1351d07ccada416a2eb0a299d0d6bcbffc8cab1c5c10e5c1d3",
+    "after_framebuffer_path": "/srv/grasshopper/android/development/arm64-observation-20261008/wait-after-20261008T065055Z.png",
+    "after_sha256": "3cf4316ab51af435523ca6f7c45914037f617d288b4ec5dffaf69eaf63f49dd1",
+    "qemu_interval_cpu_percent_one_core_basis": 85.8,
+    "host_logical_cpus": 2,
+    "qemu_rss_kib": 2243500,
+    "tradein_getstatus_timeout_seconds": 12,
+    "tradein_noarg_timeout_seconds": 6,
+    "tradein_stdout_bytes": 0,
+    "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
+    "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
+  },
+  "next_action": "Compare the image and SELinux policy with an isolated clean Android 16 reference boot; do not repeat live helper probes until safe guest-process cleanup is proven."
+}
