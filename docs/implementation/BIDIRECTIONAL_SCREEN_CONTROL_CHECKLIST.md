@@ -18,6 +18,9 @@ This checklist is a resumable execution contract. **Every completed stage is a d
 - [ ] A changed framebuffer proves only visible acknowledgement; require separate evidence for delivery, semantics and reconnect continuity.
 - [ ] Browser reconnect continuity requires an independently recorded, digest-bound same-session observation with advancing sequence, client-only disconnect and no guest restart.
 - [ ] A reconnect observation never proves input delivery, visible acknowledgement or semantic effect.
+- [ ] Physical-Android evidence names the canonical `onnxscibroccoli/broccoli-core:lib/rish_run.sh` commit and blob and records `RISH_PRESERVE_ENV=0`.
+- [ ] Never copy, patch or embed the canonical Rish wrapper in Grasshopper; consume digest-bound observation records only.
+- [ ] Wrapper qualification alone never proves cloud-Android delivery, visible acknowledgement, semantics, reconnect continuity or R2.
 
 ## Stage 0: Clean Cloud Android
 - [ ] Detect active environment.

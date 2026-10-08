@@ -1,0 +1,23 @@
+{
+  "schema": "grasshopper.broccoli-rish-record/v1",
+  "source_sha": "0000000000000000000000000000000000000000",
+  "node_identity": "NOT_PROVEN",
+  "transport": "broccoli-rish",
+  "session_id": "NOT_PROVEN",
+  "sequence": 0,
+  "captured_utc": "2026-10-08T21:45:00Z",
+  "wrapper": {
+    "repository": "onnxscibroccoli/broccoli-core",
+    "path": "lib/rish_run.sh",
+    "commit_sha": "0000000000000000000000000000000000000000",
+    "blob_sha": "0000000000000000000000000000000000000000",
+    "rish_preserve_env": "0"
+  },
+  "execution": {
+    "disposition": "OBSERVED_ONLY",
+    "exit_code": 0,
+    "uid": 2000,
+    "selinux_context": "u:r:shell:s0",
+    "device_model": "NOT_PROVEN"
+  }
+}

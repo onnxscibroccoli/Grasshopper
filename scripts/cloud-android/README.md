@@ -97,3 +97,15 @@ node scripts/cloud-android/adapt-browser-reconnect-observation.mjs \
 ```
 
 See `docs/implementation/evidence/BROWSER_RECONNECT_OBSERVATION_FORMAT.json` and `BROWSER_RECONNECT_RECORD_FORMAT.json` for the two input shapes. A reconnect PASS requires exact source/node/transport binding, identical pre/post session IDs, an advancing sequence, a client-only disconnect, no guest restart and chronological timestamps. The adapter validates record bytes and SHA-256 and refuses output overwrite. It cannot infer delivery, visible acknowledgement or semantic effect, and no output can independently close R2.
+
+### Physical-Android Broccoli Rish observation adapter
+
+`adapt-physical-android-rish-observation.mjs` consumes a digest-bound observation record produced outside Grasshopper through the canonical Broccoli boundary. The record must name `onnxscibroccoli/broccoli-core`, `lib/rish_run.sh`, exact Git commit and blob identities, and `RISH_PRESERVE_ENV=0`. It also binds source SHA, physical node, session and sequence and requires a successful Android `uid=2000`, `u:r:shell:s0` observation.
+
+```sh
+node scripts/cloud-android/adapt-physical-android-rish-observation.mjs \
+  /absolute/evidence/physical-rish-observation.json \
+  /absolute/evidence/control-evidence.json
+```
+
+The input shapes are documented in `PHYSICAL_ANDROID_RISH_OBSERVATION_FORMAT.json` and `BROCCOLI_RISH_RECORD_FORMAT.json`. This script contains no Rish launcher and never contacts a phone, dispatches input or replays an observed operation. A wrapper-bound record is only provenance: delivery, visual acknowledgement, semantic effect, reconnect continuity, overall acceptance and R2 remain `NOT_PROVEN`. The canonical wrapper is not copied or modified here.

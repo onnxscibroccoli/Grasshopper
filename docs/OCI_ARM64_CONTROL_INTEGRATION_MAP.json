@@ -1,7 +1,7 @@
 {
-  "contract_id": "ANDROID-CONTROL-BROWSER-RECONNECT-20261008-12",
-  "previous_contract_id": "ANDROID-CONTROL-RFB-ADAPTER-20261008-11",
-  "observed_utc": "2026-10-08T20:50:33Z",
+  "contract_id": "ANDROID-CONTROL-PHYSICAL-RISH-20261008-13",
+  "previous_contract_id": "ANDROID-CONTROL-BROWSER-RECONNECT-20261008-12",
+  "observed_utc": "2026-10-08T21:45:52Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -38,9 +38,9 @@
     ],
     "test_fixture_live_acceptance": false,
     "r2_closure": "PROHIBITED_BY_THIS_EVIDENCE_ALONE",
-    "focused_tests": "8/8 PASS",
-    "combined_control_transport_tests": "17/17 PASS",
-    "full_repository_tests": "282/282 PASS",
+    "focused_tests": "9/9 PASS",
+    "combined_control_transport_tests": "18/18 PASS",
+    "full_repository_tests": "291/291 PASS",
     "rfb_observation_adapter": {
       "script": "scripts/cloud-android/adapt-rfb-observation.mjs",
       "input_format": "grasshopper.rfb-observation/v1",
@@ -70,6 +70,22 @@
       "delivery": "NOT_PROVEN",
       "visible_acknowledgement": "NOT_PROVEN",
       "semantic_effect": "NOT_PROVEN",
+      "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
+    },
+    "physical_android_rish_observation_adapter": {
+      "script": "scripts/cloud-android/adapt-physical-android-rish-observation.mjs",
+      "input_format": "grasshopper.physical-android-rish-observation/v1",
+      "record_format": "grasshopper.broccoli-rish-record/v1",
+      "observation_example": "docs/implementation/evidence/PHYSICAL_ANDROID_RISH_OBSERVATION_FORMAT.json",
+      "record_example": "docs/implementation/evidence/BROCCOLI_RISH_RECORD_FORMAT.json",
+      "wrapper_repository": "onnxscibroccoli/broccoli-core",
+      "wrapper_path": "lib/rish_run.sh",
+      "wrapper_copied_or_modified": false,
+      "rish_preserve_env": "0",
+      "executes_rish_or_contacts_phone": false,
+      "replays_observed_input": false,
+      "overwrite_existing_output": false,
+      "all_control_gates": "NOT_PROVEN",
       "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
     }
   },
@@ -170,6 +186,7 @@
     "provider_neutral_control_evidence": "PASS_REPOSITORY_TESTED_LIVE_NOT_PROVEN",
     "workstation_rfb_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "browser_reconnect_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
+    "physical_android_rish_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -188,5 +205,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Define a physical-Android observation adapter that consumes canonical Broccoli Rish evidence without copying or modifying the canonical wrapper, while keeping live qualification separate from synthetic tests."
+  "next_action": "Define a provider-neutral evidence-bundle index that composes workstation, browser and physical-Android records without allowing cross-transport evidence substitution."
 }
