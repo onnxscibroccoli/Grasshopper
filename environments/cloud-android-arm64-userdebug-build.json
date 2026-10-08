@@ -7,6 +7,8 @@
     "ref": "v2026.07.09",
     "commit": "54fc5dc82fa05778be15c1200240be53f707a542",
     "build_script_blob_sha1": "b5babcdbefa664b1ffc447bda4dcf53b17628cb6",
+    "source_patch": "deploy/cloud-android/patches/full-arm64-userdebug.patch",
+    "source_patch_sha256": "710a680aa0e1b6e5630e541ad7313bf183fc9cb1da64b3356f0aafdea310cbb6",
     "lineage_manifest_branch": "lineage-23.2"
   },
   "build": {
@@ -45,5 +47,20 @@
     "mutates_live_guest": false,
     "paid_capacity_authorized": false,
     "resource_admission_required_before_build": true
+  },
+  "resource_admission": {
+    "architecture": "aarch64",
+    "minimum_logical_cpus": 8,
+    "minimum_memory_total_bytes": 34359738368,
+    "minimum_memory_available_bytes": 25769803776,
+    "minimum_workspace_free_bytes": 322122547200,
+    "maximum_load_per_logical_cpu": 0.5,
+    "maximum_qemu_processes": 0,
+    "maximum_lease_hours": 24,
+    "checkpoint_path_required": true,
+    "threshold_basis": {
+      "memory_total_and_workspace": "LineageOS guidance for lineage-18.1 and newer",
+      "cpu_available_memory_load_qemu_lease_checkpoint": "Grasshopper isolated-builder policy"
+    }
   }
 }

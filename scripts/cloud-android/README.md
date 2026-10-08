@@ -31,3 +31,9 @@ node scripts/cloud-android/verify-arm64-userdebug-provenance.mjs \
 ```
 
 The verifier fails closed unless source identity, build target/variant/goals, archive bytes and size, both persistent UTM disks, build-property bytes, `ro.build.type=userdebug`, and `ro.product.cpu.abi=arm64-v8a` are all proven. This repository profile does not authorize a build, paid capacity, guest launch, merge, or deployment.
+
+## Clean-builder resource admission
+
+The [clean-builder plan](../../docs/ARM64_USERDEBUG_BUILD_PLAN.md) and `admit-arm64-userdebug-builder.mjs` define the pre-build resource boundary. Snapshot evaluation is deliberately labeled `SIMULATED`; it exercises policy but cannot authorize a live build. The current OCI Android workstation is blocked because it has insufficient CPU, RAM and free workspace and is actively running QEMU.
+
+The pinned source patch is `deploy/cloud-android/patches/full-arm64-userdebug.patch`. It was checked against the exact upstream `build.sh` Git blob and changes only the full ARM64 VM variant from `user` to `userdebug`. No build workflow may run until a future contract adds tested live collection on an isolated builder and produces a live admission artifact.

@@ -1,7 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-USERDEBUG-PROFILE-20261008-05",
-  "previous_contract_id": "OCI-ARM64-PROFILE-20261008-04",
-  "observed_utc": "2026-10-08T11:51:59Z",
+  "contract_id": "OCI-ARM64-USERDEBUG-ADMISSION-20261008-06",
+  "previous_contract_id": "OCI-ARM64-USERDEBUG-PROFILE-20261008-05",
+  "observed_utc": "2026-10-08T12:46:51Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -12,13 +12,16 @@
     "device_id": "0852e6f4-2507-4d0f-9d62-f6eda8cdd169"
   },
   "guest": {
-    "pid": 1123620,
-    "started_utc": "2026-10-08T01:37:50Z",
+    "pid": 1273533,
+    "started_utc": "2026-10-08T12:12:08Z",
     "vcpus": 2,
     "memory_mib": 2048,
-    "restarted": false,
-    "concurrent_isolated_pid_observed": 1242165,
-    "concurrent_isolated_guest_mutated": false
+    "restarted_by_this_contract": false,
+    "prior_recorded_pids_absent": [
+      1123620,
+      1242165
+    ],
+    "continuity_from_prior_evidence": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT"
   },
   "image_profile": {
     "archive": "UTM-VM-lineage-23.2-20260709-jqssun-virtio_arm64only.zip",
@@ -41,6 +44,28 @@
     "candidate_artifact": "NOT_BUILT",
     "guest_started": false
   },
+  "builder_admission": {
+    "status": "BLOCKED_RESOURCE_ADMISSION",
+    "evaluator": "SIMULATED_ONLY",
+    "source_patch_sha256": "710a680aa0e1b6e5630e541ad7313bf183fc9cb1da64b3356f0aafdea310cbb6",
+    "observed_logical_cpus": 2,
+    "observed_memory_total_kib": 11159744,
+    "observed_memory_available_kib": 5098188,
+    "observed_workspace_free_bytes": 46636859392,
+    "observed_load_1m": 1.09,
+    "observed_qemu_processes": 1,
+    "focused_tests": "5/5 PASS",
+    "combined_admission_provenance_tests": "11/11 PASS",
+    "full_repository_tests": "248/248 PASS",
+    "failures": [
+      "logical_cpus",
+      "memory_total_bytes",
+      "memory_available_bytes",
+      "workspace_free_bytes",
+      "load_1m",
+      "active_qemu_processes"
+    ]
+  },
   "acceptance": {
     "adb_handshake": "PASS_DEVICE",
     "adb_shell": "EXPECTED_CLOSED_ANDROID16_TRADE_IN_MODE",
@@ -55,6 +80,8 @@
     "bidirectional_control": "NOT_PROVEN",
     "profile_admission": "PASS_FAIL_CLOSED_TESTED",
     "userdebug_provenance_verifier": "PASS_SYNTHETIC_ONLY",
+    "userdebug_builder_admission": "BLOCKED_RESOURCE_ADMISSION",
+    "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
   },
@@ -72,5 +99,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Define clean-builder resource admission and a reproducible source patch/workflow before authorizing any full userdebug build; preserve both running guests."
+  "next_action": "Add a tested live resource collector and hashed admission artifact on a genuinely isolated builder; do not build on the active OCI Android workstation."
 }
