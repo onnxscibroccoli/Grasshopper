@@ -35,8 +35,11 @@ to `system_server`, 8.5% to `zygote64`, and 6.1% to the loop device. This fresh
 run does not reproduce the earlier 173% SurfaceFlinger sample; it instead
 isolates sustained boot/render work under cross-architecture TCG.
 
-RFB capture moved from SeaBIOS text to a black framebuffer and never showed an
-interactive Android UI during the observation. The canonical kernel arguments
+RFB capture moved from SeaBIOS text through a black framebuffer to the Android
+boot logo at QEMU age 615 seconds, but never showed an interactive Android UI.
+The final serial request did not return properties within its 14-second bound;
+the last responsive property check therefore remains the 342-second sample.
+The canonical kernel arguments
 include `nomodeset HWACCEL=0`, so an authenticated A/B with modesetting is the
 next rendering-boundary test. A prior attempt to remove `nomodeset` exited
 before QEMU because it copied the launcher without its sibling admission
@@ -68,7 +71,12 @@ isolated run. PASS: a test-covered, fail-closed graphics selector is available.
 NOT PROVEN: boot completion, authenticated ADB on this guest, visible Android
 UI, keyboard/pointer, browser reconnect, phone-to-cloud control, and R2.
 
-Next contract: after the current guest lease, use a separate copy of the same
+The canonical transport stop completed. The container's inert `tail` process
+did not exit on SIGTERM and Podman used SIGKILL after ten seconds; container
+exit 137 again records `OOMKilled=false`. The 2.0 GiB isolated state and its
+evidence were retained, while its ports and processes were stopped.
+
+Next contract: use a separate copy of the same
 known-good data and the canonical launcher with
 `CLOUD_ANDROID_GRAPHICS_MODE=modeset`. Compare boot properties, guest top, RFB
 hash/image, and host CPU at fixed times. Do not restart the current guest merely
