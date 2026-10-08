@@ -42,6 +42,8 @@ The AWS Helix Kali VM is independent and remains untouched.
 
 Before preparation or launch, `arm64-device.sh` applies a fail-closed image-profile admission check. The pinned `user` archive is admitted only when `CLOUD_ANDROID_ARM64_ALLOW_SETUP_GATED=1` explicitly selects interactive provisioning. That override does not prove normal-shell ADB: Setup Wizard must complete and ADB must be explicitly enabled and authorized. Unattended normal-shell automation instead requires a provenance-pinned full `userdebug` VM artifact and fresh acceptance evidence.
 
+The full-userdebug build contract is defined separately in `environments/cloud-android-arm64-userdebug-build.json`. Its verifier binds a candidate full VM to the upstream source commit and build-script blob, both qcow2 disks, the archive digest/size, and a digest-bound `build.prop` proving the `userdebug` and ARM64 properties. The manifest template is `deploy/cloud-android/arm64-userdebug-provenance.template.json`. Until that manifest verifies against actual build artifacts, the userdebug execution path remains `NOT_PROVEN` and must not be passed to the launcher.
+
 The launcher is considered transport-ready only when all of these are proven live:
 
 1. QEMU process remains running.

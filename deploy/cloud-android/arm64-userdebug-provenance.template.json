@@ -1,0 +1,27 @@
+{
+  "schema": "grasshopper.android-artifact-provenance/v1",
+  "profile_id": "lineage-23.2-virtio-arm64only-userdebug",
+  "source": {
+    "repository": "https://github.com/jqssun/android-lineage-qemu.git",
+    "ref": "v2026.07.09",
+    "commit": "54fc5dc82fa05778be15c1200240be53f707a542",
+    "build_script_blob_sha1": "b5babcdbefa664b1ffc447bda4dcf53b17628cb6"
+  },
+  "build": {
+    "target": "virtio_arm64only",
+    "variant": "userdebug",
+    "goals": [
+      "vm-utm-zip",
+      "otapackage"
+    ]
+  },
+  "artifact": {
+    "file": "REPLACE_WITH_UTM_USERDEBUG_ARCHIVE.zip",
+    "sha256": "REPLACE_WITH_64_LOWERCASE_HEX_SHA256",
+    "size_bytes": 0
+  },
+  "build_properties": {
+    "file": "build.prop",
+    "sha256": "REPLACE_WITH_64_LOWERCASE_HEX_SHA256"
+  }
+}

@@ -96,3 +96,20 @@ The test-first contract initially produced two expected failures because `profil
 At the preservation check, RDC node `0852e6f4-2507-4d0f-9d62-f6eda8cdd169` was reverified as `grasshopper-workstation`, `aarch64`, OCI `VM.Standard.A1.Flex`. Original QEMU PID 1123620 retained its 2026-10-08 01:37:50 UTC start time, 2 vCPU/2048 MiB command line and running state. The source guard was not invoked on OCI and no second guest was launched.
 
 Normal authenticated ADB shell, browser reconnect, physical-phone control, semantic Setup Wizard recovery and R2 remain `NOT_PROVEN`. The next contract should produce a reproducible full `userdebug` VM build profile and artifact-provenance manifest on a clean isolated build path without disturbing the original live guest; alternatively, complete the pinned user image's supported interactive provisioning and then freshly prove authorization and all R2 controls.
+
+## Full-userdebug provenance contract
+
+Contract `OCI-ARM64-USERDEBUG-PROFILE-20261008-05` defines—but does not build or launch—the smallest admitted full `userdebug` VM profile. It is stacked on PR #170 commit `2abe93ae86473745c7bb71f15395cdcaa94d6925`. The upstream tag `v2026.07.09` resolves to commit `54fc5dc82fa05778be15c1200240be53f707a542`; its `build.sh` blob is `b5babcdbefa664b1ffc447bda4dcf53b17628cb6`. That source builds `virtio_arm64only userdebug` only for `recoveryimage`, then selects `virtio_arm64only user` for `vm-utm-zip otapackage`. The new profile requires the full VM goals to remain on `userdebug` and explicitly prohibits recovery-only substitution.
+
+The bounded implementation adds:
+
+- `environments/cloud-android-arm64-userdebug-build.json`, pinning repository, tag, commit, build-script blob, target, variant, goals and non-execution boundaries;
+- `deploy/cloud-android/arm64-userdebug-provenance.template.json`, an intentionally incomplete evidence template that cannot pass verification;
+- `scripts/cloud-android/verify-arm64-userdebug-provenance.mjs`, which binds a candidate manifest to the pinned source, archive name, SHA-256, byte size, both UTM qcow2 members, a SHA-256-bound `build.prop`, `ro.build.type=userdebug`, and `ro.product.cpu.abi=arm64-v8a`;
+- behavioral tests that accept valid synthetic full-VM evidence and reject a `user` variant, same-size artifact tampering, a missing persistent disk, non-userdebug properties and the incomplete repository template.
+
+The TDD red run failed 0/5 because the verifier did not exist. The green focused suite passed 6/6; the full repository suite passed 243/243, and Node syntax, JSON parsing, diff and degradation checks passed. No LineageOS build, artifact download, VM launch, cloud provisioning or live-guest command occurred. Local execution was limited to Node tests and small temporary synthetic files under a 30-minute lease; test cleanup removed those temporary files. Recovery is a commit revert and does not involve either running guest.
+
+RDC node `0852e6f4-2507-4d0f-9d62-f6eda8cdd169` was reverified as `grasshopper-workstation`, `aarch64`, OCI `VM.Standard.A1.Flex`. Read-only process evidence showed original PID 1123620 still running with its 2026-10-08 01:37:50 UTC start time. Concurrent isolated PID 1242165 was also observed and not mutated. The candidate full-userdebug artifact remains `NOT_BUILT`; normal ADB shell, browser reconnect, physical-phone control and R2 remain `NOT_PROVEN`.
+
+The next contract is a clean-builder resource-admission plan and reproducible source patch/workflow. It must quantify free disk, memory, CPU, lease, checkpoint and cleanup requirements before any build is authorized, and it must not consume paid capacity or run alongside unadmitted live workloads.

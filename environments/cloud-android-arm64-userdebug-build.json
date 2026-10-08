@@ -1,0 +1,49 @@
+{
+  "schema": "grasshopper.android-build-profile/v1",
+  "id": "lineage-23.2-virtio-arm64only-userdebug",
+  "status": "build-profile-only",
+  "source": {
+    "repository": "https://github.com/jqssun/android-lineage-qemu.git",
+    "ref": "v2026.07.09",
+    "commit": "54fc5dc82fa05778be15c1200240be53f707a542",
+    "build_script_blob_sha1": "b5babcdbefa664b1ffc447bda4dcf53b17628cb6",
+    "lineage_manifest_branch": "lineage-23.2"
+  },
+  "build": {
+    "target": "virtio_arm64only",
+    "variant": "userdebug",
+    "goals": [
+      "vm-utm-zip",
+      "otapackage"
+    ],
+    "required_change": "Build the full virtio_arm64only VM with breakfast virtio_arm64only userdebug; do not substitute the recovery-only userdebug artifact."
+  },
+  "artifact": {
+    "filename_regex": "^UTM-VM-lineage-[A-Za-z0-9._-]+-virtio_arm64only-userdebug\\.zip$",
+    "required_member_suffixes": [
+      "Data/vda.qcow2",
+      "Data/vdb.qcow2"
+    ],
+    "required_build_properties": {
+      "ro.build.type": "userdebug",
+      "ro.product.cpu.abi": "arm64-v8a"
+    }
+  },
+  "provenance": {
+    "schema": "grasshopper.android-artifact-provenance/v1",
+    "digest": "sha256",
+    "required_inputs": [
+      "source commit",
+      "build.sh blob SHA-1",
+      "build target and variant",
+      "full VM archive SHA-256 and size",
+      "build.prop SHA-256 and required properties"
+    ]
+  },
+  "execution": {
+    "starts_guest": false,
+    "mutates_live_guest": false,
+    "paid_capacity_authorized": false,
+    "resource_admission_required_before_build": true
+  }
+}
