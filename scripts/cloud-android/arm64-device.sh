@@ -69,8 +69,7 @@ prepare() {
   cat > "$STARTUP" <<'EOF'
 echo -off
 map -r
-fs1:
-\\EFI\\BOOT\\BOOTAA64.EFI
+fs1:\EFI\BOOT\BOOTAA64.EFI
 EOF
 
   if [ ! -s "$BOOT_HELPER" ]; then
