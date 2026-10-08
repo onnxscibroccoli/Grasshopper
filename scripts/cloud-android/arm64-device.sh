@@ -62,6 +62,7 @@ prepare() {
   [ -s "$VDB" ] || fail "missing ARM64 LineageOS vdb.qcow2"
 
   if [ "$RESET_EFI" = "1" ] || [ ! -s "$EFI_VARS" ]; then
+    : > "$EFI_VARS"
     truncate -s 64M "$EFI_VARS"
   fi
 
