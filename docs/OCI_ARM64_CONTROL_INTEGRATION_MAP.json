@@ -1,7 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-TIM-20261008-03",
-  "previous_contract_id": "OCI-ARM64-CONTROL-20261008-02",
-  "observed_utc": "2026-10-08T07:47:04Z",
+  "contract_id": "OCI-ARM64-PROFILE-20261008-04",
+  "previous_contract_id": "OCI-ARM64-TIM-20261008-03",
+  "observed_utc": "2026-10-08T08:52:06Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -18,6 +18,13 @@
     "memory_mib": 2048,
     "restarted": false
   },
+  "image_profile": {
+    "archive": "UTM-VM-lineage-23.2-20260709-jqssun-virtio_arm64only.zip",
+    "variant": "user",
+    "provenance": "UPSTREAM_BUILD_SOURCE_PROVEN",
+    "admission": "FAIL_CLOSED_SETUP_GATED",
+    "automation_profile": "REQUIRES_PROVENANCE_PINNED_FULL_USERDEBUG_VM"
+  },
   "acceptance": {
     "adb_handshake": "PASS_DEVICE",
     "adb_shell": "EXPECTED_CLOSED_ANDROID16_TRADE_IN_MODE",
@@ -30,6 +37,8 @@
     "rfb_command_client_reconnect": "PASS",
     "browser_reconnect": "NOT_PROVEN",
     "bidirectional_control": "NOT_PROVEN",
+    "profile_admission": "PASS_FAIL_CLOSED_TESTED",
+    "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
   },
   "evidence": {
@@ -46,5 +55,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Compare the image and SELinux policy with an isolated clean Android 16 reference boot; do not repeat live helper probes until safe guest-process cleanup is proven."
+  "next_action": "Produce a reproducible full userdebug VM profile and provenance manifest on a clean isolated build path, or complete supported interactive provisioning of the pinned user image; preserve the original live guest."
 }

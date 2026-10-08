@@ -27,6 +27,9 @@ VDA="$VM_DIR/Data/vda.qcow2"
 VDB="$VM_DIR/Data/vdb.qcow2"
 EFI_VARS="$RUN_DIR/flash_vars.fd"
 RESET_EFI="${CLOUD_ANDROID_ARM64_RESET_EFI:-0}"
+ANDROID_BUILD_VARIANT="user"
+ADB_READINESS_CONTRACT="setup-wizard-gated"
+ALLOW_SETUP_GATED="${CLOUD_ANDROID_ARM64_ALLOW_SETUP_GATED:-0}"
 
 fail() { echo "ERROR: $*" >&2; exit 2; }
 podman_cmd() { podman --root "$PODMAN_ROOT" "$@"; }
@@ -40,7 +43,22 @@ require_tools() {
   [ -d "$PODMAN_ROOT" ] || fail "Podman root does not exist: $PODMAN_ROOT"
 }
 
+profile_admission() {
+  if [ "$ALLOW_SETUP_GATED" = "1" ]; then
+    echo "PROFILE_ADMITTED=INTERACTIVE_SETUP_ONLY"
+    echo "ANDROID_BUILD_VARIANT=$ANDROID_BUILD_VARIANT"
+    echo "ADB_READINESS_CONTRACT=$ADB_READINESS_CONTRACT"
+    echo "NORMAL_ADB_SHELL=NOT_PROVEN"
+    return 0
+  fi
+
+  echo "ANDROID16_USER_BUILD_SETUP_GATED: pinned archive is a user build; normal ADB shell requires completed provisioning plus explicit ADB enablement and authorization, or a provenance-pinned full userdebug VM artifact" >&2
+  echo "NORMAL_ADB_SHELL=NOT_PROVEN" >&2
+  return 75
+}
+
 prepare() {
+  profile_admission
   require_tools
   mkdir -p "$STATE_DIR" "$LOG_DIR" "$RUN_DIR"
   chmod 700 "$STATE_DIR" "$LOG_DIR" "$RUN_DIR"
@@ -72,6 +90,8 @@ prepare() {
   printf '%s\n' "prepared_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_DIR/PREPARED"
   printf '%s\n' "release=$RELEASE" >> "$STATE_DIR/PREPARED"
   printf '%s\n' "archive_sha256=$actual" >> "$STATE_DIR/PREPARED"
+  printf '%s\n' "android_build_variant=$ANDROID_BUILD_VARIANT" >> "$STATE_DIR/PREPARED"
+  printf '%s\n' "adb_readiness_contract=$ADB_READINESS_CONTRACT" >> "$STATE_DIR/PREPARED"
   printf '%s\n' "host_arch=$(uname -m)" >> "$STATE_DIR/PREPARED"
   echo "PASS: ARM64 Cloud Android artifacts prepared"
 }
@@ -147,6 +167,9 @@ stop() {
 }
 
 status() {
+  echo "android_build_variant=$ANDROID_BUILD_VARIANT"
+  echo "adb_readiness_contract=$ADB_READINESS_CONTRACT"
+  echo "normal_adb_shell=NOT_PROVEN"
   if podman_cmd ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
     echo "container=RUNNING name=$CONTAINER"
   else
@@ -158,10 +181,11 @@ status() {
 }
 
 case "${1-status}" in
+  profile-admission) profile_admission ;;
   prepare) prepare ;;
   start) start ;;
   stop) stop ;;
   restart) stop || true; start ;;
   status) status ;;
-  *) echo "Usage: $0 {prepare|start|stop|restart|status}" >&2; exit 64 ;;
+  *) echo "Usage: $0 {profile-admission|prepare|start|stop|restart|status}" >&2; exit 64 ;;
 esac

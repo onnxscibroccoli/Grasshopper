@@ -16,6 +16,7 @@
     "screen": true,
     "input": true,
     "adb": true,
+    "adb_normal_shell": "conditional",
     "human_gate": true,
     "bidirectional": true
   },
@@ -26,6 +27,11 @@
     "guest_os": "LineageOS 23.2 / Android 16",
     "release": "jqssun/android-lineage-qemu:v2026.07.09",
     "execution_script": "scripts/cloud-android/arm64-device.sh",
+    "android_build_profile": {
+      "variant": "user",
+      "normal_adb_shell": "requires_completed_setup_and_explicit_adb_enablement",
+      "automation_profile": "requires_provenance_pinned_full_userdebug_vm"
+    },
     "resource_profile": {
       "memory_mb": 2048,
       "cpus": 2,
