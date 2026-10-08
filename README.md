@@ -131,3 +131,5 @@ The [2026-10-08 bounded observations](docs/OCI_ARM64_CONTROL_2026-10-08.md) reco
 The future full `userdebug` automation image now has a separate [build profile and digest-bound provenance gate](scripts/cloud-android/README.md#full-userdebug-vm-provenance). This defines reproducible admission but does not claim that an artifact has been built or accepted.
 
 Its [clean-builder resource plan](docs/ARM64_USERDEBUG_BUILD_PLAN.md) is fail-closed. The OCI Android workstation does not meet the build envelope while Android QEMU is active, so no LineageOS build is authorized there.
+
+The plan now includes a tested read-only live collector and SHA-256-bound admission evidence format. The collector was not executed on OCI because that active Android node is not an isolated builder; this repository change does not promote it or authorize a build.

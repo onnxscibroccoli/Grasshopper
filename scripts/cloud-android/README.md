@@ -36,4 +36,18 @@ The verifier fails closed unless source identity, build target/variant/goals, ar
 
 The [clean-builder plan](../../docs/ARM64_USERDEBUG_BUILD_PLAN.md) and `admit-arm64-userdebug-builder.mjs` define the pre-build resource boundary. Snapshot evaluation is deliberately labeled `SIMULATED`; it exercises policy but cannot authorize a live build. The current OCI Android workstation is blocked because it has insufficient CPU, RAM and free workspace and is actively running QEMU.
 
-The pinned source patch is `deploy/cloud-android/patches/full-arm64-userdebug.patch`. It was checked against the exact upstream `build.sh` Git blob and changes only the full ARM64 VM variant from `user` to `userdebug`. No build workflow may run until a future contract adds tested live collection on an isolated builder and produces a live admission artifact.
+The pinned source patch is `deploy/cloud-android/patches/full-arm64-userdebug.patch`. It was checked against the exact upstream `build.sh` Git blob and changes only the full ARM64 VM variant from `user` to `userdebug`. No build workflow may run until an isolated builder produces and verifies a `LIVE` admission artifact whose status is `PASS`.
+
+The live collector is now implemented, but no OCI admission record exists because the Android workstation is not an isolated builder. On a qualifying host, use absolute paths and a new evidence filename:
+
+```sh
+node scripts/cloud-android/collect-arm64-userdebug-builder.mjs collect \
+  environments/cloud-android-arm64-userdebug-build.json \
+  /absolute/build/workspace /absolute/checkpoints 24 \
+  /absolute/evidence/builder-admission.json
+node scripts/cloud-android/collect-arm64-userdebug-builder.mjs verify \
+  environments/cloud-android-arm64-userdebug-build.json \
+  /absolute/evidence/builder-admission.json
+```
+
+Collection never starts or stops a workload. It fails closed on ambiguous process visibility, identifies QEMU from `/proc/<pid>/exe` instead of command-line substring matches, and refuses to overwrite evidence. A valid hashed record can report either `PASS` or `BLOCKED`; only verified `LIVE` evidence whose admission status is `PASS` can authorize the separate build step.

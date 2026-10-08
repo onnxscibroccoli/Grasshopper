@@ -31,22 +31,27 @@ Official LineageOS guidance for current branches calls for at least 32 GiB RAM a
 - maximum build lease of 24 hours;
 - an absolute checkpoint path on persistent storage.
 
-`scripts/cloud-android/admit-arm64-userdebug-builder.mjs evaluate` evaluates recorded snapshots for planning and tests but labels them `SIMULATED`. Simulated evidence cannot authorize a build. A later contract must add and test live collection on a clean builder before the gate can pass.
+`scripts/cloud-android/admit-arm64-userdebug-builder.mjs evaluate` evaluates recorded snapshots for planning and tests but labels them `SIMULATED`. Simulated evidence cannot authorize a build.
+
+`scripts/cloud-android/collect-arm64-userdebug-builder.mjs collect` is the live collector. It reads CPU, memory, load, workspace capacity and `/proc/<pid>/exe`, writes a new evidence file without overwriting an existing record, and binds the profile, snapshot and replayed admission result with SHA-256. Only the literal `/proc` source is labeled `LIVE`; alternate process roots are labeled `TEST_FIXTURE`. Incomplete process visibility adds `process_scan_ambiguous` and blocks admission. The `verify` command recalculates every digest and replays policy against the snapshot.
+
+The live collector must run only on a genuinely isolated builder. It was deliberately not run on the active OCI Android workstation because that node already fails the static envelope and hosts QEMU.
 
 The 2026-10-08 OCI workstation observation fails this envelope: 2 logical CPUs, about 10.6 GiB total/4.9 GiB available RAM, about 46.6 GB free in the Android workspace, and one active two-vCPU QEMU process. The build therefore stays blocked.
 
 ## Reproducible workflow after live admission
 
 1. Create a new isolated build directory on the admitted builder; do not reuse any Android guest state directory.
-2. Clone the pinned repository and detach at commit `54fc5dc82fa05778be15c1200240be53f707a542`.
-3. Confirm `git hash-object build.sh` equals `b5babcdbefa664b1ffc447bda4dcf53b17628cb6`.
-4. Apply `full-arm64-userdebug.patch` with `git apply --check` followed by `git apply`.
-5. Run the pinned upstream dependency/source-sync portion, then build `breakfast virtio_arm64only userdebug` with `m vm-utm-zip otapackage`.
-6. Require exactly one emitted `UTM-VM-lineage-*-virtio_arm64only.zip`; rename it with the `-userdebug.zip` suffix.
-7. Copy `out/target/product/virtio_arm64only/system/build.prop` beside the archive.
-8. Fill the provenance template using measured byte sizes and SHA-256 digests.
-9. Run `verify-arm64-userdebug-provenance.mjs`. Retain the source commit, patch digest, logs, manifest, archive and build properties as one evidence set.
-10. Do not launch the artifact. Runtime admission and isolated boot acceptance are separate future contracts.
+2. Collect and verify a `LIVE` builder-admission evidence file. Stop if its status is not `PASS`.
+3. Clone the pinned repository and detach at commit `54fc5dc82fa05778be15c1200240be53f707a542`.
+4. Confirm `git hash-object build.sh` equals `b5babcdbefa664b1ffc447bda4dcf53b17628cb6`.
+5. Apply `full-arm64-userdebug.patch` with `git apply --check` followed by `git apply`.
+6. Run the pinned upstream dependency/source-sync portion, then build `breakfast virtio_arm64only userdebug` with `m vm-utm-zip otapackage`.
+7. Require exactly one emitted `UTM-VM-lineage-*-virtio_arm64only.zip`; rename it with the `-userdebug.zip` suffix.
+8. Copy `out/target/product/virtio_arm64only/system/build.prop` beside the archive.
+9. Fill the provenance template using measured byte sizes and SHA-256 digests.
+10. Run `verify-arm64-userdebug-provenance.mjs`. Retain the admission evidence, source commit, patch digest, logs, manifest, archive and build properties as one evidence set.
+11. Do not launch the artifact. Runtime admission and isolated boot acceptance are separate future contracts.
 
 ## Checkpoint, timeout and recovery
 
