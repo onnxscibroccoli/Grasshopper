@@ -1,0 +1,39 @@
+{
+  "schema": "omnikali.environment/v1",
+  "kind": "cloud-android",
+  "version": "1.1.0",
+  "execution": {
+    "interactive": true,
+    "persistent": true,
+    "privileged_android_shell": false,
+    "provider": "oracle-cloud",
+    "region": "us-ashburn-1",
+    "host": "grasshopper-workstation",
+    "auth": "instance-local-workstation",
+    "compute": "workstation-local-podman-qemu-aarch64"
+  },
+  "control": {
+    "screen": true,
+    "input": true,
+    "adb": true,
+    "human_gate": true,
+    "bidirectional": true
+  },
+  "parameters": {
+    "transport": "adb+vnc+websocket",
+    "display": "qemu-virtio-gpu-pci",
+    "architecture": "arm64",
+    "guest_os": "LineageOS 23.2 / Android 16",
+    "release": "jqssun/android-lineage-qemu:v2026.07.09",
+    "execution_script": "scripts/cloud-android/arm64-device.sh",
+    "resource_profile": {
+      "memory_mb": 1536,
+      "cpus": 2,
+      "acceleration": "tcg",
+      "host_architecture": "aarch64",
+      "resource_admission_required": true
+    },
+    "aws_cloud_android": "disabled",
+    "legacy_benchmark": "salvage/cloud-android-agentic-device-20261005"
+  }
+}

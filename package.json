@@ -39,6 +39,7 @@
     "test:bist-schema": "node --test test/bist-schema.test.mjs",
     "test:security-phase": "node --test test/security-phase-verify.test.mjs",
     "verify:environment": "node scripts/verify-environment-contract.mjs",
-    "verify:stage0": "bash scripts/cloud-android/stage0-clean-device.sh"
+    "verify:stage0": "bash scripts/cloud-android/stage0-clean-device.sh",
+    "verify:cloud-android-arm64": "node --test test/cloud-android-arm64-config.test.mjs"
   }
 }
