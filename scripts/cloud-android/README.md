@@ -63,3 +63,13 @@ npm run verify:cloud-android-userdebug-candidates
 The dependency-free schema runner implements only the Draft 2020-12 keywords used by this checked-in schema. Other schemas should use a complete JSON Schema implementation unless their keyword set is explicitly covered and tested.
 
 The verifier derives classification from identity, protection/provisioning boundaries and the resource policy. Even a passing static snapshot yields only `ELIGIBLE_FOR_LIVE_COLLECTION`; it cannot emit build authorization or substitute for the hashed `LIVE` evidence gate.
+
+## Provider-neutral control evidence
+
+`schemas/grasshopper-android-control-evidence-v1.schema.json` defines one evidence format for workstation, browser and physical-Android control origins. Copy `docs/implementation/evidence/ANDROID_CONTROL_EVIDENCE_TEMPLATE.json` beside a new evidence bundle and replace its `NOT_PROVEN` values only with measurements from one source SHA, node, transport and session.
+
+```sh
+node scripts/cloud-android/verify-control-evidence.mjs /absolute/evidence/control.json
+```
+
+Each PASS gate must bind its own artifact bytes and SHA-256. Delivery proves only the original sequence dispatch. Distinct before/after frames prove only a visible acknowledgement. Semantic effect requires a separately stated expected and observed result. Reconnect continuity requires the same session identity, advancing sequence, client-only disconnect and no guest restart. A `TEST_FIXTURE` bundle always evaluates to `NOT_PROVEN`, even if every internal gate passes. This verifier cannot independently close R2.
