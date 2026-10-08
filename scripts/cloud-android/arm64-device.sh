@@ -79,7 +79,11 @@ prepare() {
 start() {
   prepare
   if podman_cmd container exists "$CONTAINER"; then
-    podman_cmd rm -f "$CONTAINER" >/dev/null 2>&1 || true
+    existing_status="$(podman_cmd inspect --format '{{.State.Status}}' "$CONTAINER" 2>/dev/null || true)"
+    if [ "$existing_status" = "running" ]; then
+      fail "ARM64 Cloud Android is already running as $CONTAINER; refusing destructive replacement"
+    fi
+    podman_cmd rm "$CONTAINER" >/dev/null 2>&1 || fail "cannot remove stopped ARM64 container $CONTAINER"
   fi
 
   token="$(openssl rand -hex 32 2>/dev/null || true)"
