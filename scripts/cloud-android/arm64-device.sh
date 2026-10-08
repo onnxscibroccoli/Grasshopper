@@ -26,6 +26,8 @@ VM_DIR="$STATE_DIR/LineageOS_on_arm64.utm"
 VDA="$VM_DIR/Data/vda.qcow2"
 VDB="$VM_DIR/Data/vdb.qcow2"
 EFI_VARS="$RUN_DIR/flash_vars.fd"
+BOOT_HELPER="$RUN_DIR/boot-helper.img"
+STARTUP="$RUN_DIR/startup.nsh"
 
 fail() { echo "ERROR: $*" >&2; exit 2; }
 podman_cmd() { podman --root "$PODMAN_ROOT" "$@"; }
@@ -66,6 +68,23 @@ prepare() {
 
   [ -s "$EFI_VARS" ] || fail "missing ARM64 EFI variables from upstream image"
 
+  # Regression (run 37712185139 / 37711068890): one backslash per separator.
+  # Doubled separators fail the UEFI shell. Do not drop this line.
+  cat > "$STARTUP" <<'EOF'
+echo -off
+map -r
+fs1:\EFI\BOOT\BOOTAA64.EFI
+EOF
+
+  if [ ! -s "$BOOT_HELPER" ]; then
+    truncate -s 32M "$BOOT_HELPER"
+    podman_cmd run --rm -v "$RUN_DIR:/state:Z" "$IMAGE" sh -ec '
+      apk add --no-cache mtools >/dev/null
+      mformat -F -i /state/boot-helper.img ::
+      mcopy -i /state/boot-helper.img /state/startup.nsh ::startup.nsh
+    '
+  fi
+
   printf '%s\n' "prepared_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_DIR/PREPARED"
   printf '%s\n' "release=$RELEASE" >> "$STATE_DIR/PREPARED"
   printf '%s\n' "archive_sha256=$actual" >> "$STATE_DIR/PREPARED"
@@ -100,10 +119,12 @@ start() {
         -smp "$CLOUD_ANDROID_CPUS" -m "$CLOUD_ANDROID_MEMORY_MB" \
         -drive if=pflash,format=raw,unit=0,file=/usr/share/qemu/edk2-aarch64-code.fd,readonly=on \
         -drive if=pflash,format=raw,unit=1,file=/state/run/flash_vars.fd \
+        -drive if=none,id=boothelper,file=/state/run/boot-helper.img,format=raw,readonly=on \
+        -device virtio-blk-pci,drive=boothelper,bootindex=0 \
         -drive if=none,id=vda,file=/state/LineageOS_on_arm64.utm/Data/vda.qcow2,format=qcow2,discard=unmap,detect-zeroes=unmap \
-        -device virtio-blk-pci,drive=vda,bootindex=0 \
+        -device virtio-blk-pci,drive=vda,bootindex=1 \
         -drive if=none,id=vdb,file=/state/LineageOS_on_arm64.utm/Data/vdb.qcow2,format=qcow2,discard=unmap,detect-zeroes=unmap \
-        -device virtio-blk-pci,drive=vdb,bootindex=1 \
+        -device virtio-blk-pci,drive=vdb,bootindex=2 \
         -netdev user,id=net0,hostfwd=tcp:127.0.0.1:16555-:5555 \
         -device virtio-net-pci,netdev=net0 \
         -device virtio-rng-pci \
