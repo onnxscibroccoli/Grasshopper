@@ -113,3 +113,19 @@ The TDD red run failed 0/5 because the verifier did not exist. The green focused
 RDC node `0852e6f4-2507-4d0f-9d62-f6eda8cdd169` was reverified as `grasshopper-workstation`, `aarch64`, OCI `VM.Standard.A1.Flex`. Read-only process evidence showed original PID 1123620 still running with its 2026-10-08 01:37:50 UTC start time. Concurrent isolated PID 1242165 was also observed and not mutated. The candidate full-userdebug artifact remains `NOT_BUILT`; normal ADB shell, browser reconnect, physical-phone control and R2 remain `NOT_PROVEN`.
 
 The next contract is a clean-builder resource-admission plan and reproducible source patch/workflow. It must quantify free disk, memory, CPU, lease, checkpoint and cleanup requirements before any build is authorized, and it must not consume paid capacity or run alongside unadmitted live workloads.
+
+## Clean-builder admission contract
+
+Contract `OCI-ARM64-USERDEBUG-ADMISSION-20261008-06` is stacked on PR #171 commit `110b8f8327a357538c91a1f59aa207c617d37300`. It adds a deterministic resource policy, snapshot evaluator, exact upstream source patch and bounded build/checkpoint/recovery plan. It does not add a live collector and cannot authorize a build from simulated evidence.
+
+The policy requires AArch64, 8 logical CPUs, 32 GiB total and 24 GiB available RAM, 300 GiB free workspace, one-minute load no higher than half the logical CPU count, zero active QEMU processes, a lease no longer than 24 hours, and an absolute persistent checkpoint path. The 32 GiB RAM and 300 GB storage floor follow LineageOS guidance for 18.1 and newer; the CPU, currently available memory, load, QEMU isolation, lease and checkpoint limits are Grasshopper policy.
+
+The exact source patch SHA-256 is `710a680aa0e1b6e5630e541ad7313bf183fc9cb1da64b3356f0aafdea310cbb6`. A temporary local copy of upstream `build.sh` was verified as Git blob `b5babcdbefa664b1ffc447bda4dcf53b17628cb6`; `git apply --check` passed, applying it changed both ARM64 build selections to `userdebug`, and the temporary validation directory was removed. No upstream clone, source sync or build ran.
+
+At 2026-10-08 12:46 UTC, after RDC identity verification, the OCI workstation reported 2 logical CPUs, 11,159,744 KiB total RAM, 5,098,188 KiB available RAM, 46,636,859,392 bytes free on `/srv/grasshopper`, one-minute load 1.09 and one running QEMU process consuming about 173% CPU with 3,414,816 KiB RSS. The resource gate is therefore `BLOCKED` on CPU count, total/available RAM, workspace capacity, load and active QEMU isolation.
+
+The live process boundary had changed outside this contract: previously recorded PIDs 1123620 and 1242165 were absent, while QEMU PID 1273533 had started at 2026-10-08 12:12:08 UTC in container `grasshopper-cloud-android-arm64`. This contract did not cause, replay or modify that transition. It issued only read-only identity, resource and process observations. Prior live-control evidence cannot be promoted to the replacement process without fresh same-process acceptance.
+
+The test-first red run failed 0/5 because the evaluator did not exist. The focused green suite passed 5/5, the combined admission/provenance suite passed 11/11, and the full repository suite passed 248/248. Node syntax, JSON parsing and `git diff --check` also passed. The focused cases prove admission for a clean synthetic envelope and rejection for active QEMU, inadequate RAM/disk, inadequate CPU/load, and missing checkpoint/unbounded lease. Recovery is a commit revert; no live host state requires rollback.
+
+The next contract should add a tested live snapshot collector and signed/hashed admission artifact on a genuinely isolated builder. Until a separate host meets the envelope, the full-userdebug build stays `BLOCKED_RESOURCE_ADMISSION`; candidate artifact, authenticated ADB shell and R2 remain `NOT_PROVEN`.
