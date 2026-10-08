@@ -21,6 +21,8 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /-device virtio-blk-pci,drive=vda,bootindex=0/);
   assert.doesNotMatch(script, /qemu-system-x86_64/);
   assert.doesNotMatch(script, /-enable-kvm/);
+  assert.match(script, /refusing destructive replacement of active ARM64 guest/);
+  assert.doesNotMatch(script, /container rm -f "\$CONTAINER"/);
 });
 
 test("ARM64 launcher pins the upstream release", () => {
