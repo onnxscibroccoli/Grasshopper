@@ -99,3 +99,7 @@ Do not repeat these:
 - treating a transport identity proof as end-to-end RDC or desktop proof
 
 Run `node scripts/verify-no-broccoli-degradation.mjs` after structural changes. `npm test` includes `test/degradation-guard.test.mjs`.
+
+## Multi-agent coordination
+
+Read `docs/AGENT_COORDINATION.md` before taking ownership of a shared execution boundary. It defines ownership, stacked-PR coordination, handoff, shared-host protection, and anti-regression rules so agents move the system forward cooperatively instead of competing destructively.
