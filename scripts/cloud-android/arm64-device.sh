@@ -70,7 +70,7 @@ prepare() {
 echo -off
 map -r
 fs1:
-EFIBOOTBOOTAA64.EFI
+\\EFI\\BOOT\\BOOTAA64.EFI
 EOF
 
   if [ ! -s "$BOOT_HELPER" ]; then
