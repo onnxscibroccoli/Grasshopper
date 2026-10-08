@@ -13,7 +13,7 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /usb-kbd/);
   assert.match(script, /usb-tablet/);
   assert.ok(script.includes('RESET_EFI="${CLOUD_ANDROID_ARM64_RESET_EFI:-0}"'));
-  assert.match(script, /truncate -s 64M "$EFI_VARS"/);
+  assert.ok(script.includes('truncate -s 64M "$EFI_VARS"'));
   assert.doesNotMatch(script, /boot-helper.img/);
   assert.doesNotMatch(script, /startup.nsh/);
   assert.match(script, /-device virtio-blk-pci,drive=vda,bootindex=0/);
