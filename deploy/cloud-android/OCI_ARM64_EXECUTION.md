@@ -26,9 +26,9 @@ The upstream `jqssun/android-lineage-qemu` project explicitly recommends the `ar
 
 ## Boot reliability
 
-The launcher preserves the upstream ARM64 boot contract instead of adding a synthetic boot-helper disk. During preparation it extracts the `efi_vars.fd` shipped inside the pinned UTM archive and uses that file as the QEMU UEFI variable store. The native ARM64 `vda.qcow2` disk is boot index 0 and `vdb.qcow2` is boot index 1.
+The launcher uses a clean 64 MiB UEFI variable store so stale or cross-architecture boot entries cannot redirect an AArch64 VM into an x64 EFI payload. The native ARM64 `vda.qcow2` disk is boot index 0 and `vdb.qcow2` is boot index 1. The guest disks remain persistent; firmware variables are disposable runtime state.
 
-This keeps firmware state from the known-good upstream image and avoids introducing an x64 EFI payload into an AArch64 UEFI boot path.
+This deliberately prefers the ARM64 removable-media fallback path over persisted boot entries. The upstream image's ARM64 bootloader is therefore selected by the AArch64 firmware without inheriting stale NVRAM state.
 
 ## State boundaries
 
