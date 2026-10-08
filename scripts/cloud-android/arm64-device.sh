@@ -5,7 +5,7 @@ STATE_DIR="${CLOUD_ANDROID_ARM64_STATE_DIR:-$HOME/.cloud-android-arm64}"
 CONTAINER="${CLOUD_ANDROID_ARM64_CONTAINER:-grasshopper-cloud-android-arm64}"
 PODMAN_ROOT="${CLOUD_ANDROID_PODMAN_ROOT:-/srv/grasshopper/android/development/qemu-container-store}"
 IMAGE="${CLOUD_ANDROID_ARM64_IMAGE:-docker.io/library/alpine:3.22}"
-MEMORY_MB="${CLOUD_ANDROID_ARM64_MEMORY_MB:-1536}"
+MEMORY_MB="${CLOUD_ANDROID_ARM64_MEMORY_MB:-2048}"
 CPUS="${CLOUD_ANDROID_ARM64_CPUS:-2}"
 VNC_PORT="${CLOUD_ANDROID_ARM64_VNC_PORT:-5906}"
 WS_PORT="${CLOUD_ANDROID_ARM64_WS_PORT:-6083}"
@@ -107,7 +107,7 @@ start() {
       qemu-system-aarch64 \
         -name grasshopper-cloud-android-arm64 \
         -machine virt,gic-version=max \
-        -cpu max \
+        -cpu max,pauth-impdef=on \
         -accel tcg,thread=multi,tb-size=1024 \
         -smp "$CLOUD_ANDROID_CPUS" -m "$CLOUD_ANDROID_MEMORY_MB" \
         -drive if=pflash,format=raw,unit=0,file=/usr/share/qemu/edk2-aarch64-code.fd,readonly=on \
@@ -119,6 +119,7 @@ start() {
         -netdev user,id=net0,hostfwd=tcp:${CLOUD_ANDROID_LISTEN_ADDR}:${CLOUD_ANDROID_ADB_PORT}-:5555 \
         -device virtio-net-pci,netdev=net0 \
         -device virtio-rng-pci \
+        -device virtio-serial \
         -device qemu-xhci,id=xhci \
         -device usb-kbd,bus=xhci.0 \
         -device usb-tablet,bus=xhci.0 \
