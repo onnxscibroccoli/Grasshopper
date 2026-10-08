@@ -1,0 +1,19 @@
+{
+  "schema": "grasshopper.physical-android-rish-observation/v1",
+  "contract_id": "EXAMPLE-NOT-EVIDENCE",
+  "captured_utc": "2026-10-08T21:45:01Z",
+  "collection_mode": "TEST_FIXTURE",
+  "source": {
+    "source_sha": "0000000000000000000000000000000000000000",
+    "node_identity": "NOT_PROVEN",
+    "transport": "broccoli-rish",
+    "control_origin": "physical_android",
+    "session_id": "NOT_PROVEN"
+  },
+  "observation_only": true,
+  "rish_record": {
+    "path": "broccoli-rish-record.json",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "bytes": 1
+  }
+}
