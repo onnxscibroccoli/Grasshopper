@@ -1,0 +1,14 @@
+{
+  "schema": "grasshopper.browser-reconnect-record/v1",
+  "source_sha": "0000000000000000000000000000000000000000",
+  "node_identity": "NOT_PROVEN",
+  "transport": "noVNC-RFB-websocket",
+  "session_id_before": "NOT_PROVEN",
+  "session_id_after": "NOT_PROVEN",
+  "sequence_before": 0,
+  "sequence_after": 1,
+  "client_disconnect_only": true,
+  "guest_restarted": false,
+  "disconnected_utc": "2026-10-08T20:00:00Z",
+  "reconnected_utc": "2026-10-08T20:00:05Z"
+}
