@@ -43,6 +43,7 @@
     "verify:cloud-android-arm64": "node --test test/cloud-android-arm64-config.test.mjs",
     "verify:cloud-android-userdebug-candidates": "node scripts/validate-json-schema-subset.mjs schemas/grasshopper-builder-candidate-inventory-v1.schema.json docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json && node scripts/cloud-android/verify-arm64-userdebug-builder-candidates.mjs verify environments/cloud-android-arm64-userdebug-build.json docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json",
     "verify:android-control-evidence": "node scripts/cloud-android/verify-control-evidence.mjs docs/implementation/evidence/ANDROID_CONTROL_EVIDENCE_TEMPLATE.json",
-    "verify:android-control-evidence-bundle": "node scripts/cloud-android/verify-control-evidence-bundle.mjs docs/implementation/evidence/ANDROID_CONTROL_EVIDENCE_BUNDLE_TEMPLATE.json"
+    "verify:android-control-evidence-bundle": "node scripts/cloud-android/verify-control-evidence-bundle.mjs docs/implementation/evidence/ANDROID_CONTROL_EVIDENCE_BUNDLE_TEMPLATE.json",
+    "report:android-control-gaps": "node scripts/cloud-android/report-control-evidence-gaps.mjs docs/implementation/evidence/ANDROID_CONTROL_EVIDENCE_BUNDLE_TEMPLATE.json"
   }
 }

@@ -1,7 +1,7 @@
 {
-  "contract_id": "ANDROID-CONTROL-EVIDENCE-BUNDLE-20261008-14",
-  "previous_contract_id": "ANDROID-CONTROL-PHYSICAL-RISH-20261008-13",
-  "observed_utc": "2026-10-08T22:55:00Z",
+  "contract_id": "ANDROID-CONTROL-GAP-REPORT-20261008-15",
+  "previous_contract_id": "ANDROID-CONTROL-EVIDENCE-BUNDLE-20261008-14",
+  "observed_utc": "2026-10-08T23:55:00Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -99,6 +99,23 @@
       "node_or_transport_substitution": "REJECTED",
       "test_fixture_promotion": "REJECTED",
       "cross_origin_gate_aggregation": false,
+      "overall_status": "NOT_PROVEN",
+      "live_acceptance": false,
+      "r2": "NOT_PROVEN",
+      "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
+    },
+    "per_origin_gap_report": {
+      "schema": "grasshopper.android-control-gap-report/v1",
+      "script": "scripts/cloud-android/report-control-evidence-gaps.mjs",
+      "verification_command": "npm run report:android-control-gaps",
+      "bundle_bytes_and_sha256_bound": true,
+      "source_session_node_transport_bindings_retained": true,
+      "cross_origin_gate_aggregation": false,
+      "contains_executable_remediation": false,
+      "invalid_or_tampered_input": "FAIL_NO_REPORT",
+      "focused_tests": "8/8 PASS",
+      "combined_gap_bundle_tests": "18/18 PASS",
+      "full_repository_tests": "309/309 PASS",
       "overall_status": "NOT_PROVEN",
       "live_acceptance": false,
       "r2": "NOT_PROVEN",
@@ -204,6 +221,7 @@
     "browser_reconnect_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "physical_android_rish_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "provider_neutral_evidence_bundle_index": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
+    "per_origin_control_gap_report": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -222,5 +240,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Define a repository-only per-origin control-gap report from a verified bundle without dispatching actions, combining gates or promoting live acceptance."
+  "next_action": "Define a non-executable evidence-acquisition requirements manifest bound to a verified gap report, fresh guest-process identity and expiry without dispatching collection."
 }
