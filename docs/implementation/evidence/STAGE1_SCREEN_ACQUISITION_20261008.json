@@ -1,0 +1,27 @@
+{
+  "schema": "omnikali.screen-acquisition-evidence/v1",
+  "captured_at": "2026-10-08T00:28:00Z",
+  "stage": 1,
+  "environment": "OCI grasshopper-workstation",
+  "benchmark_sha": "99340b37b8eca1cbb8a7ac29a8a5388d4980edb8",
+  "findings": [
+    "The disposable clean guest reached Android-x86 and accumulated Android system state including SYSTEM_BOOT, system_server watchdog, low-memory, ANR and tombstone records.",
+    "The clean guest ADB endpoint remained offline after bounded reconnect attempts.",
+    "The token-gated viewer transport remained HTTP 200.",
+    "Live RFB negotiation succeeds, but the server currently emits zero framebuffer update rectangles. The old 1024x768 boot-logo PNG is historical evidence, not current live-screen evidence.",
+    "Disposable display A/B tests with std VGA + nomodeset, std VGA + xforcevesa, std VGA + xforcevesa + vga=791 + UVESA_MODE=1024x768, and vmware-svga did not produce a usable framebuffer artifact before the guest returned to console:/ #.",
+    "AWS resources were not changed by these tests."
+  ],
+  "interpretation": {
+    "screen_transport": "partially_proven",
+    "usable_screen": "NOT_PROVEN",
+    "adb_control": "NOT_PROVEN",
+    "root_cause_boundary": "Android-x86 graphical/display initialization and/or system_server stability under TCG, not token-gated transport reachability"
+  },
+  "preserved": {
+    "legacy_state": "/srv/grasshopper/android/development/tcg-android",
+    "clean_state": "/srv/grasshopper/android/development/stage0-clean-20261007",
+    "diagnostic_state": "/srv/grasshopper/android/development/stage1-video-test"
+  },
+  "next_gate": "Capture a live non-empty framebuffer or authenticated ADB screencap from the same OCI code/node, then advance to workstation input acknowledgement."
+}
