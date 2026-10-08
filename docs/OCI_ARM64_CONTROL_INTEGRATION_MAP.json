@@ -1,7 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-USERDEBUG-EVIDENCE-20261008-07",
-  "previous_contract_id": "OCI-ARM64-USERDEBUG-ADMISSION-20261008-06",
-  "observed_utc": "2026-10-08T13:44:00Z",
+  "contract_id": "OCI-ARM64-USERDEBUG-CANDIDATES-20261008-08",
+  "previous_contract_id": "OCI-ARM64-USERDEBUG-EVIDENCE-20261008-07",
+  "observed_utc": "2026-10-08T14:53:39Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -54,15 +54,15 @@
     "source_patch_sha256": "710a680aa0e1b6e5630e541ad7313bf183fc9cb1da64b3356f0aafdea310cbb6",
     "observed_logical_cpus": 2,
     "observed_memory_total_kib": 11159744,
-    "observed_memory_available_kib": 5480884,
-    "observed_workspace_free_bytes": 46635491328,
-    "observed_load_1m": 2.27,
+    "observed_memory_available_kib": 5420452,
+    "observed_workspace_free_bytes": 46634475520,
+    "observed_load_1m": 0.52,
     "observed_qemu_processes": 1,
     "observed_qemu_pid": 1273533,
     "observed_qemu_rss_kib": 3410784,
     "focused_live_collector_and_admission_tests": "10/10 PASS",
     "combined_collector_admission_provenance_tests": "16/16 PASS",
-    "full_repository_tests": "253/253 PASS",
+    "full_repository_tests": "259/259 PASS",
     "failures": [
       "logical_cpus",
       "memory_total_bytes",
@@ -70,7 +70,19 @@
       "workspace_free_bytes",
       "load_1m",
       "active_qemu_processes"
-    ]
+    ],
+    "candidate_inventory": {
+      "schema": "grasshopper.builder-candidate-inventory/v1",
+      "overall_status": "NO_ELIGIBLE_NODE",
+      "build_authorized": false,
+      "focused_tests": "6/6 PASS",
+      "combined_userdebug_tests": "22/22 PASS",
+      "full_repository_tests": "259/259 PASS",
+      "oci": "BLOCKED_RESOURCE_ADMISSION",
+      "rdc_localhost": "UNQUALIFIED_IDENTITY_TIMEOUT",
+      "gcp": "EXCLUDED_PROVISIONING_REQUIRED",
+      "aws": "EXCLUDED_PROTECTED"
+    }
   },
   "acceptance": {
     "adb_handshake": "PASS_DEVICE",
@@ -88,6 +100,7 @@
     "userdebug_provenance_verifier": "PASS_SYNTHETIC_ONLY",
     "userdebug_builder_admission": "BLOCKED_RESOURCE_ADMISSION",
     "userdebug_live_evidence_collector": "PASS_REPOSITORY_TESTED_NOT_RUN_ON_OCI",
+    "userdebug_builder_candidate_inventory": "PASS_NO_ELIGIBLE_NODE",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -106,5 +119,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Inventory already-authorized no-paid-capacity nodes against the static builder envelope; run the live collector only on a genuinely isolated qualifying builder and otherwise retain BLOCKED_RESOURCE_ADMISSION."
+  "next_action": "Bind the candidate inventory to a reusable JSON Schema and CI check, then continue provider-neutral Android control work without claiming the blocked full-image build."
 }

@@ -51,3 +51,15 @@ node scripts/cloud-android/collect-arm64-userdebug-builder.mjs verify \
 ```
 
 Collection never starts or stops a workload. It fails closed on ambiguous process visibility, identifies QEMU from `/proc/<pid>/exe` instead of command-line substring matches, and refuses to overwrite evidence. A valid hashed record can report either `PASS` or `BLOCKED`; only verified `LIVE` evidence whose admission status is `PASS` can authorize the separate build step.
+
+## Existing-builder candidate inventory
+
+The provider-neutral inventory at `docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json` is checked with:
+
+```sh
+node scripts/cloud-android/verify-arm64-userdebug-builder-candidates.mjs verify \
+  environments/cloud-android-arm64-userdebug-build.json \
+  docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json
+```
+
+The verifier derives classification from identity, protection/provisioning boundaries and the resource policy. Even a passing static snapshot yields only `ELIGIBLE_FOR_LIVE_COLLECTION`; it cannot emit build authorization or substitute for the hashed `LIVE` evidence gate.

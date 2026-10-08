@@ -2,7 +2,7 @@
 
 **Status:** `BLOCKED_RESOURCE_ADMISSION`
 
-**Contract:** `OCI-ARM64-USERDEBUG-ADMISSION-20261008-06`
+**Latest contract:** `OCI-ARM64-USERDEBUG-CANDIDATES-20261008-08`
 
 **Candidate artifact:** `NOT_BUILT`
 
@@ -38,6 +38,19 @@ Official LineageOS guidance for current branches calls for at least 32 GiB RAM a
 The live collector must run only on a genuinely isolated builder. It was deliberately not run on the active OCI Android workstation because that node already fails the static envelope and hosts QEMU.
 
 The 2026-10-08 OCI workstation observation fails this envelope: 2 logical CPUs, about 10.6 GiB total/4.9 GiB available RAM, about 46.6 GB free in the Android workspace, and one active two-vCPU QEMU process. The build therefore stays blocked.
+
+## Existing no-new-capacity candidates
+
+`docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json` records the bounded inventory. `verify-arm64-userdebug-builder-candidates.mjs` recomputes every classification from the pinned resource policy. Static capacity that meets the envelope becomes only `ELIGIBLE_FOR_LIVE_COLLECTION`; it never authorizes a build. Protected nodes, unidentified endpoints, nodes requiring provisioning and resource-blocked hosts remain excluded or unqualified.
+
+No existing candidate qualified on 2026-10-08:
+
+- OCI `grasshopper-workstation`: identity verified, but blocked by CPU, RAM, workspace and active QEMU;
+- RDC `localhost`: listed online, but its bounded identity probe timed out with no result and was not replayed;
+- GCP: no existing authorized compute node was available; no API or capacity was enabled;
+- AWS base: protected, offline and excluded without contact.
+
+The inventory status is `NO_ELIGIBLE_NODE` and `build_authorized` remains `false`.
 
 ## Reproducible workflow after live admission
 
