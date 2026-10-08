@@ -13,9 +13,10 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /usb-kbd/);
   assert.match(script, /usb-tablet/);
   assert.match(script, /unzip -p "\$ARCHIVE" LineageOS_on_arm64\.utm\/Data\/efi_vars\.fd/);
-  assert.doesNotMatch(script, /boot-helper\.img/);
-  assert.doesNotMatch(script, /startup\.nsh/);
-  assert.match(script, /-device virtio-blk-pci,drive=vda,bootindex=0/);
+  // Regression (run 37712357553): startup.nsh is delivered by boot-helper.img.
+  // One backslash per separator is required. Doubled separators fail the UEFI shell.
+  assert.match(script, /fs1:\\EFI\\BOOT\\BOOTAA64\.EFI\n/);
+  assert.doesNotMatch(script, /fs1:\\\\EFI\\\\BOOT\\\\BOOTAA64\.EFI/);
   assert.doesNotMatch(script, /qemu-system-x86_64/);
   assert.doesNotMatch(script, /-enable-kvm/);
 });
