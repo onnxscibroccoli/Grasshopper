@@ -61,10 +61,13 @@ prepare() {
   [ -s "$VDB" ] || fail "missing ARM64 LineageOS vdb.qcow2"
 
   if [ ! -s "$EFI_VARS" ]; then
-    unzip -p "$ARCHIVE" LineageOS_on_arm64.utm/Data/efi_vars.fd > "$EFI_VARS"
+    unzip -p "$ARCHIVE" LineageOS_on_arm64.utm/Data/efi_vars.fd > "$EFI_VARS.tmp"
+    truncate -s 64M "$EFI_VARS.tmp"
+    mv "$EFI_VARS.tmp" "$EFI_VARS"
   fi
 
   [ -s "$EFI_VARS" ] || fail "missing ARM64 EFI variables from upstream image"
+  [ "$(stat -c '%s' "$EFI_VARS")" = "67108864" ] || fail "ARM64 EFI variable store must be 64 MiB for QEMU pflash"
 
   printf '%s\n' "prepared_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_DIR/PREPARED"
   printf '%s\n' "release=$RELEASE" >> "$STATE_DIR/PREPARED"
