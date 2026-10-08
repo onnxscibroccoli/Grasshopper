@@ -133,3 +133,5 @@ The future full `userdebug` automation image now has a separate [build profile a
 Its [clean-builder resource plan](docs/ARM64_USERDEBUG_BUILD_PLAN.md) is fail-closed. The OCI Android workstation does not meet the build envelope while Android QEMU is active, so no LineageOS build is authorized there.
 
 The plan now includes a tested read-only live collector and SHA-256-bound admission evidence format. The collector was not executed on OCI because that active Android node is not an isolated builder; this repository change does not promote it or authorize a build.
+
+The [existing no-new-capacity candidate inventory](docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json) currently reports `NO_ELIGIBLE_NODE`. Static observations can nominate a host for live collection but can never authorize the build directly.

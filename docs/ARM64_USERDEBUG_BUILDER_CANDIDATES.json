@@ -1,0 +1,80 @@
+{
+  "schema": "grasshopper.builder-candidate-inventory/v1",
+  "contract_id": "OCI-ARM64-USERDEBUG-CANDIDATES-20261008-08",
+  "observed_utc": "2026-10-08T14:53:39Z",
+  "build_authorized": false,
+  "overall_status": "NO_ELIGIBLE_NODE",
+  "candidates": [
+    {
+      "id": "oci-grasshopper-workstation",
+      "provider": "OCI",
+      "transport": "RDC",
+      "device_id": "0852e6f4-2507-4d0f-9d62-f6eda8cdd169",
+      "protected": false,
+      "paid_capacity_authorized": false,
+      "requires_paid_provisioning": false,
+      "access_status": "VERIFIED",
+      "identity_status": "VERIFIED",
+      "evidence_source": "READ_ONLY_STATIC",
+      "declared_status": "BLOCKED_RESOURCE_ADMISSION",
+      "snapshot": {
+        "schema": "grasshopper.builder-snapshot/v1",
+        "architecture": "aarch64",
+        "logical_cpus": 2,
+        "memory_total_bytes": 11427577856,
+        "memory_available_bytes": 5550542848,
+        "workspace_free_bytes": 46634475520,
+        "load_1m": 0.52,
+        "qemu_processes": 1,
+        "lease_hours": 24,
+        "checkpoint_path": "/srv/grasshopper/android/development/userdebug-build-checkpoints"
+      },
+      "notes": "Existing no-new-cost OCI Android worker; shared with active QEMU PID 1273533 and not eligible for builder collection."
+    },
+    {
+      "id": "rdc-localhost-unidentified",
+      "provider": "UNKNOWN",
+      "transport": "RDC",
+      "device_id": "566d623e-df45-4b16-b2be-4cbd08567a49",
+      "protected": false,
+      "paid_capacity_authorized": false,
+      "requires_paid_provisioning": false,
+      "access_status": "TIMEOUT",
+      "identity_status": "NOT_PROVEN",
+      "evidence_source": "RDC_IDENTITY_TIMEOUT",
+      "declared_status": "UNQUALIFIED_IDENTITY",
+      "snapshot": null,
+      "notes": "RDC listed the endpoint online, but the bounded identity probe returned no result and was not replayed."
+    },
+    {
+      "id": "gcp-no-authorized-compute-node",
+      "provider": "GCP",
+      "transport": "NONE",
+      "protected": false,
+      "paid_capacity_authorized": false,
+      "requires_paid_provisioning": false,
+      "requires_new_provisioning": true,
+      "access_status": "NO_AUTHORIZED_NODE",
+      "identity_status": "NOT_PROVEN",
+      "evidence_source": "OCI_GCLOUD_ACTIVE_ACCOUNT_COUNT_0",
+      "declared_status": "EXCLUDED_PROVISIONING_REQUIRED",
+      "snapshot": null,
+      "notes": "No existing authorized GCP compute node was available; no API was enabled and no capacity was provisioned."
+    },
+    {
+      "id": "aws-protected-base",
+      "provider": "AWS",
+      "transport": "RDC",
+      "device_id": "882f1036-235b-4669-acaf-1e1135b156bd",
+      "protected": true,
+      "paid_capacity_authorized": false,
+      "requires_paid_provisioning": false,
+      "access_status": "OFFLINE",
+      "identity_status": "NOT_PROVEN_THIS_CONTRACT",
+      "evidence_source": "RDC_DEVICE_LIST_ONLY",
+      "declared_status": "EXCLUDED_PROTECTED",
+      "snapshot": null,
+      "notes": "Protected AWS base remains excluded and was not contacted."
+    }
+  ]
+}
