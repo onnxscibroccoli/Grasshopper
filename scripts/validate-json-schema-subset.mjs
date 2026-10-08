@@ -36,6 +36,7 @@ function validate(schema, value, root, location = "$", errors = []) {
   if (schema.enum && !schema.enum.includes(value)) errors.push(`${location}: must be one of ${schema.enum.join("|")}`);
   if (typeof value === "string") {
     if (schema.minLength && value.length < schema.minLength) errors.push(`${location}: must not be empty`);
+    if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push(`${location}: must match ${schema.pattern}`);
     if (schema.format === "date-time" && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value)) {
       errors.push(`${location}: must be an RFC 3339 UTC timestamp`);
     }

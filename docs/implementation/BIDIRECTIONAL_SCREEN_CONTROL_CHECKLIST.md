@@ -12,6 +12,8 @@ This checklist is a resumable execution contract. **Every completed stage is a d
 - [ ] Do not replace proven legacy behavior without an equivalent regression test.
 - [ ] Do not destroy a working Android session merely to test reconnection.
 - [ ] Human recovery/control remains available throughout.
+- [ ] Record delivery, visible acknowledgement, semantic effect and reconnect continuity as separate `grasshopper.android-control-evidence/v1` gates.
+- [ ] Never promote `TEST_FIXTURE` evidence to live acceptance or R2.
 
 ## Stage 0: Clean Cloud Android
 - [ ] Detect active environment.

@@ -1,0 +1,45 @@
+{
+  "schema": "grasshopper.android-control-evidence/v1",
+  "contract_id": "TEMPLATE-NOT-LIVE-EVIDENCE",
+  "captured_utc": "2026-10-08T18:00:00Z",
+  "collection_mode": "TEST_FIXTURE",
+  "source": {
+    "source_sha": "0000000000000000000000000000000000000000",
+    "node_identity": "NOT_PROVEN",
+    "transport": "provider-neutral",
+    "control_origin": "workstation",
+    "session_id": "NOT_PROVEN"
+  },
+  "delivery": {
+    "status": "NOT_PROVEN",
+    "sequence": 0,
+    "operation_id": "NOT_PROVEN",
+    "dispatch_disposition": "NOT_PROVEN",
+    "artifact": null
+  },
+  "visible_acknowledgement": {
+    "status": "NOT_PROVEN",
+    "ack_for_sequence": 0,
+    "before_frame": null,
+    "after_frame": null
+  },
+  "semantic_effect": {
+    "status": "NOT_PROVEN",
+    "ack_for_sequence": 0,
+    "expected": "",
+    "observed": "",
+    "artifact": null
+  },
+  "reconnect_continuity": {
+    "status": "NOT_PROVEN",
+    "session_id_before": "",
+    "session_id_after": "",
+    "sequence_before": 0,
+    "sequence_after": 0,
+    "client_disconnect_only": false,
+    "guest_restarted": false,
+    "artifact": null
+  },
+  "declared_status": "NOT_PROVEN",
+  "r2": "NOT_PROVEN"
+}

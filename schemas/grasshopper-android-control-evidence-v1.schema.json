@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grasshopper.invalid/schemas/android-control-evidence-v1.schema.json",
+  "title": "Grasshopper provider-neutral Android control evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "contract_id",
+    "captured_utc",
+    "collection_mode",
+    "source",
+    "delivery",
+    "visible_acknowledgement",
+    "semantic_effect",
+    "reconnect_continuity",
+    "declared_status",
+    "r2"
+  ],
+  "properties": {
+    "schema": { "const": "grasshopper.android-control-evidence/v1" },
+    "contract_id": { "type": "string", "minLength": 1 },
+    "captured_utc": { "type": "string", "format": "date-time" },
+    "collection_mode": { "enum": ["LIVE", "TEST_FIXTURE"] },
+    "source": { "$ref": "#/$defs/source" },
+    "delivery": { "$ref": "#/$defs/delivery" },
+    "visible_acknowledgement": { "$ref": "#/$defs/visibleAcknowledgement" },
+    "semantic_effect": { "$ref": "#/$defs/semanticEffect" },
+    "reconnect_continuity": { "$ref": "#/$defs/reconnectContinuity" },
+    "declared_status": { "$ref": "#/$defs/status" },
+    "r2": { "const": "NOT_PROVEN" }
+  },
+  "$defs": {
+    "status": { "enum": ["PASS", "FAIL", "NOT_PROVEN"] },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "nullableArtifact": {
+      "type": ["object", "null"],
+      "$ref": "#/$defs/artifact"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_sha", "node_identity", "transport", "control_origin", "session_id"],
+      "properties": {
+        "source_sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "node_identity": { "type": "string", "minLength": 1 },
+        "transport": { "type": "string", "minLength": 1 },
+        "control_origin": { "enum": ["workstation", "browser", "physical_android"] },
+        "session_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "sequence", "operation_id", "dispatch_disposition", "artifact"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "operation_id": { "type": "string", "minLength": 1 },
+        "dispatch_disposition": { "enum": ["ORIGINAL_DISPATCH", "DUPLICATE_SUPPRESSED", "NOT_PROVEN"] },
+        "artifact": { "$ref": "#/$defs/nullableArtifact" }
+      }
+    },
+    "visibleAcknowledgement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "ack_for_sequence", "before_frame", "after_frame"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "ack_for_sequence": { "type": "integer", "minimum": 0 },
+        "before_frame": { "$ref": "#/$defs/nullableArtifact" },
+        "after_frame": { "$ref": "#/$defs/nullableArtifact" }
+      }
+    },
+    "semanticEffect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "ack_for_sequence", "expected", "observed", "artifact"],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "ack_for_sequence": { "type": "integer", "minimum": 0 },
+        "expected": { "type": "string" },
+        "observed": { "type": "string" },
+        "artifact": { "$ref": "#/$defs/nullableArtifact" }
+      }
+    },
+    "reconnectContinuity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "session_id_before",
+        "session_id_after",
+        "sequence_before",
+        "sequence_after",
+        "client_disconnect_only",
+        "guest_restarted",
+        "artifact"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/status" },
+        "session_id_before": { "type": "string" },
+        "session_id_after": { "type": "string" },
+        "sequence_before": { "type": "integer", "minimum": 0 },
+        "sequence_after": { "type": "integer", "minimum": 0 },
+        "client_disconnect_only": { "type": "boolean" },
+        "guest_restarted": { "type": "boolean" },
+        "artifact": { "$ref": "#/$defs/nullableArtifact" }
+      }
+    }
+  }
+}
