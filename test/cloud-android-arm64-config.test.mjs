@@ -32,7 +32,7 @@ test("ARM64 environment is explicitly OCI and TCG", () => {
   assert.equal(env.execution.provider, "oracle-cloud");
   assert.equal(env.parameters.architecture, "arm64");
   assert.equal(env.parameters.resource_profile.acceleration, "tcg");
-  assert.equal(env.parameters.resource_profile.memory_mb, 1536);
+  assert.equal(env.parameters.resource_profile.memory_mb, 2048);
   assert.equal(env.parameters.resource_profile.cpus, 2);
   assert.equal(env.control.screen, true);
   assert.equal(env.control.input, true);
