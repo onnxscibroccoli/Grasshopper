@@ -1,7 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-USERDEBUG-ADMISSION-20261008-06",
-  "previous_contract_id": "OCI-ARM64-USERDEBUG-PROFILE-20261008-05",
-  "observed_utc": "2026-10-08T12:46:51Z",
+  "contract_id": "OCI-ARM64-USERDEBUG-EVIDENCE-20261008-07",
+  "previous_contract_id": "OCI-ARM64-USERDEBUG-ADMISSION-20261008-06",
+  "observed_utc": "2026-10-08T13:44:00Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -46,17 +46,23 @@
   },
   "builder_admission": {
     "status": "BLOCKED_RESOURCE_ADMISSION",
-    "evaluator": "SIMULATED_ONLY",
+    "evaluator": "SIMULATED_AND_LIVE_COLLECTOR_TESTED",
+    "live_evidence_schema": "grasshopper.builder-admission-evidence/v1",
+    "live_collector_oci_execution": "NOT_RUN_HOST_NOT_ISOLATED",
+    "process_identity_source": "/proc/<pid>/exe",
+    "ambiguous_process_visibility": "FAIL_CLOSED",
     "source_patch_sha256": "710a680aa0e1b6e5630e541ad7313bf183fc9cb1da64b3356f0aafdea310cbb6",
     "observed_logical_cpus": 2,
     "observed_memory_total_kib": 11159744,
-    "observed_memory_available_kib": 5098188,
-    "observed_workspace_free_bytes": 46636859392,
-    "observed_load_1m": 1.09,
+    "observed_memory_available_kib": 5480884,
+    "observed_workspace_free_bytes": 46635491328,
+    "observed_load_1m": 2.27,
     "observed_qemu_processes": 1,
-    "focused_tests": "5/5 PASS",
-    "combined_admission_provenance_tests": "11/11 PASS",
-    "full_repository_tests": "248/248 PASS",
+    "observed_qemu_pid": 1273533,
+    "observed_qemu_rss_kib": 3410784,
+    "focused_live_collector_and_admission_tests": "10/10 PASS",
+    "combined_collector_admission_provenance_tests": "16/16 PASS",
+    "full_repository_tests": "253/253 PASS",
     "failures": [
       "logical_cpus",
       "memory_total_bytes",
@@ -81,6 +87,7 @@
     "profile_admission": "PASS_FAIL_CLOSED_TESTED",
     "userdebug_provenance_verifier": "PASS_SYNTHETIC_ONLY",
     "userdebug_builder_admission": "BLOCKED_RESOURCE_ADMISSION",
+    "userdebug_live_evidence_collector": "PASS_REPOSITORY_TESTED_NOT_RUN_ON_OCI",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -99,5 +106,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Add a tested live resource collector and hashed admission artifact on a genuinely isolated builder; do not build on the active OCI Android workstation."
+  "next_action": "Inventory already-authorized no-paid-capacity nodes against the static builder envelope; run the live collector only on a genuinely isolated qualifying builder and otherwise retain BLOCKED_RESOURCE_ADMISSION."
 }

@@ -42,6 +42,9 @@ export function evaluateAdmission(profile, snapshot, evidenceSource = "SIMULATED
   if (!Number.isInteger(snapshot.qemu_processes) || snapshot.qemu_processes > policy.maximum_qemu_processes) {
     failures.push("active_qemu_processes");
   }
+  if (evidenceSource !== "SIMULATED" && snapshot.process_scan_complete !== true) {
+    failures.push("process_scan_ambiguous");
+  }
   if (!finiteNonnegative(snapshot.lease_hours) || snapshot.lease_hours > policy.maximum_lease_hours) {
     failures.push("lease_hours");
   }
