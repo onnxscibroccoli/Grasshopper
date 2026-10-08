@@ -13,6 +13,7 @@ MEMORY_MB="${CLOUD_ANDROID_MEMORY_MB:-1024}"
 CPUS="${CLOUD_ANDROID_CPUS:-1}"
 ACCELERATOR="${CLOUD_ANDROID_ACCELERATOR:-kvm}"
 TCG_THREADS="${CLOUD_ANDROID_TCG_THREADS:-single}"
+GRAPHICS_MODE="${CLOUD_ANDROID_GRAPHICS_MODE:-compatibility}"
 DATA_SIZE="${CLOUD_ANDROID_DATA_SIZE:-3G}"
 ISO_URL="${CLOUD_ANDROID_ISO_URL:-https://downloads.sourceforge.net/project/android-x86/Release%209.0/android-x86_64-9.0-r2.iso}"
 ISO_SHA256="${CLOUD_ANDROID_ISO_SHA256:-f7eb8fc56f29ad5432335dc054183acf086c539f3990f0b6e9ff58bd6df4604e}"
@@ -45,6 +46,14 @@ accelerator_args() {
       QEMU_ACCEL_ARGS=(-accel "tcg,thread=$TCG_THREADS" -cpu max)
       ;;
     *) fail "unsupported accelerator: $ACCELERATOR (use kvm or tcg)" ;;
+  esac
+}
+
+graphics_args() {
+  case "$GRAPHICS_MODE" in
+    compatibility) printf '%s\n' 'nomodeset HWACCEL=0' ;;
+    modeset) printf '%s\n' 'HWACCEL=0' ;;
+    *) fail "graphics mode must be compatibility or modeset" ;;
   esac
 }
 
@@ -188,6 +197,7 @@ EOF_NETWORK
 
 start() {
   accelerator_args
+  kernel_graphics_args="$(graphics_args)"
   if ! alive; then
     admission || fail "host memory admission rejected cloud Android launch"
   fi
@@ -198,7 +208,7 @@ start() {
     -name omnikali-cloud-android \
     "${QEMU_ACCEL_ARGS[@]}" -m "$MEMORY_MB" -smp "$CPUS" \
     -kernel "$RUNTIME/kernel" -initrd "$RUNTIME/initrd.img" \
-    -append 'root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 qemu=1 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 androidboot.qemu=1 nomodeset HWACCEL=0' \
+    -append "root=/dev/ram0 androidboot.selinux=permissive androidboot.hardware=android_x86_64 console=ttyS0 qemu=1 RAMDISK=vdb DATA=vdc SETUPWIZARD=0 androidboot.qemu=1 $kernel_graphics_args" \
     -drive index=0,if=virtio,id=system,file="$RUNTIME/system.sfs",format=raw,readonly=on \
     -drive index=1,if=virtio,id=ramdisk,file="$RUNTIME/ramdisk-cloud.img",format=raw,readonly=on \
     -drive index=2,if=virtio,id=data,file="$DATA",format=raw \
@@ -269,6 +279,7 @@ adb_cmd() {
 arg="${1-status}"
 case "$arg" in
   accelerator) accelerator_args; printf '%s\n' "${QEMU_ACCEL_ARGS[@]}" ;;
+  graphics-args) graphics_args ;;
   admission) admission ;;
   prepare) prepare ;;
   start) start ;;
@@ -276,5 +287,5 @@ case "$arg" in
   status) status ;;
   restart) stop || true; start ;;
   adb) shift; adb_cmd "$@" ;;
-  *) echo "Usage: $0 {accelerator|admission|prepare|start|stop|status|restart|adb ...}" >&2; exit 64 ;;
+  *) echo "Usage: $0 {accelerator|graphics-args|admission|prepare|start|stop|status|restart|adb ...}" >&2; exit 64 ;;
 esac

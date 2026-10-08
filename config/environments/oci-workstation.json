@@ -1,0 +1,11 @@
+{
+  "schema": "grasshopper.environment/v1",
+  "context": "oci-workstation",
+  "executeAutomatically": false,
+  "provider": "oci",
+  "controlDirections": ["workstation-to-cloud-android"],
+  "transport": "authenticated-adb",
+  "display": "authenticated-novnc",
+  "requiredEvidence": ["target-identity", "cpu-admission", "memory-admission", "authenticated-adb", "keyboard-pointer", "reconnect"],
+  "endpointSource": "private deployment configuration; never inferred from hostname"
+}
