@@ -120,3 +120,14 @@ node scripts/cloud-android/verify-control-evidence-bundle.mjs /absolute/evidence
 ```
 
 The verifier evaluates each embedded document with the ordinary control-evidence verifier but preserves the three gate maps independently. It rejects duplicate or missing origins, source/session mixing, node or transport substitution, missing/tampered artifacts and collection-mode relabeling. It never dispatches, connects or replays. Even a valid `LIVE` index reports overall status and R2 as `NOT_PROVEN`; separate end-to-end acceptance must close those gates.
+
+### Per-origin control-gap report
+
+`report-control-evidence-gaps.mjs` accepts the same verified bundle and emits only a deterministic assessment:
+
+```sh
+npm run report:android-control-gaps
+node scripts/cloud-android/report-control-evidence-gaps.mjs /absolute/evidence/bundle.json
+```
+
+The output binds the bundle's own SHA-256 and byte count, preserves source/session/node/transport/evidence identities, and lists every non-PASS gate under its original control origin. It has no command or action field and cannot connect, dispatch or replay. It never combines complementary gates across origins; overall status, live acceptance and R2 remain `NOT_PROVEN` even when the input bundle is structurally valid.
