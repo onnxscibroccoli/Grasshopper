@@ -41,7 +41,7 @@
     "bidirectional control",
     "reconnect without guest restart"
   ],
-  "current_bottleneck": "First Android 16 userspace boot on TCG is spending substantial CPU time decompressing APEX packages; nine compressed APEX payloads have been observed so far and system_server/boot_completed are not yet proven.",
+  "current_bottleneck": "First Android 16 userspace boot on TCG is spending substantial CPU time decompressing APEX packages. Fifteen-plus compressed APEX payloads have been observed; system_server, ADB, and boot_completed are not yet proven.",
   "safety": "AWS Helix/Kali untouched; legacy x86 benchmark preserved; no production ingress changes.",
   "transport": {
     "novnc_http": 200,
@@ -49,5 +49,10 @@
     "vnc_port": 5916,
     "websocket_port": 6093,
     "adb_port": 16565
+  },
+  "repository_validation": {
+    "focused_arm64_tests": "3/3",
+    "full_suite": "235/235",
+    "shell_syntax": "PASS"
   }
 }
