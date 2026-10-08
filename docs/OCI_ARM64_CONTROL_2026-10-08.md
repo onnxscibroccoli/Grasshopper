@@ -60,3 +60,27 @@ The new artifacts are retained at:
 The two HOME captures have the original hash. The two post-pointer captures have the changed hash. A five-second `/proc` CPU-time delta measured QEMU at 85.8% of one logical CPU on a two-logical-CPU host; RSS was 2,150,188 KiB at the end of that sample. This is a bounded interval sample, not evidence that the host is generally unconstrained. QEMU remained alive after all probes.
 
 Recovery for the contract was limited to stopping the dedicated transient ADB client; the VNC command clients disconnected normally. ADB shell control, semantic Setup Wizard recovery, browser reconnect, physical-phone control, authenticated same-source R2, full CI, merge and deployment remain unproven. The next bounded contract should diagnose why the supported Android image selects trade-in-mode adbd and why Setup Wizard remains ANR, without weakening SELinux/authentication or restarting the original guest.
+
+## Trade-in-mode root-cause contract
+
+Contract `OCI-ARM64-TIM-20261008-03` ran from 07:45:42 through 07:47:04 UTC against source baseline PR #168 commit `85fe2c74841dff50fd1e6a30ecd1486876add471` and the unchanged original PID. RDC node `0852e6f4-2507-4d0f-9d62-f6eda8cdd169`, hostname, architecture, OCI instance identity and shape were reverified before execution. The live envelope remained 2 vCPU, 2048 MiB guest RAM, TCG multi and virtio-gpu; QEMU had the same 01:37:50 UTC start time, RSS was 2,243,500 KiB at admission, and the process remained alive. No guest restart, disk/EFI change, network change, security-policy change or new guest launch occurred.
+
+Android 16's documented behavior explains the ADB boundary. On a non-debuggable user build during incomplete Setup Wizard, with ADB initially disabled and no active network/account, `DeviceDiagnostics` asks `TradeInModeService` to set `persist.adb.tradeinmode=1` and enable ADB. adbd then enters the restricted `adbd_tradeinmode` SELinux domain, where normal shell commands are intentionally closed and only the `tradeinmode` helper is admitted. This is an Android platform state, not evidence of a broken TCP forward. Primary references:
+
+- <https://android.googlesource.com/platform/packages/modules/adb/+/HEAD/docs/dev/adb_tradeinmode.md>
+- <https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android16-release/services/core/java/com/android/server/TradeInModeService.java>
+- <https://android.googlesource.com/platform/packages/modules/adb/+/refs/heads/main/daemon/tradeinmode.cpp>
+
+Two bounded, read-only helper probes used dedicated ADB server ports and a transient 128 MiB client container. Output was summarized without printing device identifiers:
+
+- `tradeinmode getstatus` produced zero stdout bytes and did not complete within 12 seconds;
+- `tradeinmode` with no arguments produced zero stdout bytes and did not complete within 6 seconds;
+- both client-side timeouts returned 143; no success is claimed;
+- serial AVCs prove that the admitted command transitioned from `adbd_tradeinmode` into the `tradeinmode` domain;
+- the corresponding timeout signals were denied between the restricted domains, so the probes were not repeated.
+
+The observed `apexdata`, `userfaultfd`, JIT-cache and dalvik-cache AVCs resemble denials explicitly documented as noncritical in the original AOSP trade-in-mode policy change. They are therefore evidence of helper execution, but not sufficient proof of the stall's root cause. The live serial log also records binder transaction latency, repeated ANR/watchdog activity and another untracked system_server helper zombie around guest seconds 18777–18845. The remaining hypothesis is system-service degradation or extreme latency downstream of the correctly admitted helper, not failure at the host TCP/ADB handshake boundary.
+
+Recovery ended both transient host clients and removed their containers. Because the restricted domain denied the timeout signal, future live helper retries are prohibited until a guest-process cleanup/recovery method is proven that does not restart or weaken the original guest. Setup Wizard recovery, a successful `tradeinmode getstatus`, authenticated normal shell, browser reconnect, physical-phone control and R2 remain `NOT_PROVEN`.
+
+The next bounded contract should compare this image/build combination with a clean, isolated Android 16 reference boot and its SELinux policy while leaving the original guest untouched. The durable fix belongs in build/profile selection or supported provisioning—not an SELinux bypass on the live guest.

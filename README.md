@@ -126,4 +126,4 @@ Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/pr
 
 ## ARM64 Android control evidence
 
-The [2026-10-08 bounded observations](docs/OCI_ARM64_CONTROL_2026-10-08.md) record serial-proven boot completion, a working ADB handshake with closed shell requests, a Setup Wizard ANR, and compositor-visible pointer acknowledgement over RFB. Browser reconnect, authenticated shell control, semantic UI recovery and R2 remain **NOT_PROVEN**. Preserve the live original guest; see the [scoped integration map](docs/OCI_ARM64_CONTROL_INTEGRATION_MAP.json).
+The [2026-10-08 bounded observations](docs/OCI_ARM64_CONTROL_2026-10-08.md) record serial-proven boot completion, Android 16 trade-in mode as the expected cause of closed normal-shell requests, a stalled admitted helper downstream of ADB, a Setup Wizard ANR, and compositor-visible pointer acknowledgement over RFB. Browser reconnect, authenticated normal-shell control, semantic UI recovery and R2 remain **NOT_PROVEN**. Preserve the live original guest; see the [scoped integration map](docs/OCI_ARM64_CONTROL_INTEGRATION_MAP.json).

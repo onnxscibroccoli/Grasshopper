@@ -1,7 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-CONTROL-20261008-02",
-  "previous_contract_id": "OCI-ARM64-ADB-20261008-01",
-  "observed_utc": "2026-10-08T06:51:32Z",
+  "contract_id": "OCI-ARM64-TIM-20261008-03",
+  "previous_contract_id": "OCI-ARM64-CONTROL-20261008-02",
+  "observed_utc": "2026-10-08T07:47:04Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -20,7 +20,9 @@
   },
   "acceptance": {
     "adb_handshake": "PASS_DEVICE",
-    "adb_shell": "FAIL_CLOSED",
+    "adb_shell": "EXPECTED_CLOSED_ANDROID16_TRADE_IN_MODE",
+    "tradeinmode_activation_cause": "PROVEN_PLATFORM_SETUP_WIZARD_BEHAVIOR",
+    "tradeinmode_helper": "ADMITTED_BUT_TIMEOUT_NO_SUCCESS",
     "boot_completed": "PASS_SERIAL_INIT_ACTION",
     "framebuffer": "PASS_1280x800_SETUP_WIZARD_ANR",
     "keyboard_home": "DELIVERED_NO_VISIBLE_CHANGE_ANR_FOCUS",
@@ -37,7 +39,12 @@
     "after_sha256": "3cf4316ab51af435523ca6f7c45914037f617d288b4ec5dffaf69eaf63f49dd1",
     "qemu_interval_cpu_percent_one_core_basis": 85.8,
     "host_logical_cpus": 2,
-    "qemu_rss_kib": 2150188
+    "qemu_rss_kib": 2243500,
+    "tradein_getstatus_timeout_seconds": 12,
+    "tradein_noarg_timeout_seconds": 6,
+    "tradein_stdout_bytes": 0,
+    "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
+    "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Diagnose supported trade-in-mode adbd selection and Setup Wizard ANR without restarting the original guest or disabling access controls."
+  "next_action": "Compare the image and SELinux policy with an isolated clean Android 16 reference boot; do not repeat live helper probes until safe guest-process cleanup is proven."
 }
