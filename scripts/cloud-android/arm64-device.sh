@@ -36,6 +36,7 @@ require_tools() {
   command -v podman >/dev/null || fail "podman is required"
   command -v curl >/dev/null || fail "curl is required"
   command -v sha256sum >/dev/null || fail "sha256sum is required"
+  command -v openssl >/dev/null || fail "openssl is required"
   command -v unzip >/dev/null || fail "unzip is required"
   [ -d "$PODMAN_ROOT" ] || fail "Podman root does not exist: $PODMAN_ROOT"
 }
@@ -146,8 +147,8 @@ start() {
   podman_cmd ps --filter "name=^/$CONTAINER$" --format '{{.Names}} {{.Status}}'
   podman_cmd exec "$CONTAINER" sh -c 'test -s /state/run/serial.log && tail -20 /state/run/serial.log || true'
 
-  encoded="$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=""))' "websockify?token=$token")"
-  printf '%s/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1500&resize=scale&path=%s\n' "${PUBLIC_BASE%/}" "$encoded" > "$URL_FILE"
+  path="websockify?token=$token"
+  printf '%s/vnc.html?autoconnect=true&reconnect=true&reconnect_delay=1500&resize=scale&path=%s\n' "${PUBLIC_BASE%/}" "$path" > "$URL_FILE"
   chmod 600 "$URL_FILE"
   echo "PASS: ARM64 Cloud Android QEMU, VNC and token-gated WebSocket transport started"
   status
