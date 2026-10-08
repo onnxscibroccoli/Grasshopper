@@ -13,7 +13,7 @@
     {
       "id": 1,
       "name": "screen-acquisition",
-      "status": "pending",
+      "status": "blocked",
       "doorway": "real screen data is available through screen-control-v1"
     },
     {
@@ -74,8 +74,24 @@
       "viewer_http": 200,
       "screen_frame_captured": true,
       "screen_frame_sha256": "c2d3cabb82e19d5673de68dfe4ae65c74cec062964913b3761acea9a15e2b2f8",
-      "screen_frame_note": "Frame is real but visually blank; Stage 1 remains pending until usable screen data is proven.",
-      "next_action": "resolve screen acquisition/display initialization without replacing the clean-device foundation"
+      "screen_frame_note": "Historical real framebuffer capture was visually blank. Stage 1 is not satisfied."
+    },
+    "stage1": {
+      "captured_at": "2026-10-08T00:28:00Z",
+      "evidence_file": "docs/implementation/evidence/STAGE1_SCREEN_ACQUISITION_20261008.json",
+      "screen_transport": "PARTIALLY_PROVEN",
+      "live_rfb": "NEGOTIATES",
+      "framebuffer_updates": "ZERO",
+      "usable_screen": "NOT_PROVEN",
+      "adb": "OFFLINE",
+      "tested_display_variants": [
+        "std+nomodeset",
+        "std+nomodeset+xforcevesa",
+        "std+nomodeset+xforcevesa+vga791+UVESA_MODE=1024x768",
+        "vmware-svga"
+      ],
+      "blocker": "Android-x86 graphical/display initialization and/or system_server stability under OCI TCG",
+      "next_action": "obtain a live non-empty framebuffer or authenticated ADB screencap without replacing the legacy benchmark"
     }
   },
   "rule": "completed stage unlocks the next stage; failures remain in the current stage"
