@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grasshopper.invalid/schemas/android-control-evidence-bundle-v1.schema.json",
+  "title": "Grasshopper provider-neutral Android control evidence bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "contract_id", "captured_utc", "collection_mode", "binding", "entries", "declared_status", "live_acceptance", "r2"],
+  "properties": {
+    "schema": { "const": "grasshopper.android-control-evidence-bundle/v1" },
+    "contract_id": { "type": "string", "minLength": 1 },
+    "captured_utc": { "type": "string", "format": "date-time" },
+    "collection_mode": { "enum": ["LIVE", "TEST_FIXTURE"] },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_sha", "session_id"],
+      "properties": {
+        "source_sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "session_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/entry" }
+    },
+    "declared_status": { "const": "NOT_PROVEN" },
+    "live_acceptance": { "const": false },
+    "r2": { "const": "NOT_PROVEN" }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "node_identity", "transport", "session_id", "artifact"],
+      "properties": {
+        "origin": { "enum": ["workstation", "browser", "physical_android"] },
+        "node_identity": { "type": "string", "minLength": 1 },
+        "transport": { "type": "string", "minLength": 1 },
+        "session_id": { "type": "string", "minLength": 1 },
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256", "bytes"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1 },
+            "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "bytes": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    }
+  }
+}
