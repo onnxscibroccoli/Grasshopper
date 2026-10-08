@@ -26,6 +26,7 @@ VM_DIR="$STATE_DIR/LineageOS_on_arm64.utm"
 VDA="$VM_DIR/Data/vda.qcow2"
 VDB="$VM_DIR/Data/vdb.qcow2"
 EFI_VARS="$RUN_DIR/flash_vars.fd"
+RESET_EFI="${CLOUD_ANDROID_ARM64_RESET_EFI:-0}"
 
 fail() { echo "ERROR: $*" >&2; exit 2; }
 podman_cmd() { podman --root "$PODMAN_ROOT" "$@"; }
@@ -60,10 +61,8 @@ prepare() {
   [ -s "$VDA" ] || fail "missing ARM64 LineageOS vda.qcow2"
   [ -s "$VDB" ] || fail "missing ARM64 LineageOS vdb.qcow2"
 
-  if [ ! -s "$EFI_VARS" ]; then
-    unzip -p "$ARCHIVE" LineageOS_on_arm64.utm/Data/efi_vars.fd > "$EFI_VARS.tmp"
-    truncate -s 64M "$EFI_VARS.tmp"
-    mv "$EFI_VARS.tmp" "$EFI_VARS"
+  if [ "$RESET_EFI" = "1" ] || [ ! -s "$EFI_VARS" ]; then
+    truncate -s 64M "$EFI_VARS"
   fi
 
   [ -s "$EFI_VARS" ] || fail "missing ARM64 EFI variables from upstream image"
