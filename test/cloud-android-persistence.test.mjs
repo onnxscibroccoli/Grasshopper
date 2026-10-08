@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 
 const script = path.resolve(process.cwd(), 'scripts/cloud-android/persistent-device.sh');
 
@@ -62,4 +63,23 @@ test('software emulation is explicit and rejects unknown accelerators', async ()
   assert.equal(run('tcg').trim(), '-accel\ntcg,thread=single\n-cpu\nmax');
   assert.equal(run('kvm').trim(), '-enable-kvm\n-cpu\nhost');
   assert.throws(() => run('invalid'));
+});
+
+test('graphics mode keeps compatibility by default and enables an explicit modeset experiment', () => {
+  const run = value => spawnSync('bash', [script, 'graphics-args'], {
+    encoding: 'utf8',
+    env: {...process.env, ...(value === undefined ? {} : {CLOUD_ANDROID_GRAPHICS_MODE: value})}
+  });
+
+  const compatibility = run();
+  assert.equal(compatibility.status, 0, compatibility.stderr);
+  assert.equal(compatibility.stdout.trim(), 'nomodeset HWACCEL=0');
+
+  const modeset = run('modeset');
+  assert.equal(modeset.status, 0, modeset.stderr);
+  assert.equal(modeset.stdout.trim(), 'HWACCEL=0');
+
+  const invalid = run('unchecked');
+  assert.equal(invalid.status, 2);
+  assert.match(invalid.stderr, /graphics mode must be compatibility or modeset/);
 });

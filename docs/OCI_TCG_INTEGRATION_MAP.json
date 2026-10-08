@@ -17,7 +17,7 @@
   "serial_console_identity": "PASS",
   "android_boot_completed": "NOT_PROVEN",
   "martian_definition": ".agents/agents/martian/agent.md",
-  "next_contract": "Reverify current OCI QEMU identity/configuration and isolate CPU saturation before fresh same-source R2 input/reconnect acceptance",
+  "next_contract": "Run a same-state isolated compatibility versus modeset A/B after the current guest lease; only then resume fresh same-source R2 input/reconnect acceptance",
   "contract_id": "OCI-TCG-NETWORK-20261007-02",
   "oci_guest_network": "PASS_AFTER_RESTART",
   "adb_evidence": "docs/evidence/OCI_TCG_ADB_20261007.txt",
@@ -34,12 +34,26 @@
     ]
   },
   "latest_observation": {
-    "date": "2026-10-07",
-    "oci_qemu_pid": 1054022,
-    "oci_qemu_cpu_percent": 188,
-    "physical_phone": "OFFLINE",
-    "rdc_followup": "HTTP_504_TIMEOUT",
+    "date": "2026-10-08",
+    "contract_id": "OCI-TCG-CPU-20261008-01",
+    "evidence": "docs/OCI_TCG_CPU_2026-10-08.md",
+    "oci_qemu_pid": 1090850,
+    "guest_vcpus": 1,
+    "guest_memory_mb": 1024,
+    "oci_qemu_cpu_percent": 96,
+    "oci_qemu_rss_mb_at_356s": 1809,
+    "oom_kill": false,
+    "guest_uptime_seconds": 342,
+    "android_boot_completed": "NOT_PROVEN_EMPTY_PROPERTY",
+    "rfb_ui": "BLACK_FRAMEBUFFER",
+    "physical_phone": "ONLINE_NOT_QUALIFIED_IN_THIS_CONTRACT",
     "prior_passes": "Historical evidence above; not refreshed by this contract",
     "r2": "NOT_PROVEN"
+  },
+  "graphics_mode_contract": {
+    "default": "compatibility",
+    "experimental": "modeset",
+    "live_modeset_result": "NOT_PROVEN",
+    "invalid_values": "FAIL_CLOSED"
   }
 }
