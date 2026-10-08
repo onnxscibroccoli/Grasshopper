@@ -12,7 +12,10 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /virtio-gpu-pci/);
   assert.match(script, /usb-kbd/);
   assert.match(script, /usb-tablet/);
-  assert.match(script, /fs1:\\EFI\\BOOT\\BOOTAA64\\.EFI/);
+  // Regression (run 37711068978): startup.nsh is two lines, one backslash per
+  // separator. A same-line fs1:\EFI\... match does not describe the heredoc.
+  assert.match(script, /fs1:\n\\EFI\\BOOT\\BOOTAA64\.EFI\n/);
+  assert.doesNotMatch(script, /\\\\EFI\\\\BOOT\\\\BOOTAA64/);
   assert.doesNotMatch(script, /qemu-system-x86_64/);
   assert.doesNotMatch(script, /-enable-kvm/);
 });
