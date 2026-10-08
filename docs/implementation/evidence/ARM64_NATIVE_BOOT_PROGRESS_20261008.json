@@ -1,0 +1,44 @@
+{
+  "schema": "omnikali.cloud-android-arm64-live-evidence/v1",
+  "captured_at": "2026-10-08T01:31:00Z",
+  "environment": {
+    "provider": "oracle-cloud",
+    "host": "grasshopper-workstation",
+    "architecture": "aarch64",
+    "runtime_branch": "feat/arm64-native-direct-efi-boot-lead",
+    "runtime_commit": "80860fc629510ddfb96bdc1f93b9dffd8288fed9"
+  },
+  "isolation": {
+    "container": "grasshopper-cloud-android-arm64-lead",
+    "state_dir": "/srv/grasshopper/android/development/arm64-native-lead-20261008",
+    "vnc_port": 5916,
+    "websocket_port": 6093,
+    "adb_port": 16565,
+    "memory_mb": 1536,
+    "cpus": 2
+  },
+  "proven": [
+    "QEMU aarch64 TCG process running",
+    "UEFI direct native ARM64 disk path passes the prior x64 EFI launcher failure",
+    "virtio-gpu-pci DRM initialized",
+    "live RFB/VNC endpoint listening",
+    "QEMU screendump produced a 1280x800 PPM",
+    "live framebuffer contains nonzero pixels",
+    "two framebuffer captures differ by SHA-256",
+    "Android init is progressing and processing Android 16 APEX payloads"
+  ],
+  "artifacts": {
+    "frame_1": "eda60856d3ab0e0923a44dad7ea7aac5c9f6347a70152783151b576c76e05fb7",
+    "frame_2": "29bc75bcbfb4674e55b35de2c53171b267fd3cf14d079b8aa489dbd6cf8eaf64"
+  },
+  "not_proven": [
+    "ADB device state",
+    "sys.boot_completed=1",
+    "authenticated Android screenshot through ADB",
+    "workstation input acknowledgement",
+    "bidirectional control",
+    "reconnect without guest restart"
+  ],
+  "current_bottleneck": "First Android 16 userspace boot on TCG is spending substantial CPU time decompressing APEX packages.",
+  "safety": "AWS Helix/Kali untouched; legacy x86 benchmark preserved; no production ingress changes."
+}
