@@ -118,7 +118,7 @@ start() {
       qemu_pid=$!
       printf "%s\n" "$qemu_pid" > /state/run/qemu-container-pid
       websockify --token-plugin TokenFile --token-source /state/token-map \
-        --web /usr/share/novnc --heartbeat 30 127.0.0.1:6083 127.0.0.1:5906 \
+        --web /usr/share/novnc --heartbeat 30 127.0.0.1:6083 \
         > /state/logs/websockify.log 2>&1 &
       ws_pid=$!
       printf "%s\n" "$ws_pid" > /state/run/websockify-container-pid
