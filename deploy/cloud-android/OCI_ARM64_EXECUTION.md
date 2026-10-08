@@ -26,14 +26,9 @@ The upstream `jqssun/android-lineage-qemu` project explicitly recommends the `ar
 
 ## Boot reliability
 
-The upstream ARM64 image currently reaches the UEFI shell when its stored boot entry is not suitable for the local firmware. The launcher therefore creates a tiny read-only FAT boot-helper disk containing `startup.nsh`. The helper is boot index 0 and launches:
+The launcher preserves the upstream ARM64 boot contract instead of adding a synthetic boot-helper disk. During preparation it extracts the `efi_vars.fd` shipped inside the pinned UTM archive and uses that file as the QEMU UEFI variable store. The native ARM64 `vda.qcow2` disk is boot index 0 and `vdb.qcow2` is boot index 1.
 
-```
-fs1:
-\EFI\BOOT\BOOTAA64.EFI
-```
-
-This avoids modifying the Android disk image just to repair firmware boot selection.
+This keeps firmware state from the known-good upstream image and avoids introducing an x64 EFI payload into an AArch64 UEFI boot path.
 
 ## State boundaries
 
