@@ -1,6 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-ADB-20261008-01",
-  "observed_utc": "2026-10-08T05:49:26Z",
+  "contract_id": "OCI-ARM64-CONTROL-20261008-02",
+  "previous_contract_id": "OCI-ARM64-ADB-20261008-01",
+  "observed_utc": "2026-10-08T06:51:32Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -20,16 +21,23 @@
   "acceptance": {
     "adb_handshake": "PASS_DEVICE",
     "adb_shell": "FAIL_CLOSED",
-    "boot_completed": "NOT_PROVEN",
+    "boot_completed": "PASS_SERIAL_INIT_ACTION",
     "framebuffer": "PASS_1280x800_SETUP_WIZARD_ANR",
-    "input": "NOT_ATTEMPTED_BOOT_GATE",
+    "keyboard_home": "DELIVERED_NO_VISIBLE_CHANGE_ANR_FOCUS",
+    "pointer": "PASS_VISUAL_ACK_SEMANTIC_RECOVERY_UNPROVEN",
+    "rfb_command_client_reconnect": "PASS",
     "browser_reconnect": "NOT_PROVEN",
     "bidirectional_control": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
   },
   "evidence": {
-    "framebuffer_path": "/srv/grasshopper/android/development/arm64-observation-20261008/direct-0548.png",
-    "sha256": "2ed8bfb826576a1351d07ccada416a2eb0a299d0d6bcbffc8cab1c5c10e5c1d3"
+    "before_framebuffer_path": "/srv/grasshopper/android/development/arm64-observation-20261008/home-before-20261008T065031Z.png",
+    "before_sha256": "2ed8bfb826576a1351d07ccada416a2eb0a299d0d6bcbffc8cab1c5c10e5c1d3",
+    "after_framebuffer_path": "/srv/grasshopper/android/development/arm64-observation-20261008/wait-after-20261008T065055Z.png",
+    "after_sha256": "3cf4316ab51af435523ca6f7c45914037f617d288b4ec5dffaf69eaf63f49dd1",
+    "qemu_interval_cpu_percent_one_core_basis": 85.8,
+    "host_logical_cpus": 2,
+    "qemu_rss_kib": 2150188
   },
-  "next_action": "Diagnose adbd shell closure and Setup Wizard ANR without restarting the original guest or disabling access controls."
+  "next_action": "Diagnose supported trade-in-mode adbd selection and Setup Wizard ANR without restarting the original guest or disabling access controls."
 }
