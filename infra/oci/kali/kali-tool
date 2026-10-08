@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+exec podman run --rm -it \
+  --name grasshopper-kali-cli \
+  -v /srv/grasshopper/kali-workspace:/workspace:Z \
+  -w /workspace \
+  docker.io/kalilinux/kali-rolling:latest "$@"

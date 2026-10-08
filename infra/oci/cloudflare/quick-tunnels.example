@@ -1,0 +1,6 @@
+# Current live architecture uses Cloudflare Quick Tunnels.
+# Quick Tunnels do not require a config file.
+# Live commands observed:
+# cloudflared tunnel --no-autoupdate --url REDACTED_URL
+# cloudflared tunnel --no-autoupdate --url REDACTED_URL
+# Public trycloudflare URLs are intentionally omitted.

@@ -1,0 +1,14 @@
+[Unit]
+Description=Grasshopper persistent graphical VNC desktop
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/grasshopper-vnc-session
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
