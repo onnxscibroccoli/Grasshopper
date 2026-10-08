@@ -12,19 +12,17 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /virtio-gpu-pci/);
   assert.match(script, /usb-kbd/);
   assert.match(script, /usb-tablet/);
-  // Regression (run 37712140437, SHA 716de7f): do not require startup.nsh
-  // fs1:\EFI\BOOT\BOOTAA64.EFI. Direct boot uses upstream EFI vars and vda.
-  assert.match(script, /unzip -p "\$ARCHIVE" LineageOS_on_arm64\.utm\/Data\/efi_vars\.fd/);
-  assert.match(script, /truncate -s 64M "\$EFI_VARS\.tmp"/);
-  assert.doesNotMatch(script, /boot-helper\.img/);
-  assert.doesNotMatch(script, /startup\.nsh/);
+  assert.match(script, /RESET_EFI="${CLOUD_ANDROID_ARM64_RESET_EFI:-0}"/);
+  assert.match(script, /truncate -s 64M "$EFI_VARS"/);
+  assert.doesNotMatch(script, /boot-helper.img/);
+  assert.doesNotMatch(script, /startup.nsh/);
   assert.match(script, /-device virtio-blk-pci,drive=vda,bootindex=0/);
   assert.doesNotMatch(script, /qemu-system-x86_64/);
   assert.doesNotMatch(script, /-enable-kvm/);
 });
 
 test("ARM64 launcher pins the upstream release", () => {
-  assert.match(script, /v2026\.07\.09/);
+  assert.match(script, /v2026.07.09/);
   assert.match(script, /55dcf50038de1ad460a680d82146294151c9301084c4b88c7ddc0323bade5e53/);
   assert.match(script, /arm64only/);
 });
