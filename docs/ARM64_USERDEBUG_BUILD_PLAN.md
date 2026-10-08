@@ -2,7 +2,7 @@
 
 **Status:** `BLOCKED_RESOURCE_ADMISSION`
 
-**Latest contract:** `OCI-ARM64-USERDEBUG-CANDIDATES-20261008-08`
+**Latest contract:** `OCI-ARM64-USERDEBUG-CANDIDATE-SCHEMA-20261008-09`
 
 **Candidate artifact:** `NOT_BUILT`
 
@@ -51,6 +51,8 @@ No existing candidate qualified on 2026-10-08:
 - AWS base: protected, offline and excluded without contact.
 
 The inventory status is `NO_ELIGIBLE_NODE` and `build_authorized` remains `false`.
+
+The inventory format is now published as `schemas/grasshopper-builder-candidate-inventory-v1.schema.json`. Run `npm run verify:cloud-android-userdebug-candidates` from the repository root to validate both the JSON shape and the independently recomputed admission classifications. The schema fixes `build_authorized` to `false`; a later live evidence contract remains the only route from a static candidate to build admission.
 
 ## Reproducible workflow after live admission
 

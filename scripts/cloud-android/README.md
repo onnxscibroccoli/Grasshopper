@@ -54,12 +54,12 @@ Collection never starts or stops a workload. It fails closed on ambiguous proces
 
 ## Existing-builder candidate inventory
 
-The provider-neutral inventory at `docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json` is checked with:
+The provider-neutral inventory at `docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json` is checked against `schemas/grasshopper-builder-candidate-inventory-v1.schema.json` and the admission policy with:
 
 ```sh
-node scripts/cloud-android/verify-arm64-userdebug-builder-candidates.mjs verify \
-  environments/cloud-android-arm64-userdebug-build.json \
-  docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json
+npm run verify:cloud-android-userdebug-candidates
 ```
+
+The dependency-free schema runner implements only the Draft 2020-12 keywords used by this checked-in schema. Other schemas should use a complete JSON Schema implementation unless their keyword set is explicitly covered and tested.
 
 The verifier derives classification from identity, protection/provisioning boundaries and the resource policy. Even a passing static snapshot yields only `ELIGIBLE_FOR_LIVE_COLLECTION`; it cannot emit build authorization or substitute for the hashed `LIVE` evidence gate.

@@ -1,7 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-USERDEBUG-CANDIDATES-20261008-08",
-  "previous_contract_id": "OCI-ARM64-USERDEBUG-EVIDENCE-20261008-07",
-  "observed_utc": "2026-10-08T14:53:39Z",
+  "contract_id": "OCI-ARM64-USERDEBUG-CANDIDATE-SCHEMA-20261008-09",
+  "previous_contract_id": "OCI-ARM64-USERDEBUG-CANDIDATES-20261008-08",
+  "observed_utc": "2026-10-08T17:43:57Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -10,6 +10,15 @@
     "shape": "VM.Standard.A1.Flex",
     "transport": "RDC",
     "device_id": "0852e6f4-2507-4d0f-9d62-f6eda8cdd169"
+  },
+  "contract_execution": {
+    "node": "isolated-local-worktree",
+    "architecture": "x86_64",
+    "transport": "LOCAL_REPOSITORY",
+    "lease_minutes": 20,
+    "remote_observation_performed": false,
+    "remote_mutation_performed": false,
+    "recovery": "REVERT_CONTRACT_COMMIT"
   },
   "guest": {
     "pid": 1273533,
@@ -62,7 +71,7 @@
     "observed_qemu_rss_kib": 3410784,
     "focused_live_collector_and_admission_tests": "10/10 PASS",
     "combined_collector_admission_provenance_tests": "16/16 PASS",
-    "full_repository_tests": "259/259 PASS",
+    "full_repository_tests": "262/262 PASS",
     "failures": [
       "logical_cpus",
       "memory_total_bytes",
@@ -73,11 +82,14 @@
     ],
     "candidate_inventory": {
       "schema": "grasshopper.builder-candidate-inventory/v1",
+      "json_schema": "schemas/grasshopper-builder-candidate-inventory-v1.schema.json",
+      "verification_command": "npm run verify:cloud-android-userdebug-candidates",
+      "schema_validation": "PASS",
       "overall_status": "NO_ELIGIBLE_NODE",
       "build_authorized": false,
-      "focused_tests": "6/6 PASS",
-      "combined_userdebug_tests": "22/22 PASS",
-      "full_repository_tests": "259/259 PASS",
+      "focused_tests": "9/9 PASS",
+      "combined_userdebug_tests": "25/25 PASS",
+      "full_repository_tests": "262/262 PASS",
       "oci": "BLOCKED_RESOURCE_ADMISSION",
       "rdc_localhost": "UNQUALIFIED_IDENTITY_TIMEOUT",
       "gcp": "EXCLUDED_PROVISIONING_REQUIRED",
@@ -101,6 +113,7 @@
     "userdebug_builder_admission": "BLOCKED_RESOURCE_ADMISSION",
     "userdebug_live_evidence_collector": "PASS_REPOSITORY_TESTED_NOT_RUN_ON_OCI",
     "userdebug_builder_candidate_inventory": "PASS_NO_ELIGIBLE_NODE",
+    "userdebug_builder_candidate_schema": "PASS_FAIL_CLOSED_TESTED",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -119,5 +132,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Bind the candidate inventory to a reusable JSON Schema and CI check, then continue provider-neutral Android control work without claiming the blocked full-image build."
+  "next_action": "Define and test the provider-neutral input acknowledgement and reconnect evidence format without depending on the blocked full-userdebug build or claiming live R2 acceptance."
 }

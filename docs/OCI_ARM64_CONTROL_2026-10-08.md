@@ -155,3 +155,13 @@ The provider-neutral matrix classifies OCI as blocked, the unidentified RDC endp
 Remote activity was limited to identity and read-only capacity/account-count observations. No guest, process, disk, container, network, access control, API, billing setting or cloud capacity changed. Local work used Node and small temporary JSON files under a 20-minute lease. Recovery is a commit revert; no remote rollback is required.
 
 No existing node qualifies. The build remains `BLOCKED_RESOURCE_ADMISSION`, the candidate artifact remains `NOT_BUILT`, and authenticated ADB plus R2 remain `NOT_PROVEN`. The next provider-neutral contract should bind this candidate inventory to a reusable JSON Schema and CI check, then resume independent Android control work that does not require the blocked full-image build.
+
+## Candidate-schema contract
+
+Contract `OCI-ARM64-USERDEBUG-CANDIDATE-SCHEMA-20261008-09` is a repository-only change stacked on PR #174 commit `59c7ba0e65bf9214f15acbc4d228acb11c0d8478`. It adds a reusable Draft 2020-12 schema for the provider-neutral candidate inventory, a dependency-free validator for the schema keywords used by that file, and the deterministic `npm run verify:cloud-android-userdebug-candidates` entrypoint. The command validates structure first and then independently recomputes every candidate classification from the pinned builder policy.
+
+The schema rejects undeclared fields, malformed snapshots and any `build_authorized` value other than `false`. Its runtime is intentionally bounded to the keywords exercised by this schema; it is not presented as a general replacement for a complete JSON Schema implementation. The test-first red run failed because the validator and npm entrypoint did not exist. The focused green suite passed 9/9, the combined userdebug suites passed 25/25, and the full repository suite passed 262/262. The degradation guard, Node syntax, JSON parsing and diff checks also passed.
+
+Execution used only the isolated local worktree, Node.js and temporary JSON fixtures under a 20-minute lease. No RDC endpoint was contacted, no prior node observation was replayed, and no guest, process, disk, container, access control, API, billing setting or cloud capacity changed. Recovery is a commit revert; no remote rollback is required. The matrix remains `NO_ELIGIBLE_NODE`, `build_authorized=false`; the full-userdebug artifact remains `NOT_BUILT`, and authenticated ADB plus R2 remain `NOT_PROVEN`.
+
+The next provider-neutral Android control task should define and test the transport-neutral input acknowledgement and reconnect evidence format, without depending on the blocked full-userdebug build or claiming live R2 acceptance.

@@ -9,6 +9,7 @@ const root = process.cwd();
 const script = path.join(root, "scripts/cloud-android/verify-arm64-userdebug-builder-candidates.mjs");
 const profile = path.join(root, "environments/cloud-android-arm64-userdebug-build.json");
 const inventory = path.join(root, "docs/ARM64_USERDEBUG_BUILDER_CANDIDATES.json");
+const schema = path.join(root, "schemas/grasshopper-builder-candidate-inventory-v1.schema.json");
 
 function run(file, command = "verify") {
   return spawnSync(process.execPath, [script, command, profile, file], {
@@ -140,4 +141,37 @@ test("a missing node that requires provisioning remains excluded", () => {
     const result = run(file);
     assert.equal(result.status, 0, result.stderr);
   });
+});
+
+test("candidate inventory schema validates the checked-in matrix", () => {
+  const result = spawnSync(process.execPath, [
+    path.join(root, "scripts/validate-json-schema-subset.mjs"),
+    schema,
+    inventory,
+  ], { cwd: root, encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /SCHEMA OK grasshopper\.builder-candidate-inventory\/v1/);
+});
+
+test("candidate inventory schema rejects undeclared candidate fields", () => {
+  const value = baseInventory(passingStaticCandidate({ unexpected: true }));
+  withInventory(value, (file) => {
+    const result = spawnSync(process.execPath, [
+      path.join(root, "scripts/validate-json-schema-subset.mjs"),
+      schema,
+      file,
+    ], { cwd: root, encoding: "utf8" });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /candidates\/0\/unexpected: additional property is not allowed/);
+  });
+});
+
+test("repository command deterministically verifies schema and candidate policy", () => {
+  const result = spawnSync("npm", ["run", "verify:cloud-android-userdebug-candidates"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /SCHEMA OK grasshopper\.builder-candidate-inventory\/v1/);
+  assert.match(result.stdout, /overall=NO_ELIGIBLE_NODE build_authorized=false/);
 });
