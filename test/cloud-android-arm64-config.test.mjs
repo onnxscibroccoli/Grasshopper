@@ -18,6 +18,12 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /-device virtio-blk-pci,drive=vda,bootindex=0/);
   assert.doesNotMatch(script, /qemu-system-x86_64/);
   assert.doesNotMatch(script, /-enable-kvm/);
+  // Regression (run 37712140521, commit 716de7f): the launcher no longer
+  // boots through a UEFI shell line. Requiring fs1:\EFI\BOOT\BOOTAA64.EFI
+  // failed Reference tests after the switch to upstream EFI vars.
+  // Run 37711068890: if a shell line returns, keep one backslash per separator.
+  assert.doesNotMatch(script, /fs1:\\EFI\\BOOT\\BOOTAA64\.EFI/);
+  assert.doesNotMatch(script, /fs1:\\\\EFI\\\\BOOT\\\\BOOTAA64\.EFI/);
 });
 
 test("ARM64 launcher pins the upstream release", () => {
