@@ -1,6 +1,6 @@
 {
   "schema": "omnikali.cloud-android-arm64-live-evidence/v1",
-  "captured_at": "2026-10-08T01:31:00Z",
+  "captured_at": "2026-10-08T01:36:00Z",
   "environment": {
     "provider": "oracle-cloud",
     "host": "grasshopper-workstation",
@@ -25,7 +25,9 @@
     "QEMU screendump produced a 1280x800 PPM",
     "live framebuffer contains nonzero pixels",
     "two framebuffer captures differ by SHA-256",
-    "Android init is progressing and processing Android 16 APEX payloads"
+    "Android init is progressing and processing Android 16 APEX payloads",
+    "token-gated noVNC HTTP endpoint returned HTTP 200",
+    "token-authenticated WebSocket upgrade returned HTTP 101 Switching Protocols"
   ],
   "artifacts": {
     "frame_1": "eda60856d3ab0e0923a44dad7ea7aac5c9f6347a70152783151b576c76e05fb7",
@@ -39,6 +41,13 @@
     "bidirectional control",
     "reconnect without guest restart"
   ],
-  "current_bottleneck": "First Android 16 userspace boot on TCG is spending substantial CPU time decompressing APEX packages.",
-  "safety": "AWS Helix/Kali untouched; legacy x86 benchmark preserved; no production ingress changes."
+  "current_bottleneck": "First Android 16 userspace boot on TCG is spending substantial CPU time decompressing APEX packages; nine compressed APEX payloads have been observed so far and system_server/boot_completed are not yet proven.",
+  "safety": "AWS Helix/Kali untouched; legacy x86 benchmark preserved; no production ingress changes.",
+  "transport": {
+    "novnc_http": 200,
+    "websocket_upgrade": 101,
+    "vnc_port": 5916,
+    "websocket_port": 6093,
+    "adb_port": 16565
+  }
 }
