@@ -127,3 +127,5 @@ Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/pr
 ## ARM64 Android control evidence
 
 The [2026-10-08 bounded observations](docs/OCI_ARM64_CONTROL_2026-10-08.md) record serial-proven boot completion, Android 16 trade-in mode as the expected cause of closed normal-shell requests, a stalled admitted helper downstream of ADB, a Setup Wizard ANR, and compositor-visible pointer acknowledgement over RFB. Upstream provenance also establishes that the pinned UTM archive is a full `user` build, so the ARM64 launcher now fails closed unless it is explicitly admitted for interactive, setup-gated provisioning; this never claims automation-ready ADB. Browser reconnect, authenticated normal-shell control, semantic UI recovery and R2 remain **NOT_PROVEN**. Preserve the live original guest; see the [scoped integration map](docs/OCI_ARM64_CONTROL_INTEGRATION_MAP.json).
+
+The future full `userdebug` automation image now has a separate [build profile and digest-bound provenance gate](scripts/cloud-android/README.md#full-userdebug-vm-provenance). This defines reproducible admission but does not claim that an artifact has been built or accepted.

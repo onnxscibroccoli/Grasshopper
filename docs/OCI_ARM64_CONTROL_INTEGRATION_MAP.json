@@ -1,7 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-PROFILE-20261008-04",
-  "previous_contract_id": "OCI-ARM64-TIM-20261008-03",
-  "observed_utc": "2026-10-08T08:52:06Z",
+  "contract_id": "OCI-ARM64-USERDEBUG-PROFILE-20261008-05",
+  "previous_contract_id": "OCI-ARM64-PROFILE-20261008-04",
+  "observed_utc": "2026-10-08T11:51:59Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -16,7 +16,9 @@
     "started_utc": "2026-10-08T01:37:50Z",
     "vcpus": 2,
     "memory_mib": 2048,
-    "restarted": false
+    "restarted": false,
+    "concurrent_isolated_pid_observed": 1242165,
+    "concurrent_isolated_guest_mutated": false
   },
   "image_profile": {
     "archive": "UTM-VM-lineage-23.2-20260709-jqssun-virtio_arm64only.zip",
@@ -24,6 +26,20 @@
     "provenance": "UPSTREAM_BUILD_SOURCE_PROVEN",
     "admission": "FAIL_CLOSED_SETUP_GATED",
     "automation_profile": "REQUIRES_PROVENANCE_PINNED_FULL_USERDEBUG_VM"
+  },
+  "userdebug_build_profile": {
+    "profile_id": "lineage-23.2-virtio-arm64only-userdebug",
+    "source_commit": "54fc5dc82fa05778be15c1200240be53f707a542",
+    "build_script_blob_sha1": "b5babcdbefa664b1ffc447bda4dcf53b17628cb6",
+    "target": "virtio_arm64only",
+    "variant": "userdebug",
+    "goals": [
+      "vm-utm-zip",
+      "otapackage"
+    ],
+    "profile_definition": "PASS_FAIL_CLOSED_TESTED",
+    "candidate_artifact": "NOT_BUILT",
+    "guest_started": false
   },
   "acceptance": {
     "adb_handshake": "PASS_DEVICE",
@@ -38,6 +54,7 @@
     "browser_reconnect": "NOT_PROVEN",
     "bidirectional_control": "NOT_PROVEN",
     "profile_admission": "PASS_FAIL_CLOSED_TESTED",
+    "userdebug_provenance_verifier": "PASS_SYNTHETIC_ONLY",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
   },
@@ -55,5 +72,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Produce a reproducible full userdebug VM profile and provenance manifest on a clean isolated build path, or complete supported interactive provisioning of the pinned user image; preserve the original live guest."
+  "next_action": "Define clean-builder resource admission and a reproducible source patch/workflow before authorizing any full userdebug build; preserve both running guests."
 }
