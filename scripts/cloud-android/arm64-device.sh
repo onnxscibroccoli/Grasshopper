@@ -12,10 +12,10 @@ WS_PORT="${CLOUD_ANDROID_ARM64_WS_PORT:-6083}"
 ADB_PORT="${CLOUD_ANDROID_ARM64_ADB_PORT:-16555}"
 LISTEN_ADDR="${CLOUD_ANDROID_ARM64_LISTEN_ADDR:-127.0.0.1}"
 PUBLIC_BASE="${CLOUD_ANDROID_ARM64_PUBLIC_BASE_URL:-}"
-RELEASE="v2026.07.09"
-ARCHIVE_NAME="UTM-VM-lineage-23.2-20260709-jqssun-virtio_arm64only.zip"
+RELEASE="${CLOUD_ANDROID_ARM64_RELEASE:-v2026.09.17}"
+ARCHIVE_NAME="UTM-VM-lineage-23.2-20260917-jqssun-virtio_arm64only.zip"
 ARCHIVE_URL="https://github.com/jqssun/android-lineage-qemu/releases/download/${RELEASE}/${ARCHIVE_NAME}"
-ARCHIVE_SHA256="55dcf50038de1ad460a680d82146294151c9301084c4b88c7ddc0323bade5e53"
+ARCHIVE_SHA256="0a50afc821d905848b4560c33a5a706e6aee5ac414f85b31f9e52fc1ffabbd61"
 ARCHIVE="$STATE_DIR/$ARCHIVE_NAME"
 TOKEN_FILE="$STATE_DIR/current-token"
 TOKEN_MAP="$STATE_DIR/token-map"
@@ -85,7 +85,7 @@ start() {
   token="$(openssl rand -hex 32 2>/dev/null || true)"
   [ -n "$token" ] || fail "openssl is required for session tokens"
   printf '%s\n' "$token" > "$TOKEN_FILE"
-  printf '%s: 127.0.0.1:5906\n' "$token" > "$TOKEN_MAP"
+  printf '%s: %s:%s\n' "$token" "$LISTEN_ADDR" "$VNC_PORT" > "$TOKEN_MAP"
   chmod 600 "$TOKEN_FILE" "$TOKEN_MAP"
 
   podman_cmd run -d --name "$CONTAINER" --network host \
@@ -107,7 +107,7 @@ start() {
         -device virtio-blk-pci,drive=vda,bootindex=0 \
         -drive if=none,id=vdb,file=/state/LineageOS_on_arm64.utm/Data/vdb.qcow2,format=qcow2,discard=unmap,detect-zeroes=unmap \
         -device virtio-blk-pci,drive=vdb,bootindex=1 \
-        -netdev user,id=net0,hostfwd=tcp:127.0.0.1:16555-:5555 \
+        -netdev user,id=net0,hostfwd=tcp:"$LISTEN_ADDR":"$ADB_PORT"-:5555 \
         -device virtio-net-pci,netdev=net0 \
         -device virtio-rng-pci \
         -device virtio-serial \
@@ -115,7 +115,7 @@ start() {
         -device usb-kbd,bus=xhci.0 \
         -device usb-tablet,bus=xhci.0 \
         -device virtio-gpu-pci \
-        -vnc 127.0.0.1:6 \
+        -vnc "$LISTEN_ADDR:6" \
         -serial file:/state/run/serial.log \
         -monitor unix:/state/run/mon.sock,server=on,wait=off \
         > /state/logs/qemu.log 2>&1 &

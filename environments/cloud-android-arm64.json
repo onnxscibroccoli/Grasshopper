@@ -24,7 +24,7 @@
     "display": "qemu-virtio-gpu-pci",
     "architecture": "arm64",
     "guest_os": "LineageOS 23.2 / Android 16",
-    "release": "jqssun/android-lineage-qemu:v2026.07.09",
+    "release": "jqssun/android-lineage-qemu:v2026.09.17",
     "execution_script": "scripts/cloud-android/arm64-device.sh",
     "resource_profile": {
       "memory_mb": 2048,

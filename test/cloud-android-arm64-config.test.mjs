@@ -22,8 +22,8 @@ test("ARM64 OCI launcher is architecture-native", () => {
 });
 
 test("ARM64 launcher pins the upstream release", () => {
-  assert.match(script, /v2026.07.09/);
-  assert.match(script, /55dcf50038de1ad460a680d82146294151c9301084c4b88c7ddc0323bade5e53/);
+  assert.match(script, /v2026.09.17/);
+  assert.match(script, /0a50afc821d905848b4560c33a5a706e6aee5ac414f85b31f9e52fc1ffabbd61/);
   assert.match(script, /arm64only/);
 });
 
