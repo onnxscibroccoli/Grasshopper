@@ -12,10 +12,11 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /virtio-gpu-pci/);
   assert.match(script, /usb-kbd/);
   assert.match(script, /usb-tablet/);
-  // Regression (run 37711068890): startup.nsh keeps one backslash per
-  // separator on the same line as fs1:. Doubled separators fail the UEFI shell.
-  assert.match(script, /fs1:\\EFI\\BOOT\\BOOTAA64\.EFI\n/);
-  assert.doesNotMatch(script, /fs1:\\\\EFI\\\\BOOT\\\\BOOTAA64\.EFI/);
+  // Regression (run 37711260820): /fs1:\EFI\BOOT.../ treats \B as a
+  // non-word-boundary, so the one-line path never matches. Compare strings.
+  const uefiStartup = "fs1:\\EFI\\BOOT\\BOOTAA64.EFI\n";
+  assert.ok(script.includes(uefiStartup));
+  assert.equal(script.includes("fs1:\\\\EFI\\\\BOOT\\\\BOOTAA64.EFI"), false);
   assert.doesNotMatch(script, /qemu-system-x86_64/);
   assert.doesNotMatch(script, /-enable-kvm/);
 });
