@@ -49,3 +49,10 @@ The launcher is considered transport-ready only when all of these are proven liv
 7. A workstation input event is acknowledged by the guest.
 
 Only then should the bidirectional control state advance beyond Stage 1.
+
+
+## Concurrent-agent safety
+
+The launcher treats the named ARM64 container as an owned live execution boundary. `start` refuses to remove an existing running container. Agents must observe and hand off a running guest instead of replacing it to obtain cleaner evidence. A stopped container may be explicitly removed before a new start.
+
+This is intentional: concurrent development must converge on one live ARM64 runtime rather than repeatedly destroying first-boot progress.
