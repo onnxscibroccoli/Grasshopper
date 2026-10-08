@@ -85,3 +85,15 @@ node scripts/cloud-android/adapt-rfb-observation.mjs \
 ```
 
 The input shape is illustrated by `docs/implementation/evidence/WORKSTATION_RFB_OBSERVATION_FORMAT.json`. The adapter verifies both frame byte counts and SHA-256 digests and refuses to overwrite an existing output. Different frame hashes produce only `visible_acknowledgement=PASS`. Because an observed operation is not proof of original dispatch, delivery, semantic effect and reconnect continuity remain `NOT_PROVEN`; so do overall acceptance and R2. An unchanged frame remains `NOT_PROVEN` rather than becoming a failure or inferred acknowledgement.
+
+### Browser reconnect observation adapter
+
+`adapt-browser-reconnect-observation.mjs` consumes a browser observation manifest and an independently captured, digest-bound reconnect record from the same evidence directory. It performs no browser, WebSocket or RFB connection and sends no input.
+
+```sh
+node scripts/cloud-android/adapt-browser-reconnect-observation.mjs \
+  /absolute/evidence/browser-reconnect-observation.json \
+  /absolute/evidence/control-evidence.json
+```
+
+See `docs/implementation/evidence/BROWSER_RECONNECT_OBSERVATION_FORMAT.json` and `BROWSER_RECONNECT_RECORD_FORMAT.json` for the two input shapes. A reconnect PASS requires exact source/node/transport binding, identical pre/post session IDs, an advancing sequence, a client-only disconnect, no guest restart and chronological timestamps. The adapter validates record bytes and SHA-256 and refuses output overwrite. It cannot infer delivery, visible acknowledgement or semantic effect, and no output can independently close R2.

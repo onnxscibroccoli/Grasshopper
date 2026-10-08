@@ -1,0 +1,19 @@
+{
+  "schema": "grasshopper.browser-reconnect-observation/v1",
+  "contract_id": "EXAMPLE-NOT-EVIDENCE",
+  "captured_utc": "2026-10-08T20:00:06Z",
+  "collection_mode": "TEST_FIXTURE",
+  "source": {
+    "source_sha": "0000000000000000000000000000000000000000",
+    "node_identity": "NOT_PROVEN",
+    "transport": "noVNC-RFB-websocket",
+    "control_origin": "browser",
+    "session_id": "NOT_PROVEN"
+  },
+  "observation_only": true,
+  "reconnect_record": {
+    "path": "browser-reconnect-record.json",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "bytes": 1
+  }
+}

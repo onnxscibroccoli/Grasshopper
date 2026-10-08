@@ -16,6 +16,8 @@ This checklist is a resumable execution contract. **Every completed stage is a d
 - [ ] Never promote `TEST_FIXTURE` evidence to live acceptance or R2.
 - [ ] Treat an observed RFB operation as provenance, never as permission or proof that this adapter dispatched it.
 - [ ] A changed framebuffer proves only visible acknowledgement; require separate evidence for delivery, semantics and reconnect continuity.
+- [ ] Browser reconnect continuity requires an independently recorded, digest-bound same-session observation with advancing sequence, client-only disconnect and no guest restart.
+- [ ] A reconnect observation never proves input delivery, visible acknowledgement or semantic effect.
 
 ## Stage 0: Clean Cloud Android
 - [ ] Detect active environment.
