@@ -22,6 +22,8 @@ This path runs an ARM64 Android guest on the ARM64 OCI host. It still uses free 
 - Browser screen transport: websockify + noVNC with a per-session token.
 - Persistence: the extracted UTM disks remain in the state directory.
 
+The pinned upstream UTM archive is a full Android `user` build. Upstream's release build creates a `userdebug` recovery image separately, then selects `user` before producing the UTM VM archive and OTA package. The recovery image is not a full automation VM profile.
+
 The upstream `jqssun/android-lineage-qemu` project explicitly recommends the `arm64only` build for ARM64 Linux and documents QEMU execution with virtio-gpu and TCG when hardware acceleration is unavailable.
 
 ## Boot reliability
@@ -37,6 +39,8 @@ The ARM64 state is disposable until Stage 1 acceptance. The known-good legacy OC
 The AWS Helix Kali VM is independent and remains untouched.
 
 ## Acceptance boundary
+
+Before preparation or launch, `arm64-device.sh` applies a fail-closed image-profile admission check. The pinned `user` archive is admitted only when `CLOUD_ANDROID_ARM64_ALLOW_SETUP_GATED=1` explicitly selects interactive provisioning. That override does not prove normal-shell ADB: Setup Wizard must complete and ADB must be explicitly enabled and authorized. Unattended normal-shell automation instead requires a provenance-pinned full `userdebug` VM artifact and fresh acceptance evidence.
 
 The launcher is considered transport-ready only when all of these are proven live:
 

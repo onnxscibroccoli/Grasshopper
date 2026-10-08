@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 const script = fs.readFileSync(path.join(root, "scripts/cloud-android/arm64-device.sh"), "utf8");
@@ -37,4 +38,33 @@ test("ARM64 environment is explicitly OCI and TCG", () => {
   assert.equal(env.control.screen, true);
   assert.equal(env.control.input, true);
   assert.equal(env.control.adb, true);
+  assert.equal(env.control.adb_normal_shell, "conditional");
+  assert.equal(env.parameters.android_build_profile.variant, "user");
+  assert.equal(env.parameters.android_build_profile.normal_adb_shell, "requires_completed_setup_and_explicit_adb_enablement");
+  assert.equal(env.parameters.android_build_profile.automation_profile, "requires_provenance_pinned_full_userdebug_vm");
+});
+
+test("pinned Android 16 user archive blocks normal-shell automation by default", () => {
+  const result = spawnSync("bash", ["scripts/cloud-android/arm64-device.sh", "profile-admission"], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env },
+  });
+
+  assert.equal(result.status, 75);
+  assert.match(result.stderr, /ANDROID16_USER_BUILD_SETUP_GATED/);
+  assert.doesNotMatch(result.stdout, /AUTOMATION_READY/);
+});
+
+test("interactive provisioning override remains explicitly setup-gated", () => {
+  const result = spawnSync("bash", ["scripts/cloud-android/arm64-device.sh", "profile-admission"], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env, CLOUD_ANDROID_ARM64_ALLOW_SETUP_GATED: "1" },
+  });
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /PROFILE_ADMITTED=INTERACTIVE_SETUP_ONLY/);
+  assert.match(result.stdout, /NORMAL_ADB_SHELL=NOT_PROVEN/);
+  assert.doesNotMatch(result.stdout, /AUTOMATION_READY/);
 });
