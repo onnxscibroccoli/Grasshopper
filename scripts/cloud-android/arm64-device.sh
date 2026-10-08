@@ -10,6 +10,7 @@ CPUS="${CLOUD_ANDROID_ARM64_CPUS:-2}"
 VNC_PORT="${CLOUD_ANDROID_ARM64_VNC_PORT:-5906}"
 WS_PORT="${CLOUD_ANDROID_ARM64_WS_PORT:-6083}"
 ADB_PORT="${CLOUD_ANDROID_ARM64_ADB_PORT:-16555}"
+VNC_DISPLAY="${CLOUD_ANDROID_ARM64_VNC_DISPLAY:-6}"
 LISTEN_ADDR="${CLOUD_ANDROID_ARM64_LISTEN_ADDR:-127.0.0.1}"
 PUBLIC_BASE="${CLOUD_ANDROID_ARM64_PUBLIC_BASE_URL:-}"
 RELEASE="${CLOUD_ANDROID_ARM64_RELEASE:-v2026.09.17}"
@@ -92,6 +93,11 @@ start() {
     -v "$STATE_DIR:/state:Z" \
     -e CLOUD_ANDROID_MEMORY_MB="$MEMORY_MB" \
     -e CLOUD_ANDROID_CPUS="$CPUS" \
+    -e CLOUD_ANDROID_VNC_PORT="$VNC_PORT" \
+    -e CLOUD_ANDROID_WS_PORT="$WS_PORT" \
+    -e CLOUD_ANDROID_ADB_PORT="$ADB_PORT" \
+    -e CLOUD_ANDROID_LISTEN_ADDR="$LISTEN_ADDR" \
+    -e CLOUD_ANDROID_VNC_DISPLAY="$VNC_DISPLAY" \
     "$IMAGE" \
     sh -ec '
       apk add --no-cache qemu-system-aarch64 qemu-hw-display-virtio-gpu-pci websockify novnc >/dev/null
@@ -115,7 +121,7 @@ start() {
         -device usb-kbd,bus=xhci.0 \
         -device usb-tablet,bus=xhci.0 \
         -device virtio-gpu-pci \
-        -vnc "$LISTEN_ADDR:6" \
+        -vnc "$LISTEN_ADDR:$CLOUD_ANDROID_VNC_DISPLAY" \
         -serial file:/state/run/serial.log \
         -monitor unix:/state/run/mon.sock,server=on,wait=off \
         > /state/logs/qemu.log 2>&1 &
