@@ -12,8 +12,9 @@ test("ARM64 OCI launcher is architecture-native", () => {
   assert.match(script, /virtio-gpu-pci/);
   assert.match(script, /usb-kbd/);
   assert.match(script, /usb-tablet/);
-  // Regression (run 37711068890): startup.nsh keeps one backslash per
-  // separator on the same line as fs1:. Doubled separators fail the UEFI shell.
+  assert.match(script, /unzip -p "\$ARCHIVE" LineageOS_on_arm64\.utm\/Data\/efi_vars\.fd/);
+  // Regression (runs 37712357553, 37712570132): regex literals need \\ to match one backslash.
+  // One backslash per separator is required. Doubled separators fail the UEFI shell.
   assert.match(script, /fs1:\\EFI\\BOOT\\BOOTAA64\.EFI\n/);
   assert.doesNotMatch(script, /fs1:\\\\EFI\\\\BOOT\\\\BOOTAA64\.EFI/);
   assert.doesNotMatch(script, /qemu-system-x86_64/);

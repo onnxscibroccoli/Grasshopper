@@ -63,9 +63,13 @@ prepare() {
   [ -s "$VDB" ] || fail "missing ARM64 LineageOS vdb.qcow2"
 
   if [ ! -s "$EFI_VARS" ]; then
-    truncate -s 64M "$EFI_VARS"
+    unzip -p "$ARCHIVE" LineageOS_on_arm64.utm/Data/efi_vars.fd > "$EFI_VARS"
   fi
 
+  [ -s "$EFI_VARS" ] || fail "missing ARM64 EFI variables from upstream image"
+
+  # Regression (run 37712185139 / 37711068890): one backslash per separator.
+  # Doubled separators fail the UEFI shell. Do not drop this line.
   cat > "$STARTUP" <<'EOF'
 echo -off
 map -r
