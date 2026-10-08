@@ -1,0 +1,26 @@
+{
+  "schema": "grasshopper.rfb-observation/v1",
+  "contract_id": "EXAMPLE-NOT-EVIDENCE",
+  "captured_utc": "2026-10-08T19:00:00Z",
+  "collection_mode": "TEST_FIXTURE",
+  "source": {
+    "source_sha": "0000000000000000000000000000000000000000",
+    "node_identity": "NOT_PROVEN",
+    "transport": "RFB",
+    "control_origin": "workstation",
+    "session_id": "NOT_PROVEN"
+  },
+  "observed_sequence": 0,
+  "observed_operation_id": "OBSERVED_ONLY_NOT_DISPATCHED",
+  "input_observed_only": true,
+  "before_frame": {
+    "path": "before.frame",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "bytes": 1
+  },
+  "after_frame": {
+    "path": "after.frame",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "bytes": 1
+  }
+}

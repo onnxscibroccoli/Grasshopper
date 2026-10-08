@@ -1,7 +1,7 @@
 {
-  "contract_id": "ANDROID-CONTROL-EVIDENCE-20261008-10",
-  "previous_contract_id": "OCI-ARM64-USERDEBUG-CANDIDATE-SCHEMA-20261008-09",
-  "observed_utc": "2026-10-08T18:44:45Z",
+  "contract_id": "ANDROID-CONTROL-RFB-ADAPTER-20261008-11",
+  "previous_contract_id": "ANDROID-CONTROL-EVIDENCE-20261008-10",
+  "observed_utc": "2026-10-08T20:20:00Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -39,8 +39,21 @@
     "test_fixture_live_acceptance": false,
     "r2_closure": "PROHIBITED_BY_THIS_EVIDENCE_ALONE",
     "focused_tests": "6/6 PASS",
-    "combined_control_transport_tests": "9/9 PASS",
-    "full_repository_tests": "268/268 PASS"
+    "combined_control_transport_tests": "15/15 PASS",
+    "full_repository_tests": "274/274 PASS",
+    "rfb_observation_adapter": {
+      "script": "scripts/cloud-android/adapt-rfb-observation.mjs",
+      "input_format": "grasshopper.rfb-observation/v1",
+      "example": "docs/implementation/evidence/WORKSTATION_RFB_OBSERVATION_FORMAT.json",
+      "connects_or_dispatches": false,
+      "replays_observed_input": false,
+      "overwrite_existing_output": false,
+      "visible_acknowledgement_from_changed_frames": true,
+      "delivery": "NOT_PROVEN",
+      "semantic_effect": "NOT_PROVEN",
+      "reconnect_continuity": "NOT_PROVEN",
+      "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
+    }
   },
   "guest": {
     "pid": 1273533,
@@ -137,6 +150,7 @@
     "userdebug_builder_candidate_inventory": "PASS_NO_ELIGIBLE_NODE",
     "userdebug_builder_candidate_schema": "PASS_FAIL_CLOSED_TESTED",
     "provider_neutral_control_evidence": "PASS_REPOSITORY_TESTED_LIVE_NOT_PROVEN",
+    "workstation_rfb_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -155,5 +169,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Adapt the existing workstation and RFB observation path to emit the control evidence format without injecting new input or claiming live acceptance, then separately qualify browser and physical-Android transports."
+  "next_action": "Define a browser reconnect observation adapter that proves continuity only from independently recorded same-session and advancing-sequence artifacts, without connecting to or mutating the live guest."
 }
