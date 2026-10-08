@@ -1,7 +1,7 @@
 {
-  "contract_id": "ANDROID-CONTROL-PHYSICAL-RISH-20261008-13",
-  "previous_contract_id": "ANDROID-CONTROL-BROWSER-RECONNECT-20261008-12",
-  "observed_utc": "2026-10-08T21:45:52Z",
+  "contract_id": "ANDROID-CONTROL-EVIDENCE-BUNDLE-20261008-14",
+  "previous_contract_id": "ANDROID-CONTROL-PHYSICAL-RISH-20261008-13",
+  "observed_utc": "2026-10-08T22:55:00Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -38,9 +38,9 @@
     ],
     "test_fixture_live_acceptance": false,
     "r2_closure": "PROHIBITED_BY_THIS_EVIDENCE_ALONE",
-    "focused_tests": "9/9 PASS",
-    "combined_control_transport_tests": "18/18 PASS",
-    "full_repository_tests": "291/291 PASS",
+    "focused_tests": "10/10 PASS",
+    "combined_control_transport_tests": "28/28 PASS",
+    "full_repository_tests": "301/301 PASS",
     "rfb_observation_adapter": {
       "script": "scripts/cloud-android/adapt-rfb-observation.mjs",
       "input_format": "grasshopper.rfb-observation/v1",
@@ -86,6 +86,22 @@
       "replays_observed_input": false,
       "overwrite_existing_output": false,
       "all_control_gates": "NOT_PROVEN",
+      "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
+    },
+    "evidence_bundle_index": {
+      "schema": "grasshopper.android-control-evidence-bundle/v1",
+      "schema_file": "schemas/grasshopper-android-control-evidence-bundle-v1.schema.json",
+      "template": "docs/implementation/evidence/ANDROID_CONTROL_EVIDENCE_BUNDLE_TEMPLATE.json",
+      "verification_command": "npm run verify:android-control-evidence-bundle",
+      "required_origins": ["workstation", "browser", "physical_android"],
+      "exact_bytes_and_sha256_required": true,
+      "source_and_session_mixing": "REJECTED",
+      "node_or_transport_substitution": "REJECTED",
+      "test_fixture_promotion": "REJECTED",
+      "cross_origin_gate_aggregation": false,
+      "overall_status": "NOT_PROVEN",
+      "live_acceptance": false,
+      "r2": "NOT_PROVEN",
       "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
     }
   },
@@ -187,6 +203,7 @@
     "workstation_rfb_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "browser_reconnect_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "physical_android_rish_observation_adapter": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
+    "provider_neutral_evidence_bundle_index": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -205,5 +222,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Define a provider-neutral evidence-bundle index that composes workstation, browser and physical-Android records without allowing cross-transport evidence substitution."
+  "next_action": "Define a repository-only per-origin control-gap report from a verified bundle without dispatching actions, combining gates or promoting live acceptance."
 }

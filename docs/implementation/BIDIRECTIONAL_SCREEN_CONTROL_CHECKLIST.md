@@ -95,6 +95,7 @@ This checklist is a resumable execution contract. **Every completed stage is a d
 
 ## Stage 7: Continuous-development doorway
 - [ ] Record complete evidence bundle.
+  - Repository format and fail-closed index verification exist; live three-origin evidence is still missing.
 - [ ] Promote proven implementation.
 - [ ] Re-run legacy benchmark comparison.
 - [ ] Extract reusable core logic from deployment adapters.

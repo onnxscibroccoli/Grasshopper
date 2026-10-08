@@ -109,3 +109,14 @@ node scripts/cloud-android/adapt-physical-android-rish-observation.mjs \
 ```
 
 The input shapes are documented in `PHYSICAL_ANDROID_RISH_OBSERVATION_FORMAT.json` and `BROCCOLI_RISH_RECORD_FORMAT.json`. This script contains no Rish launcher and never contacts a phone, dispatches input or replays an observed operation. A wrapper-bound record is only provenance: delivery, visual acknowledgement, semantic effect, reconnect continuity, overall acceptance and R2 remain `NOT_PROVEN`. The canonical wrapper is not copied or modified here.
+
+### Provider-neutral evidence bundle index
+
+`verify-control-evidence-bundle.mjs` verifies an index over exactly one workstation, browser and physical-Android control-evidence document. Each entry binds the document's exact byte count and SHA-256 plus its source SHA, node, transport, origin and session.
+
+```sh
+npm run verify:android-control-evidence-bundle
+node scripts/cloud-android/verify-control-evidence-bundle.mjs /absolute/evidence/bundle.json
+```
+
+The verifier evaluates each embedded document with the ordinary control-evidence verifier but preserves the three gate maps independently. It rejects duplicate or missing origins, source/session mixing, node or transport substitution, missing/tampered artifacts and collection-mode relabeling. It never dispatches, connects or replays. Even a valid `LIVE` index reports overall status and R2 as `NOT_PROVEN`; separate end-to-end acceptance must close those gates.

@@ -1,0 +1,36 @@
+{
+  "schema": "grasshopper.android-control-evidence-bundle/v1",
+  "contract_id": "TEMPLATE-CONTROL-BUNDLE-NOT-LIVE",
+  "captured_utc": "2026-10-08T22:05:00Z",
+  "collection_mode": "TEST_FIXTURE",
+  "binding": {
+    "source_sha": "0000000000000000000000000000000000000000",
+    "session_id": "NOT_PROVEN_SESSION"
+  },
+  "entries": [
+    {
+      "origin": "workstation",
+      "node_identity": "NOT_PROVEN_WORKSTATION",
+      "transport": "RFB",
+      "session_id": "NOT_PROVEN_SESSION",
+      "artifact": { "path": "ANDROID_CONTROL_BUNDLE_WORKSTATION_TEMPLATE.json", "sha256": "a49267cdf21261bdf0d8f0008f55afd6475cb36fd16d8a183e16c66f33fa0f76", "bytes": 1068 }
+    },
+    {
+      "origin": "browser",
+      "node_identity": "NOT_PROVEN_BROWSER",
+      "transport": "noVNC-websocket",
+      "session_id": "NOT_PROVEN_SESSION",
+      "artifact": { "path": "ANDROID_CONTROL_BUNDLE_BROWSER_TEMPLATE.json", "sha256": "9de4835223a6b4f008997b62f897837badafe2b883ecdd302e34cd70b8c3b831", "bytes": 1068 }
+    },
+    {
+      "origin": "physical_android",
+      "node_identity": "NOT_PROVEN_PHYSICAL_ANDROID",
+      "transport": "broccoli-rish-observation",
+      "session_id": "NOT_PROVEN_SESSION",
+      "artifact": { "path": "ANDROID_CONTROL_BUNDLE_PHYSICAL_ANDROID_TEMPLATE.json", "sha256": "0d9dc059f0934d8802af7d6e48d04b4e3c21f77d72a2e7bc3f5edad861abb74a", "bytes": 1105 }
+    }
+  ],
+  "declared_status": "NOT_PROVEN",
+  "live_acceptance": false,
+  "r2": "NOT_PROVEN"
+}
