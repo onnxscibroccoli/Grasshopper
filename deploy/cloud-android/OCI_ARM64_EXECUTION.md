@@ -22,7 +22,7 @@ This path runs an ARM64 Android guest on the ARM64 OCI host. It still uses free 
 - Browser screen transport: websockify + noVNC with a per-session token.
 - Persistence: the extracted UTM disks remain in the state directory.
 
-The upstream project explicitly recommends the `arm64only` build for ARM64 Linux and documents QEMU execution with virtio-gpu and TCG when hardware acceleration is unavailable. urlLineageOS for QEMUhttps://github.com/jqssun/android-lineage-qemu
+The upstream `jqssun/android-lineage-qemu` project explicitly recommends the `arm64only` build for ARM64 Linux and documents QEMU execution with virtio-gpu and TCG when hardware acceleration is unavailable.
 
 ## Boot reliability
 
