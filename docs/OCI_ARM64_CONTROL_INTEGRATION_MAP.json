@@ -1,0 +1,35 @@
+{
+  "contract_id": "OCI-ARM64-ADB-20261008-01",
+  "observed_utc": "2026-10-08T05:49:26Z",
+  "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
+  "source_pr": 168,
+  "node": {
+    "name": "grasshopper-workstation",
+    "architecture": "aarch64",
+    "shape": "VM.Standard.A1.Flex",
+    "transport": "RDC",
+    "device_id": "0852e6f4-2507-4d0f-9d62-f6eda8cdd169"
+  },
+  "guest": {
+    "pid": 1123620,
+    "started_utc": "2026-10-08T01:37:50Z",
+    "vcpus": 2,
+    "memory_mib": 2048,
+    "restarted": false
+  },
+  "acceptance": {
+    "adb_handshake": "PASS_DEVICE",
+    "adb_shell": "FAIL_CLOSED",
+    "boot_completed": "NOT_PROVEN",
+    "framebuffer": "PASS_1280x800_SETUP_WIZARD_ANR",
+    "input": "NOT_ATTEMPTED_BOOT_GATE",
+    "browser_reconnect": "NOT_PROVEN",
+    "bidirectional_control": "NOT_PROVEN",
+    "r2": "NOT_PROVEN"
+  },
+  "evidence": {
+    "framebuffer_path": "/srv/grasshopper/android/development/arm64-observation-20261008/direct-0548.png",
+    "sha256": "2ed8bfb826576a1351d07ccada416a2eb0a299d0d6bcbffc8cab1c5c10e5c1d3"
+  },
+  "next_action": "Diagnose adbd shell closure and Setup Wizard ANR without restarting the original guest or disabling access controls."
+}
