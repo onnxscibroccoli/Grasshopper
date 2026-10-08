@@ -14,6 +14,8 @@ This checklist is a resumable execution contract. **Every completed stage is a d
 - [ ] Human recovery/control remains available throughout.
 - [ ] Record delivery, visible acknowledgement, semantic effect and reconnect continuity as separate `grasshopper.android-control-evidence/v1` gates.
 - [ ] Never promote `TEST_FIXTURE` evidence to live acceptance or R2.
+- [ ] Treat an observed RFB operation as provenance, never as permission or proof that this adapter dispatched it.
+- [ ] A changed framebuffer proves only visible acknowledgement; require separate evidence for delivery, semantics and reconnect continuity.
 
 ## Stage 0: Clean Cloud Android
 - [ ] Detect active environment.

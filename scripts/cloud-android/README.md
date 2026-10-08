@@ -73,3 +73,15 @@ node scripts/cloud-android/verify-control-evidence.mjs /absolute/evidence/contro
 ```
 
 Each PASS gate must bind its own artifact bytes and SHA-256. Delivery proves only the original sequence dispatch. Distinct before/after frames prove only a visible acknowledgement. Semantic effect requires a separately stated expected and observed result. Reconnect continuity requires the same session identity, advancing sequence, client-only disconnect and no guest restart. A `TEST_FIXTURE` bundle always evaluates to `NOT_PROVEN`, even if every internal gate passes. This verifier cannot independently close R2.
+
+### Workstation RFB observation adapter
+
+`adapt-rfb-observation.mjs` consumes an observation-only manifest plus existing frame files from one evidence directory. It never connects to RFB, injects input or replays the operation recorded in the manifest.
+
+```sh
+node scripts/cloud-android/adapt-rfb-observation.mjs \
+  /absolute/evidence/rfb-observation.json \
+  /absolute/evidence/control-evidence.json
+```
+
+The input shape is illustrated by `docs/implementation/evidence/WORKSTATION_RFB_OBSERVATION_FORMAT.json`. The adapter verifies both frame byte counts and SHA-256 digests and refuses to overwrite an existing output. Different frame hashes produce only `visible_acknowledgement=PASS`. Because an observed operation is not proof of original dispatch, delivery, semantic effect and reconnect continuity remain `NOT_PROVEN`; so do overall acceptance and R2. An unchanged frame remains `NOT_PROVEN` rather than becoming a failure or inferred acknowledgement.
