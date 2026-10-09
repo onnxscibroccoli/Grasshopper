@@ -98,6 +98,7 @@ This checklist is a resumable execution contract. **Every completed stage is a d
   - Repository format and fail-closed index verification exist; live three-origin evidence is still missing.
   - Per-origin gap reporting exists; it does not dispatch collection or aggregate gates.
   - Time-bounded acquisition requirements exist; no live collection is authorized or performed.
+  - Receipt verification binds independently supplied bytes to an unexpired process/source/session/origin contract; bound bytes are not gate PASS evidence.
 - [ ] Promote proven implementation.
 - [ ] Re-run legacy benchmark comparison.
 - [ ] Extract reusable core logic from deployment adapters.
