@@ -18,7 +18,19 @@ trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 mkdir -p "$TMP/source"
 git archive --format=tar "$COMMIT" | tar -xf - -C "$TMP/source"
 [ ! -e "$TMP/source/.state" ] || { echo "source archive unexpectedly contains .state" >&2; exit 1; }
-if find "$TMP/source" -type f \( -name '*.pem' -o -name '*.key' -o -name '*.p12' \) -print -quit | grep -q .; then
+# Regression (run 37885707035): a checked-in Ed25519 PUBLIC KEY fixture
+# (docs/implementation/evidence/OCI_NODE_IDENTITY_ATTESTATION_PUBLIC_KEY.pem)
+# matched the previous *.pem name gate. Private-key filenames and PEM headers
+# still fail closed; public-key PEM fixtures are allowed.
+if find "$TMP/source" -type f \( -name '*.key' -o -name '*.p12' \) -print -quit | grep -q .; then
+  echo "source archive contains private-key material" >&2
+  exit 1
+fi
+if find "$TMP/source" -type f -name '*.pem' -print | while IFS= read -r pem; do
+  if grep -E -q 'BEGIN (ENCRYPTED |OPENSSH |RSA |EC |DSA )?PRIVATE KEY' "$pem"; then
+    printf '%s\n' "$pem"
+  fi
+done | grep -q .; then
   echo "source archive contains private-key material" >&2
   exit 1
 fi
