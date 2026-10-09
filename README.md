@@ -151,3 +151,5 @@ The [control evidence bundle schema](schemas/grasshopper-android-control-evidenc
 `npm run verify:android-control-acquisition-requirements` validates a non-executable acquisition-requirements manifest against the exact gap report and original bundle. The manifest binds a freshly observed guest PID/start/fingerprint, expires within 20 minutes, and repeats each origin's exact missing gates and evidence identity. It never authorizes collection, live acceptance, or R2.
 
 `npm run verify:android-control-acquisition-receipt` verifies independently supplied artifact bytes against that still-valid manifest. It revalidates the complete requirements/gap/bundle chain, keeps workstation, browser and physical-Android receipts separate, and reports only `ARTIFACT_BOUND`; it cannot dispatch collection, upgrade a control gate to PASS, claim live acceptance or close R2.
+
+`npm run report:android-control-acquisition-coverage` compares a verified receipt with its manifest and reports bound versus still-uncollected gates for each origin. Even complete artifact coverage is explicitly not acceptance and remains `NOT_PROVEN`.
