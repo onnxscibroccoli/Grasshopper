@@ -1,7 +1,7 @@
 {
-  "contract_id": "ANDROID-CONTROL-ACQUISITION-RECEIPT-20261008-17",
-  "previous_contract_id": "ANDROID-CONTROL-ACQUISITION-REQUIREMENTS-20261008-16",
-  "observed_utc": "2026-10-09T01:50:00Z",
+  "contract_id": "ANDROID-CONTROL-ACQUISITION-COVERAGE-20261008-18",
+  "previous_contract_id": "ANDROID-CONTROL-ACQUISITION-RECEIPT-20261008-17",
+  "observed_utc": "2026-10-09T02:47:00Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -160,6 +160,25 @@
       "live_acceptance": false,
       "r2": "NOT_PROVEN",
       "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
+    },
+    "acquisition_coverage_report": {
+      "schema": "grasshopper.android-control-acquisition-coverage/v1",
+      "script": "scripts/cloud-android/report-control-acquisition-coverage.mjs",
+      "verification_command": "npm run report:android-control-acquisition-coverage",
+      "receipt_requirements_gap_bundle_chain_verified": true,
+      "source_session_process_artifact_bindings_retained": true,
+      "per_origin_coverage_only": true,
+      "cross_origin_equivalence": "NOT_INFERRED",
+      "bound_gate_state": "ARTIFACT_BOUND_NOT_ACCEPTANCE",
+      "missing_gate_state": "NOT_COLLECTED",
+      "complete_coverage_status": "COMPLETE_ARTIFACT_BINDING_NOT_ACCEPTANCE",
+      "reporter_dispatches_or_connects": false,
+      "focused_tests": "9/9 PASS",
+      "combined_coverage_receipt_requirements_gap_bundle_tests": "48/48 PASS",
+      "full_repository_tests": "339/339 PASS",
+      "live_acceptance": false,
+      "r2": "NOT_PROVEN",
+      "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
     }
   },
   "guest": {
@@ -264,6 +283,7 @@
     "per_origin_control_gap_report": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "control_acquisition_requirements": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "control_acquisition_receipt": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
+    "control_acquisition_coverage_report": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -282,5 +302,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Define a repository-only acquisition-coverage report that lists still-missing gates per origin from a verified receipt without interpreting bound bytes as acceptance."
+  "next_action": "Perform identity-first read-only OCI requalification and issue fresh non-executable requirements only if current source, guest process and session identity are proven without mutation."
 }

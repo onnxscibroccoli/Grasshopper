@@ -164,3 +164,21 @@ node scripts/cloud-android/verify-control-acquisition-receipt.mjs \
 The verifier first revalidates the exact requirements bytes and their complete gap-report/bundle chain at the evaluation time. It then requires the same source, session and guest-process fingerprint, checks that collection occurred inside the manifest window, retains each origin's node and transport, and verifies every received artifact's byte count and SHA-256 inside the receipt directory. Duplicate gates, cross-origin substitutions, path traversal, expired requirements and `TEST_FIXTURE` relabeling fail closed.
 
 A valid entry is reported only as `ARTIFACT_BOUND`. The receipt verifier never connects, dispatches, injects, replays, interprets semantic success or upgrades a control gate to PASS. Live acceptance and R2 remain `NOT_PROVEN`.
+
+### Acquisition coverage report
+
+`report-control-acquisition-coverage.mjs` consumes the same verified receipt chain and deterministically compares its entries with the requested gates:
+
+```sh
+npm run report:android-control-acquisition-coverage
+node scripts/cloud-android/report-control-acquisition-coverage.mjs \
+  /absolute/evidence/receipt.json \
+  /absolute/evidence/requirements.json \
+  /absolute/evidence/gap-report.json \
+  /absolute/evidence/bundle.json \
+  --at 2026-10-09T00:35:00Z
+```
+
+The report preserves source, session, guest-process, node, transport and artifact identities. For each origin it lists requested gates, received artifact bindings and still-uncollected gates. Bound entries are labeled `ARTIFACT_BOUND_NOT_ACCEPTANCE`; missing entries are `NOT_COLLECTED`. One origin can never satisfy another.
+
+Complete binding produces `COMPLETE_ARTIFACT_BINDING_NOT_ACCEPTANCE`, not PASS. The reporter contains no remediation command or action, performs no connection or replay, and keeps overall status and R2 `NOT_PROVEN`.
