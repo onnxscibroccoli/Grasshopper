@@ -18,6 +18,9 @@ trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 mkdir -p "$TMP/source"
 git archive --format=tar "$COMMIT" | tar -xf - -C "$TMP/source"
 [ ! -e "$TMP/source/.state" ] || { echo "source archive unexpectedly contains .state" >&2; exit 1; }
+# Regression (run 37885707035): do not package public-key fixtures as *.pem.
+# The OCI node-identity trust anchor is OCI_NODE_IDENTITY_ATTESTATION_PUBLIC_KEY.pub.
+# *.pem, *.key, and *.p12 remain fail-closed private-key material.
 if find "$TMP/source" -type f \( -name '*.pem' -o -name '*.key' -o -name '*.p12' \) -print -quit | grep -q .; then
   echo "source archive contains private-key material" >&2
   exit 1

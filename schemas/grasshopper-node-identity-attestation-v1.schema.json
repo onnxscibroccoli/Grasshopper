@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grasshopper.invalid/schemas/node-identity-attestation-v1.schema.json",
+  "title": "Grasshopper signed non-executable node identity attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "contract_id", "collection_mode", "issued_utc", "claims", "provenance", "signature", "execution_mode", "shell_required", "identity_qualified", "live_acceptance", "r2"],
+  "properties": {
+    "schema": { "const": "grasshopper.node-identity-attestation/v1" },
+    "contract_id": { "type": "string", "minLength": 1 },
+    "collection_mode": { "enum": ["LIVE", "TEST_FIXTURE"] },
+    "issued_utc": { "type": "string", "format": "date-time" },
+    "claims": { "$ref": "#/$defs/artifact" },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_kind", "source_uri", "acquisition_boundary", "collector_sha256"],
+      "properties": {
+        "source_kind": { "const": "OCI_INSTANCE_METADATA_V2" },
+        "source_uri": { "const": "http://169.254.169.254/opc/v2/instance/" },
+        "acquisition_boundary": { "const": "PREPROVISIONED_READ_ONLY_ATTESTOR" },
+        "collector_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "public_key_path", "public_key_sha256", "value_base64"],
+      "properties": {
+        "algorithm": { "const": "ED25519" },
+        "public_key_path": { "type": "string", "minLength": 1 },
+        "public_key_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "value_base64": { "type": "string", "minLength": 1 }
+      }
+    },
+    "execution_mode": { "const": "NON_EXECUTABLE_VERIFICATION" },
+    "shell_required": { "const": false },
+    "identity_qualified": { "const": false },
+    "live_acceptance": { "const": false },
+    "r2": { "const": "NOT_PROVEN" }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "bytes", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}
