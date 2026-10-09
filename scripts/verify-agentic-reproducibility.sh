@@ -18,6 +18,8 @@ trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 mkdir -p "$TMP/source"
 git archive --format=tar "$COMMIT" | tar -xf - -C "$TMP/source"
 [ ! -e "$TMP/source/.state" ] || { echo "source archive unexpectedly contains .state" >&2; exit 1; }
+# Regression (actions run 37885707040): this name gate treats *.pem, *.key, and *.p12 as private-key material.
+# Public attestation fixtures must use a non-matching suffix such as .pub. Do not weaken the gate to allow *.pem.
 if find "$TMP/source" -type f \( -name '*.pem' -o -name '*.key' -o -name '*.p12' \) -print -quit | grep -q .; then
   echo "source archive contains private-key material" >&2
   exit 1
