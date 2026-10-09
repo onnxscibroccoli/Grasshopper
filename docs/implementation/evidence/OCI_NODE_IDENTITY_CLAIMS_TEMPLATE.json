@@ -1,0 +1,13 @@
+{
+  "schema": "grasshopper.oci-node-identity-claims/v1",
+  "collection_mode": "TEST_FIXTURE",
+  "observed_utc": "2026-10-09T04:30:00Z",
+  "expires_utc": "2026-10-09T04:45:00Z",
+  "rdc_device_id": "0852e6f4-2507-4d0f-9d62-f6eda8cdd169",
+  "hostname": "grasshopper-workstation",
+  "architecture": "aarch64",
+  "provider": "OCI",
+  "shape": "VM.Standard.A1.Flex",
+  "region": "us-ashburn-1",
+  "instance_id": "ocid1.instance.oc1.iad.syntheticfixture"
+}

@@ -188,3 +188,13 @@ Complete binding produces `COMPLETE_ARTIFACT_BINDING_NOT_ACCEPTANCE`, not PASS. 
 `docs/OCI_ARM64_READONLY_REQUALIFICATION_2026-10-09.json` records the fail-closed pre-shell identity gate. RDC device metadata and non-shell file reads proved the expected device ID, hostname and ARM64 architecture, but the permitted observations did not prove OCI provider or `VM.Standard.A1.Flex`: cloud-init identity was permission-blocked and DMI reported only a generic KVM product.
 
 The contract therefore performed no shell action and did not inspect source, processes, containers, listeners or sessions. It issued no LIVE acquisition requirements and did not contact ADB/RFB or mutate a guest. A future requalification must begin from device selection and obtain provider plus shape from a non-shell, least-privilege attested source before crossing the shell boundary.
+
+### Signed OCI node-identity attestation
+
+`verify-oci-node-identity-attestation.mjs` verifies a non-executable, detached Ed25519 signature over exact OCI identity claim bytes. The trust fingerprint and expected RDC device, hostname, architecture, provider and shape are supplied independently on the command line rather than trusted from the manifest. Claims must identify OCI Instance Metadata v2 provenance, be fresh at issue time, expire within twenty minutes of observation, and reside with the manifest and public key in one evidence directory.
+
+```sh
+npm run verify:oci-node-identity-attestation
+```
+
+The checked-in template is deliberately `TEST_FIXTURE` and returns `TEST_FIXTURE_NOT_QUALIFIED`. A valid LIVE signature may qualify only the node identity boundary; it cannot authorize collection, prove a guest, close live acceptance or close R2. The verifier performs no metadata request, shell command, connection or mutation. A deployment must provision the attestor through a separately trusted bootstrap and pin the public-key fingerprint out of band; an unqualified node cannot manufacture its own trusted identity proof.

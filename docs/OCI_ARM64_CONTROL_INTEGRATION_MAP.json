@@ -1,7 +1,7 @@
 {
-  "contract_id": "OCI-ARM64-READONLY-REQUALIFICATION-20261009-19",
-  "previous_contract_id": "ANDROID-CONTROL-ACQUISITION-COVERAGE-20261008-18",
-  "observed_utc": "2026-10-09T03:44:00Z",
+  "contract_id": "OCI-NODE-IDENTITY-ATTESTATION-20261009-20",
+  "previous_contract_id": "OCI-ARM64-READONLY-REQUALIFICATION-20261009-19",
+  "observed_utc": "2026-10-09T04:48:17Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -14,9 +14,9 @@
   "contract_execution": {
     "node": "isolated-local-worktree",
     "architecture": "x86_64",
-    "transport": "LOCAL_REPOSITORY_AND_RDC_NON_SHELL_READ_ONLY",
+    "transport": "LOCAL_REPOSITORY",
     "lease_minutes": 20,
-    "remote_observation_performed": true,
+    "remote_observation_performed": false,
     "remote_mutation_performed": false,
     "recovery": "REVERT_CONTRACT_COMMIT"
   },
@@ -37,6 +37,29 @@
     "remote_mutations": 0,
     "live_requirements_issued": false,
     "deferred_current_process_identity": true
+  },
+  "node_identity_attestation": {
+    "schema": "grasshopper.node-identity-attestation/v1",
+    "schema_file": "schemas/grasshopper-node-identity-attestation-v1.schema.json",
+    "verifier": "scripts/cloud-android/verify-oci-node-identity-attestation.mjs",
+    "template": "docs/implementation/evidence/OCI_NODE_IDENTITY_ATTESTATION_TEMPLATE.json",
+    "verification_command": "npm run verify:oci-node-identity-attestation",
+    "signature_algorithm": "ED25519",
+    "trusted_key_fingerprint_required_out_of_band": true,
+    "claims_bytes_and_sha256_bound": true,
+    "expected_identity_cli_bound": ["rdc_device_id", "hostname", "architecture", "provider", "shape"],
+    "provenance": "OCI_INSTANCE_METADATA_V2",
+    "maximum_observation_age_at_issue_minutes": 5,
+    "maximum_validity_from_observation_minutes": 20,
+    "shell_required": false,
+    "collection_authorized": false,
+    "template_identity_status": "TEST_FIXTURE_NOT_QUALIFIED",
+    "live_positive_path": "PASS_SYNTHETIC_TEST_ONLY",
+    "focused_tests": "8/8 PASS",
+    "live_attestation_collected": false,
+    "live_identity_qualified": false,
+    "live_acceptance": false,
+    "r2": "NOT_PROVEN"
   },
   "control_evidence_contract": {
     "schema": "grasshopper.android-control-evidence/v1",
@@ -302,6 +325,7 @@
     "control_acquisition_requirements": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "control_acquisition_receipt": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "control_acquisition_coverage_report": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
+    "oci_node_identity_attestation": "PASS_REPOSITORY_TESTED_LIVE_NOT_COLLECTED",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -320,5 +344,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Expose a non-shell least-privilege attested OCI provider-and-shape identity source, then repeat identity-first read-only requalification in a new bounded lease; do not query processes or issue LIVE requirements before that gate passes."
+  "next_action": "Provision the read-only attestor only through the canonical clean-host bootstrap or another already-verified administrative boundary, pin its public-key fingerprint out of band, and collect a fresh signed LIVE OCI identity artifact; do not use the unqualified RDC shell to create its own trust proof."
 }

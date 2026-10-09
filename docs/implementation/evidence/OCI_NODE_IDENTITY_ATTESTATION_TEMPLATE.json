@@ -1,0 +1,28 @@
+{
+  "schema": "grasshopper.node-identity-attestation/v1",
+  "contract_id": "TEST-OCI-NODE-IDENTITY-ATTESTATION",
+  "collection_mode": "TEST_FIXTURE",
+  "issued_utc": "2026-10-09T04:31:00Z",
+  "claims": {
+    "path": "OCI_NODE_IDENTITY_CLAIMS_TEMPLATE.json",
+    "bytes": 450,
+    "sha256": "c98fdcec54813353d2f9a9f23f4952e0783f1655d31dc8349dce07a5cbf098e9"
+  },
+  "provenance": {
+    "source_kind": "OCI_INSTANCE_METADATA_V2",
+    "source_uri": "http://169.254.169.254/opc/v2/instance/",
+    "acquisition_boundary": "PREPROVISIONED_READ_ONLY_ATTESTOR",
+    "collector_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "signature": {
+    "algorithm": "ED25519",
+    "public_key_path": "OCI_NODE_IDENTITY_ATTESTATION_PUBLIC_KEY.pem",
+    "public_key_sha256": "88c52f33069c9c3acced672463d637fd59d7d6384f6d52cc18057b51740706dd",
+    "value_base64": "SOW6l57C05kQOLnC3hvmzz78qbxHm94IRXsce/xFasfqylyRkKPKo0F8CRj91K2JewyhCLYJlTbHZ+ihI87OAw=="
+  },
+  "execution_mode": "NON_EXECUTABLE_VERIFICATION",
+  "shell_required": false,
+  "identity_qualified": false,
+  "live_acceptance": false,
+  "r2": "NOT_PROVEN"
+}
