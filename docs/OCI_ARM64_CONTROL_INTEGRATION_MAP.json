@@ -1,7 +1,7 @@
 {
-  "contract_id": "ANDROID-CONTROL-ACQUISITION-REQUIREMENTS-20261008-16",
-  "previous_contract_id": "ANDROID-CONTROL-GAP-REPORT-20261008-15",
-  "observed_utc": "2026-10-09T00:45:00Z",
+  "contract_id": "ANDROID-CONTROL-ACQUISITION-RECEIPT-20261008-17",
+  "previous_contract_id": "ANDROID-CONTROL-ACQUISITION-REQUIREMENTS-20261008-16",
+  "observed_utc": "2026-10-09T01:50:00Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -139,6 +139,27 @@
       "live_acceptance": false,
       "r2": "NOT_PROVEN",
       "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
+    },
+    "acquisition_receipt": {
+      "schema": "grasshopper.android-control-acquisition-receipt/v1",
+      "schema_file": "schemas/grasshopper-android-control-acquisition-receipt-v1.schema.json",
+      "script": "scripts/cloud-android/verify-control-acquisition-receipt.mjs",
+      "template": "docs/implementation/evidence/ANDROID_CONTROL_ACQUISITION_RECEIPT_TEMPLATE.json",
+      "verification_command": "npm run verify:android-control-acquisition-receipt",
+      "requirements_chain_revalidated": true,
+      "guest_process_binding": ["node_identity", "pid", "started_utc", "observed_utc", "fingerprint_sha256"],
+      "per_origin_node_transport_session_binding": true,
+      "received_artifact_bytes_and_sha256_required": true,
+      "duplicate_or_cross_origin_gate_substitution": "REJECTED",
+      "artifact_path_escape": "REJECTED",
+      "verifier_dispatches_or_connects": false,
+      "received_entry_status": "ARTIFACT_BOUND_NOT_GATE_PASS",
+      "focused_tests": "12/12 PASS",
+      "combined_receipt_requirements_gap_bundle_tests": "39/39 PASS",
+      "full_repository_tests": "330/330 PASS",
+      "live_acceptance": false,
+      "r2": "NOT_PROVEN",
+      "live_execution": "NOT_PERFORMED_REPOSITORY_ONLY"
     }
   },
   "guest": {
@@ -242,6 +263,7 @@
     "provider_neutral_evidence_bundle_index": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "per_origin_control_gap_report": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "control_acquisition_requirements": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
+    "control_acquisition_receipt": "PASS_REPOSITORY_TESTED_LIVE_NOT_RUN",
     "live_guest_continuity": "NOT_PROVEN_EXTERNAL_PROCESS_REPLACEMENT",
     "normal_adb_shell": "NOT_PROVEN",
     "r2": "NOT_PROVEN"
@@ -260,5 +282,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Define a repository-only acquisition-receipt verifier that binds independently collected artifacts to an unexpired requirements manifest without adding a dispatcher."
+  "next_action": "Define a repository-only acquisition-coverage report that lists still-missing gates per origin from a verified receipt without interpreting bound bytes as acceptance."
 }

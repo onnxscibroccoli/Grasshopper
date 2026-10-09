@@ -146,3 +146,21 @@ node scripts/cloud-android/verify-control-acquisition-requirements.mjs \
 ```
 
 Verification re-generates the gap report from the bundle, so a digest-valid but substituted report still fails. Source/session and every origin's node, transport, evidence digest and missing gates must match. The guest-process binding includes node, PID, start time, observation time and fingerprint; observation may be at most five minutes old when issued, and expiry may be at most twenty minutes after observation. The schema prohibits undeclared execution fields and pins `collection_authorized=false`, live acceptance false and R2 `NOT_PROVEN`. This is a requirements artifact, not a collector or dispatcher.
+
+### Acquisition artifact receipt
+
+`verify-control-acquisition-receipt.mjs` verifies bytes supplied by an independent collection boundary without operating that boundary:
+
+```sh
+npm run verify:android-control-acquisition-receipt
+node scripts/cloud-android/verify-control-acquisition-receipt.mjs \
+  /absolute/evidence/receipt.json \
+  /absolute/evidence/requirements.json \
+  /absolute/evidence/gap-report.json \
+  /absolute/evidence/bundle.json \
+  --at 2026-10-09T00:35:00Z
+```
+
+The verifier first revalidates the exact requirements bytes and their complete gap-report/bundle chain at the evaluation time. It then requires the same source, session and guest-process fingerprint, checks that collection occurred inside the manifest window, retains each origin's node and transport, and verifies every received artifact's byte count and SHA-256 inside the receipt directory. Duplicate gates, cross-origin substitutions, path traversal, expired requirements and `TEST_FIXTURE` relabeling fail closed.
+
+A valid entry is reported only as `ARTIFACT_BOUND`. The receipt verifier never connects, dispatches, injects, replays, interprets semantic success or upgrades a control gate to PASS. Live acceptance and R2 remain `NOT_PROVEN`.

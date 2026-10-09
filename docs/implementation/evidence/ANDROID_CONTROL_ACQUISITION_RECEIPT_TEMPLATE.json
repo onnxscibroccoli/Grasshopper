@@ -1,0 +1,76 @@
+{
+  "schema": "grasshopper.android-control-acquisition-receipt/v1",
+  "contract_id": "TEMPLATE-ACQUISITION-RECEIPT-NOT-LIVE",
+  "collection_mode": "TEST_FIXTURE",
+  "collected_utc": "2026-10-09T00:34:00Z",
+  "requirements": {
+    "path": "ANDROID_CONTROL_ACQUISITION_REQUIREMENTS_TEMPLATE.json",
+    "sha256": "2239374b700a7930f6ce750250277cef12195629dadceb639b3814f3e1d41758",
+    "bytes": 2099
+  },
+  "binding": {
+    "source_sha": "0000000000000000000000000000000000000000",
+    "session_id": "NOT_PROVEN_SESSION"
+  },
+  "guest_process": {
+    "node_identity": "NOT_PROVEN_FIXTURE_NODE",
+    "pid": 4242,
+    "started_utc": "2026-10-09T00:00:00Z",
+    "observed_utc": "2026-10-09T00:31:00Z",
+    "fingerprint_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "origins": [
+    {
+      "origin": "workstation",
+      "node_identity": "NOT_PROVEN_WORKSTATION",
+      "transport": "RFB",
+      "session_id": "NOT_PROVEN_SESSION",
+      "entries": [
+        {
+          "gate": "delivery",
+          "artifact": {
+            "path": "ANDROID_CONTROL_BUNDLE_WORKSTATION_TEMPLATE.json",
+            "sha256": "a49267cdf21261bdf0d8f0008f55afd6475cb36fd16d8a183e16c66f33fa0f76",
+            "bytes": 1068
+          }
+        }
+      ]
+    },
+    {
+      "origin": "browser",
+      "node_identity": "NOT_PROVEN_BROWSER",
+      "transport": "noVNC-websocket",
+      "session_id": "NOT_PROVEN_SESSION",
+      "entries": [
+        {
+          "gate": "delivery",
+          "artifact": {
+            "path": "ANDROID_CONTROL_BUNDLE_BROWSER_TEMPLATE.json",
+            "sha256": "9de4835223a6b4f008997b62f897837badafe2b883ecdd302e34cd70b8c3b831",
+            "bytes": 1068
+          }
+        }
+      ]
+    },
+    {
+      "origin": "physical_android",
+      "node_identity": "NOT_PROVEN_PHYSICAL_ANDROID",
+      "transport": "broccoli-rish-observation",
+      "session_id": "NOT_PROVEN_SESSION",
+      "entries": [
+        {
+          "gate": "delivery",
+          "artifact": {
+            "path": "ANDROID_CONTROL_BUNDLE_PHYSICAL_ANDROID_TEMPLATE.json",
+            "sha256": "0d9dc059f0934d8802af7d6e48d04b4e3c21f77d72a2e7bc3f5edad861abb74a",
+            "bytes": 1105
+          }
+        }
+      ]
+    }
+  ],
+  "verification_mode": "RECEIPT_ONLY",
+  "verifier_dispatches_or_connects": false,
+  "live_acceptance": false,
+  "r2": "NOT_PROVEN"
+}
