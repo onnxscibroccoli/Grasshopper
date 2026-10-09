@@ -182,3 +182,9 @@ node scripts/cloud-android/report-control-acquisition-coverage.mjs \
 The report preserves source, session, guest-process, node, transport and artifact identities. For each origin it lists requested gates, received artifact bindings and still-uncollected gates. Bound entries are labeled `ARTIFACT_BOUND_NOT_ACCEPTANCE`; missing entries are `NOT_COLLECTED`. One origin can never satisfy another.
 
 Complete binding produces `COMPLETE_ARTIFACT_BINDING_NOT_ACCEPTANCE`, not PASS. The reporter contains no remediation command or action, performs no connection or replay, and keeps overall status and R2 `NOT_PROVEN`.
+
+### OCI identity-first read-only requalification
+
+`docs/OCI_ARM64_READONLY_REQUALIFICATION_2026-10-09.json` records the fail-closed pre-shell identity gate. RDC device metadata and non-shell file reads proved the expected device ID, hostname and ARM64 architecture, but the permitted observations did not prove OCI provider or `VM.Standard.A1.Flex`: cloud-init identity was permission-blocked and DMI reported only a generic KVM product.
+
+The contract therefore performed no shell action and did not inspect source, processes, containers, listeners or sessions. It issued no LIVE acquisition requirements and did not contact ADB/RFB or mutate a guest. A future requalification must begin from device selection and obtain provider plus shape from a non-shell, least-privilege attested source before crossing the shell boundary.

@@ -1,0 +1,73 @@
+{
+  "contract_id": "OCI-ARM64-READONLY-REQUALIFICATION-20261009-19",
+  "observed_utc": "2026-10-09T03:44:00Z",
+  "repository_baseline": {
+    "pull_request": 184,
+    "remote_commit": "550233e073755ee44e652198e6732694a9676bcb",
+    "tree": "e2563b0be16e39fa6d6f07d2c7f58443d439fefa",
+    "local_detached_commit": "461013a19e8e710a41cd50a03543beff9c74c394"
+  },
+  "transport": {
+    "kind": "RDC",
+    "device_id": "0852e6f4-2507-4d0f-9d62-f6eda8cdd169",
+    "reported_name": "grasshopper-workstation",
+    "status": "ONLINE",
+    "app_version": "0.2.52"
+  },
+  "identity_gate": {
+    "expected": {
+      "hostname": "grasshopper-workstation",
+      "architecture": "aarch64",
+      "provider": "OCI",
+      "shape": "VM.Standard.A1.Flex"
+    },
+    "observed": {
+      "hostname": "grasshopper-workstation",
+      "architecture": "arm64",
+      "platform": "linux",
+      "virtual_product": "KVM Virtual Machine",
+      "provider": null,
+      "shape": null
+    },
+    "non_shell_sources": [
+      "RDC list_devices",
+      "RDC get_config systemInfo",
+      "/etc/hostname",
+      "/sys/class/dmi/id/product_name"
+    ],
+    "blocked_source": {
+      "path": "/run/cloud-init/instance-data.json",
+      "result": "EACCES_REALPATH"
+    },
+    "status": "UNQUALIFIED_IDENTITY",
+    "reason": "The expected OCI provider and VM.Standard.A1.Flex shape were not proven before the shell boundary."
+  },
+  "scope": {
+    "lease_minutes": 20,
+    "shell_actions": 0,
+    "process_or_container_queries": 0,
+    "listener_queries": 0,
+    "adb_or_rfb_calls": 0,
+    "input_events": 0,
+    "remote_mutations": 0,
+    "guest_restarts_or_stops": 0,
+    "live_requirements_issued": false
+  },
+  "deferred_observations": [
+    "source_checkout_identity",
+    "qemu_process_identity_and_start_time",
+    "container_identity",
+    "guest_process_fingerprint",
+    "loopback_listeners",
+    "session_identity"
+  ],
+  "acceptance": {
+    "identity_before_shell": "NOT_PROVEN",
+    "read_only_requalification": "BLOCKED_UNQUALIFIED_IDENTITY",
+    "live_guest_continuity": "NOT_PROVEN",
+    "live_acceptance": false,
+    "r2": "NOT_PROVEN"
+  },
+  "recovery": "NO_REMOTE_RECOVERY_REQUIRED_OBSERVATION_ONLY",
+  "next_action": "Provide or expose a non-shell, least-privilege attested OCI instance identity source that includes provider and shape, then begin a new bounded requalification from list_devices."
+}

@@ -1,7 +1,7 @@
 {
-  "contract_id": "ANDROID-CONTROL-ACQUISITION-COVERAGE-20261008-18",
-  "previous_contract_id": "ANDROID-CONTROL-ACQUISITION-RECEIPT-20261008-17",
-  "observed_utc": "2026-10-09T02:47:00Z",
+  "contract_id": "OCI-ARM64-READONLY-REQUALIFICATION-20261009-19",
+  "previous_contract_id": "ANDROID-CONTROL-ACQUISITION-COVERAGE-20261008-18",
+  "observed_utc": "2026-10-09T03:44:00Z",
   "source_commit": "85fe2c74841dff50fd1e6a30ecd1486876add471",
   "source_pr": 168,
   "node": {
@@ -14,11 +14,29 @@
   "contract_execution": {
     "node": "isolated-local-worktree",
     "architecture": "x86_64",
-    "transport": "LOCAL_REPOSITORY",
+    "transport": "LOCAL_REPOSITORY_AND_RDC_NON_SHELL_READ_ONLY",
     "lease_minutes": 20,
-    "remote_observation_performed": false,
+    "remote_observation_performed": true,
     "remote_mutation_performed": false,
     "recovery": "REVERT_CONTRACT_COMMIT"
+  },
+  "read_only_requalification": {
+    "evidence_file": "docs/OCI_ARM64_READONLY_REQUALIFICATION_2026-10-09.json",
+    "rdc_device_online": true,
+    "device_id": "0852e6f4-2507-4d0f-9d62-f6eda8cdd169",
+    "hostname": "PASS_GRASSHOPPER_WORKSTATION",
+    "architecture": "PASS_ARM64",
+    "provider": "NOT_PROVEN",
+    "shape": "NOT_PROVEN",
+    "cloud_init_identity": "EACCES_REALPATH",
+    "dmi_product": "KVM Virtual Machine",
+    "identity_gate": "UNQUALIFIED_IDENTITY",
+    "shell_actions": 0,
+    "process_container_listener_queries": 0,
+    "adb_rfb_input_calls": 0,
+    "remote_mutations": 0,
+    "live_requirements_issued": false,
+    "deferred_current_process_identity": true
   },
   "control_evidence_contract": {
     "schema": "grasshopper.android-control-evidence/v1",
@@ -302,5 +320,5 @@
     "helper_domain_transition": "PROVEN_BY_SERIAL_AVC",
     "timeout_signal_delivery": "DENIED_BY_RESTRICTED_DOMAIN"
   },
-  "next_action": "Perform identity-first read-only OCI requalification and issue fresh non-executable requirements only if current source, guest process and session identity are proven without mutation."
+  "next_action": "Expose a non-shell least-privilege attested OCI provider-and-shape identity source, then repeat identity-first read-only requalification in a new bounded lease; do not query processes or issue LIVE requirements before that gate passes."
 }
