@@ -16,7 +16,7 @@
   },
   "signature": {
     "algorithm": "ED25519",
-    "public_key_path": "OCI_NODE_IDENTITY_ATTESTATION_PUBLIC_KEY.pem",
+    "public_key_path": "OCI_NODE_IDENTITY_ATTESTATION_PUBLIC_KEY.pub",
     "public_key_sha256": "88c52f33069c9c3acced672463d637fd59d7d6384f6d52cc18057b51740706dd",
     "value_base64": "SOW6l57C05kQOLnC3hvmzz78qbxHm94IRXsce/xFasfqylyRkKPKo0F8CRj91K2JewyhCLYJlTbHZ+ihI87OAw=="
   },
