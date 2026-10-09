@@ -1,0 +1,61 @@
+{
+  "schema": "grasshopper.android-control-gap-report/v1",
+  "contract_id": "TEMPLATE-CONTROL-BUNDLE-NOT-LIVE",
+  "collection_mode": "TEST_FIXTURE",
+  "bundle": {
+    "sha256": "0fc62b640c03df32619e94c5801c31af9b4171b62ebbe3be60a278d4fb23d884",
+    "bytes": 1464
+  },
+  "binding": {
+    "source_sha": "0000000000000000000000000000000000000000",
+    "session_id": "NOT_PROVEN_SESSION"
+  },
+  "origins": {
+    "workstation": {
+      "node_identity": "NOT_PROVEN_WORKSTATION",
+      "transport": "RFB",
+      "session_id": "NOT_PROVEN_SESSION",
+      "evidence_sha256": "a49267cdf21261bdf0d8f0008f55afd6475cb36fd16d8a183e16c66f33fa0f76",
+      "gate_statuses": {
+        "delivery": "NOT_PROVEN",
+        "visible_acknowledgement": "NOT_PROVEN",
+        "semantic_effect": "NOT_PROVEN",
+        "reconnect_continuity": "NOT_PROVEN"
+      },
+      "missing_gates": ["delivery", "visible_acknowledgement", "semantic_effect", "reconnect_continuity"],
+      "status": "NOT_PROVEN"
+    },
+    "browser": {
+      "node_identity": "NOT_PROVEN_BROWSER",
+      "transport": "noVNC-websocket",
+      "session_id": "NOT_PROVEN_SESSION",
+      "evidence_sha256": "9de4835223a6b4f008997b62f897837badafe2b883ecdd302e34cd70b8c3b831",
+      "gate_statuses": {
+        "delivery": "NOT_PROVEN",
+        "visible_acknowledgement": "NOT_PROVEN",
+        "semantic_effect": "NOT_PROVEN",
+        "reconnect_continuity": "NOT_PROVEN"
+      },
+      "missing_gates": ["delivery", "visible_acknowledgement", "semantic_effect", "reconnect_continuity"],
+      "status": "NOT_PROVEN"
+    },
+    "physical_android": {
+      "node_identity": "NOT_PROVEN_PHYSICAL_ANDROID",
+      "transport": "broccoli-rish-observation",
+      "session_id": "NOT_PROVEN_SESSION",
+      "evidence_sha256": "0d9dc059f0934d8802af7d6e48d04b4e3c21f77d72a2e7bc3f5edad861abb74a",
+      "gate_statuses": {
+        "delivery": "NOT_PROVEN",
+        "visible_acknowledgement": "NOT_PROVEN",
+        "semantic_effect": "NOT_PROVEN",
+        "reconnect_continuity": "NOT_PROVEN"
+      },
+      "missing_gates": ["delivery", "visible_acknowledgement", "semantic_effect", "reconnect_continuity"],
+      "status": "NOT_PROVEN"
+    }
+  },
+  "cross_origin_equivalence": "NOT_INFERRED",
+  "overall_status": "NOT_PROVEN",
+  "live_acceptance": false,
+  "r2": "NOT_PROVEN"
+}

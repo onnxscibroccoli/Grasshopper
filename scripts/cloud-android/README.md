@@ -131,3 +131,18 @@ node scripts/cloud-android/report-control-evidence-gaps.mjs /absolute/evidence/b
 ```
 
 The output binds the bundle's own SHA-256 and byte count, preserves source/session/node/transport/evidence identities, and lists every non-PASS gate under its original control origin. It has no command or action field and cannot connect, dispatch or replay. It never combines complementary gates across origins; overall status, live acceptance and R2 remain `NOT_PROVEN` even when the input bundle is structurally valid.
+
+### Non-executable acquisition requirements
+
+`verify-control-acquisition-requirements.mjs` validates a requirements manifest against both its exact gap-report artifact and the original evidence bundle:
+
+```sh
+npm run verify:android-control-acquisition-requirements
+node scripts/cloud-android/verify-control-acquisition-requirements.mjs \
+  /absolute/evidence/requirements.json \
+  /absolute/evidence/gap-report.json \
+  /absolute/evidence/bundle.json \
+  --at 2026-10-09T00:35:00Z
+```
+
+Verification re-generates the gap report from the bundle, so a digest-valid but substituted report still fails. Source/session and every origin's node, transport, evidence digest and missing gates must match. The guest-process binding includes node, PID, start time, observation time and fingerprint; observation may be at most five minutes old when issued, and expiry may be at most twenty minutes after observation. The schema prohibits undeclared execution fields and pins `collection_authorized=false`, live acceptance false and R2 `NOT_PROVEN`. This is a requirements artifact, not a collector or dispatcher.
