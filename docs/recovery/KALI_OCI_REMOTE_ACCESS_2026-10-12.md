@@ -98,3 +98,35 @@ Independent read-only RDC verification on the accessible Kali guest:
 - The RustDesk GUI continues to run under an XFCE/tmux session and PID 1 is `vncserver`; **unattended access after full host/guest reboot, after XFCE stops, and through session expiry has not been tested**. Do not mark reboot persistence PASS without a non-destructive reboot/restore acceptance test.
 
 **Updated judgment:** External RustDesk desktop sessions and permanent-password changes are supported by logs, consistent with operator's report. Day-to-day unattended login is plausible/observed, but cold-boot unattended availability remains unverified.
+
+## Operator-accepted noVNC display fix and RustDesk restart verification (2026-10-12 EDT)
+
+**noVNC display fix — LOGGED, operator confirmed the display issue was fixed:**
+- Previously the server-side X framebuffer was altered to portrait `411×788` by noVNC Remote Resizing, inherited from the Android viewport.
+- Actual selected XRandR VNC-0 mode restored to `1280×720` (16:9 landscape); non-destructive `xrandr --current` confirms it after subsequent checks.
+- Pinned noVNC `app/ui.js` changed default `resize` from `off` to `scale`, and normalizes an old stored value of `remote` to `scale`.
+- The `Remote resizing` option was removed from the browser viewer settings (do not permit an Android portrait viewport to change the shared X display).
+- `vnc.html` permits mobile browser zoom (`minimum-scale=0.5,maximum-scale=5,user-scalable=yes`) and loads `app/kali_zoom.js` for `− / Fit / +` controls when used standalone.
+- `mobile.html` includes `Zoom − / Zoom + / Fit / Pan / Full screen / Rotate` controls; the duplicate zoom toolbar is hidden in its iframe.
+- JavaScript syntax (Node `--check`), HTTP asset retrieval (200), and XRandR geometry (1280×720) passed. Actual touch gestures were operator-accepted for the fixed display; do not infer tested keyboard or all zoom gestures without corresponding evidence.
+- Original noVNC sources were backed up locally as `vnc.html.pre-landscape-20261012` and `app/ui.js.pre-landscape-20261012`.
+
+**Controlled RustDesk application process restart — PASS (not a cold boot):**
+- Existing RustDesk 1.4.9 AppRun and self-hosted configuration were preserved. A separate tmux supervisor was created at `~/.local/bin/kali-rustdesk-supervisor.sh`; its idempotent launcher is `~/.local/bin/ensure-kali-rustdesk.sh`.
+- XFCE XDG autostart entry `~/.config/autostart/kali-rustdesk.desktop` references this launcher on the persistent `/home/kali` volume.
+- Before test, RustDesk PID `446738`, RustDesk ID `218812001`; deliberately sent TERM **to that application process only**, not VNC or XFCE.
+- Within the check period, supervisor relaunched RustDesk as PID `505370` and its log recorded `RUSTDESK_START_ATTEMPT`. CLI again returned the **same ID `218812001`**; persistent config remained `verification-method=use-both-passwords` and `approve-mode=password`.
+- Original XFCE and TigerVNC remained PID `15` and PID `10`. Therefore application-process restart recovery PASS. **A container/VM cold reboot and pre-login RustDesk availability remain UNVERIFIED**, because PID 1 is `vncserver` and RustDesk is not installed as a boot-level system service. Do not turn off the only working noVNC fallback based on this narrower result.
+- See RustDesk official unattended-access guidance: a permanent password alone is insufficient for *cold-boot unattended access* without a service that starts before login.
+
+**User-set HTTPS/noVNC credentials — PREPARED, not yet set by operator:**
+- `~/.local/bin/set-kali-novnc-password`: interactive masked double-entry password prompt (16–128 characters), salt + PBKDF2 SHA-256, fresh signing key, atomic `0600` replacement of `~/.local/state/kali-novnc/auth.json`. No secrets logged, printed, or committed.
+- The gateway code `~/.local/bin/kali-novnc-auth.py` now loads the secret config on each authenticated HTTP request, supporting rotation with **no server restart** while revoking older browser cookies. Existing sessions may require login again. Separate RustDesk and VncAuth passwords are unchanged.
+- Test `set-kali-novnc-password --check` PASS; isolated temporary-config test confirmed a previously valid cookie is rejected immediately after key rotation without touching production secrets. Two gateway listeners reloaded successfully: `127.0.0.1:6081` (HTTPS tunnel origin) and `10.42.1.26:6082` (private IP intended for the OCI host reverse proxy). Both returned HTTP 200 for login, unauthenticated desktop routes redirect to login.
+- **User still needs to enter their own new password from an interactive Kali terminal; no credential was chosen on their behalf.**
+
+**Direct public-IP HTTPS/noVNC — HOST INGRESS BLOCKED, Quick Tunnel retained:**
+- OCI guest NIC is `10.42.1.26` (private); `129.213.28.18` is the public **egress** address. The host has an existing nginx `HTTP 200` listener on port 80; the guest has no SSH keys or OCI management credentials available through this RDC connection.
+- The authenticated gateway at private IP `10.42.1.26:6082` is ready for reverse proxying, but direct public IP routing, trusted IP TLS cert, and OCI firewall/NSG have **not** been installed or validated.
+- Vendor reference: Let's Encrypt Certbot >=5.4 supports IP certificate `certonly --preferred-profile shortlived --webroot ... --ip-address <public IP>` with six-day validity. Requires host nginx support for ACME HTTP-01 and a renew/deploy hook; do not use self-signed WSS or overwrite existing port 80 listener.
+- **Retire Quick Tunnel only after** live Android RustDesk reconnect acceptance following workstation reboot and live external direct-IP HTTPS/noVNC acceptance with user-set credentials, including WebSocket + keyboard/mouse.
