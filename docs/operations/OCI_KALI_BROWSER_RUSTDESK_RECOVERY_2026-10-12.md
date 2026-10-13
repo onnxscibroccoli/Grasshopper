@@ -4,9 +4,9 @@
 **Status:** Partial. Browser access through temporary tunnel was observed by the operator; direct-IP HTTPS access and RustDesk remote-login acceptance are **NOT PROVEN**.
 
 ## Authority and separation
-- This is the live **OCI Kali container/workstation**, not proof of access to the separate `grasshopper-workstation` instance.
+- **Host identity now verified through OCI Instance Metadata Service (IMDS):** the live Kali container is running inside OCI compute instance named `Grasshopper-Workstation`, VM.Standard.A1.Flex, Ashburn, in the documented Grasshopper compartment. The separate `grasshopper-workstation` RDC **host agent remains offline**; guest access is not host administrative access.
 - The Kali guest has private address `10.42.1.26` on a separate container network. Its outward public address belongs to an upstream OCI host. Do not assume services bound on guest loopback are public-IP accessible.
-- An existing upstream host nginx on HTTP port 80 serves **another** noVNC frontend and a WebSocket/RFB endpoint. Its VNC target was NOT proven to be this guest. Do not repoint or replace its routing without identifying its owner.
+- An existing upstream host nginx on HTTP port 80 serves **another** noVNC frontend and a WebSocket/RFB endpoint (external test: HTTP 200, WebSocket 101, RFB 003.008). A concurrent guest socket inspection found no incoming connection to its local VNC servers, so do **not** treat this as the authenticated Kali guest endpoint. Do not repoint or replace its routing without identifying its owner. The upstream public HTTPS port 443 was unreachable at last test.
 - Preserve the upstream host's RustDesk rendezvous/relay services and other tenants. No AWS migration.
 - Preserve the original Kali XFCE/Xtigervnc session (display `:1`, port 5901). Its password file is a **read-only bind mount** from an upstream persistent volume; changing it inside the container failed. Do not retry or restart the original display to force a password change.
 
@@ -17,16 +17,16 @@
 - `~/.local/opt/noVNC/mobile.html`: mobile browser wrapper with Fit, + / − zoom, Pan mode, optional fullscreen / landscape orientation request. It embeds standard noVNC; Android browser interaction requires fresh acceptance.
 - `~/.local/opt/x11vnc`: x11vnc 0.9.17 from extracted Kali ARM64 packages (no global apt modification). Mirrors the original display on loopback TCP 5902 using a separate writable file `~/.local/state/kali-novnc/x11vnc-password`, mode 0600.
 - Local WebSockets bridge on 127.0.0.1:6080 proxies port 5902.
-- Local password/cookie gateway `~/.local/bin/kali-novnc-auth.py` on 127.0.0.1:6081. It is the only origin exposed by temporary HTTPS tunnel; do not expose 6080 or raw VNC on a public port.
+- Local password/cookie gateway `~/.local/bin/kali-novnc-auth.py` on 127.0.0.1:6081. A **second private gateway** is available at `10.42.1.26:6082` (read-only probe GET `/login` 200, unauthenticated `/mobile.html` 303); it is ready for a future upstream nginx HTTPS reverse proxy. Only the loopback gateway is exposed by the temporary HTTPS tunnel; do not expose 6080 or raw VNC on a public port. The startup script auto-detects the private interface IP on restart.
 - `~/.local/bin/ensure-kali-novnc.sh` and XFCE autostart `~/.config/autostart/kali-novnc.desktop` start tmux services. Reboot survival unverified.
 - The temporary Cloudflare Quick Tunnel is a fallback ONLY. It has no stable hostname or SLA. The protected `--allowed-mail` Quick Tunnel failed after email OTP, possibly related to upstream session/cookie behavior; a second locally authenticated gateway was installed. **Do not promote the temporary Quick Tunnel to a permanent address.**
 
 ## RustDesk live findings
 - An existing RustDesk **portable AppImage v1.4.9** is running as the Kali user (not as a boot-managed native service), from `~/.local/opt/rustdesk-1.4.9/AppRun`.
 - The device's RustDesk ID was confirmed through `AppRun --get-id`. It and the upstream server public key should not be committed to this public repository.
-- `~/.config/rustdesk/RustDesk2.toml` selects a custom rendezvous/relay server on the OCI host and `verification-method=use-permanent-password`.
+- `~/.config/rustdesk/RustDesk2.toml` selects a custom rendezvous/relay server on the OCI host. Initial observation found `verification-method=use-permanent-password`; **a subsequent live read showed `use-both-passwords` and a restarted RustDesk process**. Do not overwrite this live operator state without inspecting it first.
 - TCP rendezvous/relay ports 21115, 21116, 21117 responded from the guest. Client logs show repeated timeouts contacting the optional HTTP API on port 21114 and inbound mobile relay attempts that closed. These observations do **not** prove a valid RustDesk password or that the Android client used the matching server key.
-- `~/.local/bin/change-kali-rustdesk-password` provides a local **interactive** password rotation path using RustDesk's documented `AppRun --password` CLI; remote acceptance still must be tested.
+- `~/.local/bin/change-kali-rustdesk-password` provides a local **interactive** password rotation path using RustDesk's documented `AppRun --password` CLI; remote acceptance still must be tested. The user-reported VNC password rotation was unsuccessful; the writable x11vnc password file timestamp remained unchanged from its initial creation.
 - `~/.local/bin/ensure-kali-rustdesk.sh` and `~/.config/autostart/kali-rustdesk.desktop` supervise the existing portable client at XFCE startup. This is **not** equivalent to a native systemd service or pre-login access; reboot survival unverified.
 
 ## Acceptance: strictly separate PASS vs NOT PROVEN
