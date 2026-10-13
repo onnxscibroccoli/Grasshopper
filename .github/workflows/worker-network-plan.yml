@@ -1,0 +1,40 @@
+name: Multi-cloud worker plan (ZERO BILLABLE)
+
+on:
+  workflow_dispatch:
+    inputs:
+      providers:
+        description: "Provider selection (all or a comma-separated subset)"
+        required: true
+        default: all
+        type: string
+        # Enter e.g. oci,gcp,github; provider IDs are parsed by workerctl.
+
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker-plan-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan-only:
+    name: Offline provider plan (no cloud credentials)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout controlled repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Static guardrail tests
+        run: python3 -m unittest discover -s worker-network/tests -v
+      - name: Write non-secret read-only plan summary
+        env:
+          PROVIDERS: ${{ inputs.providers }}
+        run: |
+          set -euo pipefail
+          python3 worker-network/workerctl.py plan --providers "$PROVIDERS" > "$GITHUB_STEP_SUMMARY"
+          echo "DEVELOPMENT_STATUS=PLAN_ONLY"
+          echo "NO_PROVIDER_OAUTH_IN_CI; NO_BILLING_CHANGES; NO_CLOUD_MUTATIONS"
