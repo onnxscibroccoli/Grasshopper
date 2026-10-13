@@ -1,0 +1,38 @@
+name: Grasshopper RDC and desktop boot recovery
+on:
+  pull_request:
+    paths:
+      - 'scripts/desktop-access/**'
+      - 'test/test_guarded_boot_setup.py'
+      - '.github/workflows/grasshopper-desktop-boot-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-boot-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify staged configuration without production credentials
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile scripts/desktop-access/guarded-boot-setup.py
+          python3 -m unittest discover -s test -p 'test_guarded_boot_setup.py' -v
+          mkdir -p "$RUNNER_TEMP/boot-fixture"
+          touch "$RUNNER_TEMP/boot-fixture/agent.js"
+          python3 scripts/desktop-access/guarded-boot-setup.py stage \
+            --entry "$RUNNER_TEMP/boot-fixture/agent.js" \
+            --output-dir "$RUNNER_TEMP/boot-fixture"
+          systemd-analyze verify "$RUNNER_TEMP/boot-fixture/grasshopper-rdc.service"
+          grep -qx 'User=grasshopper' "$RUNNER_TEMP/boot-fixture/grasshopper-rdc.service"
+          grep -qx 'Restart=always' "$RUNNER_TEMP/boot-fixture/grasshopper-rdc.service"
+          grep -qx 'NoNewPrivileges=true' "$RUNNER_TEMP/boot-fixture/grasshopper-rdc.service"
+          ! grep -Eq 'User=root|@latest|ExecStart=.*/npx' "$RUNNER_TEMP/boot-fixture/grasshopper-rdc.service"
+          echo 'BOOT_RECOVERY_STATIC_CHECK=PASS'
+          echo 'REAL_HOST_REBOOT_ACCEPTANCE=NOT_TESTED'
