@@ -2,7 +2,7 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-01 00:30 UTC
+**Documentation snapshot:** 2026-10-13 21:40 UTC
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
@@ -81,6 +81,10 @@ Known unproven items remain explicit: actual reboot survival, authenticated Andr
 The repository has crossed the clean-archive/reference-control-plane gates, while clean-host production reproduction remains a separate gate.
 
 That distinction must remain explicit.
+
+## OCI protected boot recovery (review required)
+
+The existing OCI Grasshopper VNC, noVNC and MCP system services are enabled and running; their restart behavior must remain unchanged. A separate, pinned-version, **non-root** Remote Desktop Commander unit and narrow optional operator sudo handoff are proposed in [OCI protected boot and Redroid release contract](docs/operations/OCI_PROTECTED_BOOT_AND_REDROID_RELEASE.md). The proposal has offline GitHub Actions checks but **has not been installed**; the Kali container's host reboot policy and post-reboot GUI recovery are still NOT_PROVEN. A kernel reboot causes bounded downtime and requires independently verified out-of-band recovery before authorization.
 
 ## Reproduce locally
 
