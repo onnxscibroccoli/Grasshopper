@@ -1,0 +1,194 @@
+name: Ollama mainline architecture and code intelligence
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Repository question; routing chooses Llama for architecture or DeepSeek Coder for code"
+        required: true
+        default: "Map the current Broccoli and Grasshopper architecture, historical milestones, reproducibility contracts and remaining blockers"
+        type: string
+      review_artifacts:
+        description: "Explicitly publish deidentified documentation as workflow artifacts for human review"
+        required: true
+        default: false
+        type: boolean
+  schedule:
+    - cron: "37 6 * * 0"
+  pull_request:
+    paths:
+      - ".github/workflows/ollama-mainline-knowledge.yml"
+      - "scripts/agentic-knowledge/**"
+      - "test/agentic_knowledge/**"
+      - "bots/**"
+      - "schemas/reproducible-bot.schema.json"
+      - "config/agentic-repository-catalog.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ollama-mainline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  routing-contract:
+    name: Verify routing, mainline boundaries, and bot receipt safety
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - name: Checkout workflow-under-test (not historical commits)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Offline safety tests
+        run: |
+          set -Eeuo pipefail
+          python3 -m compileall -q scripts/agentic-knowledge
+          python3 -m unittest discover -s test/agentic_knowledge -p 'test_*.py' -v
+          python3 -m json.tool config/agentic-repository-catalog.json > /dev/null
+          python3 -m json.tool schemas/reproducible-bot.schema.json > /dev/null
+          python3 -m json.tool bots/catalog.json > /dev/null
+          echo "BOT_ROUTING_CONTRACT=PASS" >> "$GITHUB_STEP_SUMMARY"
+
+  analyze:
+    name: Dynamically route analysis to local Llama or DeepSeek Coder
+    needs: routing-contract
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    env:
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_KEEP_ALIVE: "0"
+      AUDIT_TASK: ${{ github.event_name == 'workflow_dispatch' && inputs.task || 'Summarize Broccoli architecture, merged history, cross-repository dependencies and reproducible bot candidates' }}
+    steps:
+      - name: Checkout reviewed workflow code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare Ollama (no cloud model credentials)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # Official installer on an isolated GitHub-hosted runner.
+          # Pin to a reviewed release before promoting this workflow to mandatory CI.
+          curl --fail --location --silent --show-error --retry 2 \
+            https://ollama.com/install.sh -o "$RUNNER_TEMP/ollama-install.sh"
+          bash "$RUNNER_TEMP/ollama-install.sh"
+          ollama --version
+          nohup ollama serve > "$RUNNER_TEMP/ollama-serve.log" 2>&1 </dev/null &
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:11434/api/tags > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull llama3.2:3b
+          echo 'LLAMA_GENERAL_MODEL_READY=YES' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Classify task and choose specialist
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/ollama-audit"
+          chmod 700 "$RUNNER_TEMP/ollama-audit"
+          python3 scripts/agentic-knowledge/model_router.py classify \
+            --task "$AUDIT_TASK" \
+            --route-file "$RUNNER_TEMP/ollama-audit/task-route.json"
+          python3 - "$RUNNER_TEMP/ollama-audit/task-route.json" <<'PY'
+          import json, os, sys
+          route = json.load(open(sys.argv[1], encoding="utf-8"))
+          model = route["model"]
+          allowed = ("llama3.2:3b", "deepseek-coder:6.7b-instruct")
+          if model not in allowed:
+              raise SystemExit("Unknown model")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
+              f.write("SELECTED_MODEL=" + model + "\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write("### Model routing\n")
+              f.write("- Task class: " + route["classification"] + "\n")
+              f.write("- Model: `" + model + "`\n")
+              f.write("- Router: " + route["route_source"] + "\n")
+              f.write("- Human-reviewed code promotion: REQUIRED\n")
+          PY
+
+      - name: Load only the selected model
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          case "$SELECTED_MODEL" in
+            llama3.2:3b)
+              echo 'Using the general architecture model.'
+              ;;
+            deepseek-coder:6.7b-instruct)
+              echo 'Loading the specialized coding and refactoring model.'
+              ollama pull deepseek-coder:6.7b-instruct
+              ;;
+            *)
+              echo 'Unexpected model rejected.'
+              exit 2
+              ;;
+          esac
+          ollama list
+          echo "ROUTED_MODEL_AVAILABLE=YES" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run source-limited, deidentified repository investigation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-knowledge/model_router.py audit \
+            --route-file "$RUNNER_TEMP/ollama-audit/task-route.json" \
+            --catalog config/agentic-repository-catalog.json \
+            --output "$RUNNER_TEMP/ollama-audit/generated"
+          echo "MAINLINE_AUDIT_COMPLETE=REVIEW_REQUIRED" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Privacy gate before optional publication
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - "$RUNNER_TEMP/ollama-audit/generated" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+          folder=Path(sys.argv[1])
+          files=list(folder.glob("*.md"))+list(folder.glob("*.json"))
+          if len(files) < 2:
+              raise SystemExit("Missing evidence outputs")
+          patterns=[
+              re.compile(r"(?i)\b[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}\b"),
+              re.compile(r"(?<!\d)(?:\+?1[-. ]?)?\(?[2-9]\d{2}\)?[-. ]?[2-9]\d{2}[-. ]?\d{4}(?!\d)"),
+              re.compile(r"-----BEGIN .{0,40}PRIVATE KEY-----"),
+              re.compile(r"(?i)(?:ghp_|github_pat_)[A-Za-z0-9_]{15,}"),
+              re.compile(r"(?i)\b(?:sk-proj-|sk-)[A-Za-z0-9_\-]{24,}\b"),
+              re.compile(r"(?i)\bocid1\.[A-Za-z0-9._-]{25,}\b"),
+          ]
+          for file in files:
+              if file.stat().st_size > 2_000_000:
+                  raise SystemExit("Oversized audit output")
+              data=file.read_text(encoding="utf8")
+              if any(p.search(data) for p in patterns):
+                  raise SystemExit("Sensitive pattern in generated audit; refusing publication")
+          print("GENERATED_ARTIFACT_PRIVACY_SCAN=PASS")
+          PY
+
+      - name: Publish evidence for explicit review only
+        if: github.event_name == 'workflow_dispatch' && inputs.review_artifacts == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-ollama-mainline-review
+          path: ${{ runner.temp }}/ollama-audit/generated/
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Explain publication boundary
+        if: always()
+        shell: bash
+        run: |
+          echo 'No generated code or historical commit text was executed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No repository push, merge, cloud deployment, or sudo action was performed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Documentation artifacts require an explicit opt-in and human privacy review.' >> "$GITHUB_STEP_SUMMARY"
