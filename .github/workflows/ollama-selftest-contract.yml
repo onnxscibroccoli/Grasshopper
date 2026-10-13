@@ -1,0 +1,47 @@
+name: Ollama CI harness contract tests
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ollama-selftest-reusable.yml"
+      - ".github/workflows/ollama-selftest-contract.yml"
+      - ".github/workflows/ollama-ci-observatory.yml"
+      - "scripts/agentic-ci/**"
+      - "test/agentic_ci/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ollama-selftest-reusable.yml"
+      - "scripts/agentic-ci/**"
+      - "test/agentic_ci/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate for isolated tests (not as architectural authority)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify Python code structure and model-free contracts
+        run: |
+          set -Eeuo pipefail
+          python3 -m compileall -q scripts/agentic-ci
+          python3 -m unittest discover -s test/agentic_ci -p "test_*.py" -v
+          echo "AGENTIC_SELFTEST_OFFLINE_CONTRACT=PASS" >> "$GITHUB_STEP_SUMMARY"
+      - name: Check for forbidden privileged operations
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if grep -REn 'sudoers|NOPASSWD|gh pr merge|\bdocker exec .*sh\b' scripts/agentic-ci; then
+            echo "Detected forbidden privileged pattern"
+            exit 1
+          fi
+          echo "NO_SUDO_CREDENTIALS_OR_AUTO_MERGE=PASS" >> "$GITHUB_STEP_SUMMARY"
