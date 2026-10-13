@@ -185,7 +185,8 @@ def load_onboarding(path: Path, cat: dict) -> dict:
     path = path.expanduser()
     if path.is_symlink() or not path.is_file():
         raise ValueError("Onboarding state missing or symlink")
-    if path.stat().st_mode & 0o077:
+    # Windows uses NTFS ACLs rather than POSIX 0600; state contains no secrets.
+    if os.name != "nt" and path.stat().st_mode & 0o077:
         raise ValueError("Onboarding file must be private (0600); run chmod 600")
     data = json.loads(path.read_text(encoding="utf-8"))
     if data.get("cost_policy") != "ZERO_BILLABLE_STRICT" or data.get("deploy_authorized") is not False:
