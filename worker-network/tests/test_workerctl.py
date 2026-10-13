@@ -47,7 +47,8 @@ class OfflineNoSpendTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as path:
             output = Path(path) / 'nested' / 'plan.json'
             w.safe_write(output, '{"action":"PLAN_ONLY"}')
-            self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+            if os.name != 'nt':  # Windows permission control is via filesystem ACLs
+                self.assertEqual(output.stat().st_mode & 0o777, 0o600)
             with self.assertRaises(FileExistsError):
                 w.safe_write(output, '{}')
 
@@ -72,7 +73,8 @@ class OfflineNoSpendTests(unittest.TestCase):
             filename = Path(temp) / 'job.json'
             data = w.create_onboarding(['gcp', 'oci'], self.cat, filename)
             self.assertFalse(data['deploy_authorized'])
-            self.assertEqual(filename.stat().st_mode & 0o777, 0o600)
+            if os.name != 'nt':  # Nonsecret state; ACLs on Windows
+                self.assertEqual(filename.stat().st_mode & 0o777, 0o600)
             restored = w.load_onboarding(filename, self.cat)
             self.assertIn('DEPLOYMENT_BLOCKED', w.report_onboarding(restored, self.cat))
             self.assertNotIn('token=', filename.read_text())
