@@ -4,6 +4,7 @@ Documentation=https://github.com/wonderwhy-er/DesktopCommanderMCP
 Wants=network-online.target
 After=network-online.target
 ConditionPathExists=/home/grasshopper/.desktop-commander-device/device.json
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -15,7 +16,6 @@ Environment=NPM_CONFIG_UPDATE_NOTIFIER=false
 ExecStart=/usr/bin/npx -y @wonderwhy-er/desktop-commander@0.2.52 remote
 Restart=always
 RestartSec=30s
-StartLimitIntervalSec=0
 TimeoutStopSec=30s
 KillSignal=SIGINT
 NoNewPrivileges=true
