@@ -45,6 +45,8 @@ Key source files:
 
 > **ZERO-BILLABLE production constraint (mandatory):** [Free-only cloud policy](docs/operations/FREE_ONLY_CLOUD_POLICY_2026-10-12.md). Existing OCI/GCP authorization does **not** authorize provisioning paid resources. Run the [zero-billable preflight](scripts/cloud/grasshopper-free-only-preflight.py) before any cloud agent planning; it is advisory, not an IAM/billing hard cap. Android/MCP implementation plan: [self-hosted MCP and cloud Android](docs/architecture/SELF_HOSTED_MCP_ANDROID_FREE_ONLY_2026-10-12.md). Staged [Antigravity development mission](prompts/ANTIGRAVITY_CLOUD_ANDROID_MCP_FREE_ONLY_2026-10-12.md).
 
+**[Complete eight-provider Android-first worker onboarding handbook](docs/worker-network/README.md)** — Oracle, Google Cloud, Azure, AWS, IBM, GitHub Actions, Cloudflare and Render; resumable CLI [workerctl](worker-network/README.md), security/billing policy, provider-specific human OAuth handoffs, [GitHub Actions plan workflow](.github/workflows/worker-network-plan.yml). All v0 actions default to **read-only and zero-billable**; real cloud provisioning remains unimplemented and unauthorized.
+
 ## Production evidence and recovery
 
 The repository contains an unusually large documentation/evidence surface because it is intended to prevent future agents from destroying validated infrastructure while “improving” it.
