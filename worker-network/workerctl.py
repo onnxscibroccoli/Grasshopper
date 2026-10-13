@@ -78,7 +78,7 @@ def make_plan(selected: list[str], cat: dict) -> dict:
 
 def markdown_plan(plan: dict) -> str:
     lines = [
-        "# Multi-cloud onboarding — ZERO BILLABLE PLAN",
+        "# Multi-cloud onboarding - ZERO BILLABLE PLAN",
         "",
         "**No provider mutations; no billable allocations.** Auth != free entitlement.",
         "",
@@ -87,7 +87,7 @@ def markdown_plan(plan: dict) -> str:
     ]
     for p in plan["providers"]:
         lines.append(f"| {p['name']} | {p['candidate']} | {p['region']} | {p['risk']} |")
-    lines += ["", "## Human authorizations", "", "Before any real deployment, complete provider-specific signup, OAuth and account cost controls manually.", "", "## Machine state", "", "`DEPLOYMENT_NOT_IMPLEMENTED` — this toolkit intentionally cannot create paid or free cloud resources yet."]
+    lines += ["", "## Human authorizations", "", "Before any real deployment, complete provider-specific signup, OAuth and account cost controls manually.", "", "## Machine state", "", "`DEPLOYMENT_NOT_IMPLEMENTED` - this toolkit intentionally cannot create paid or free cloud resources yet."]
     return "\n".join(lines) + "\n"
 
 
