@@ -80,7 +80,7 @@ def markdown_plan(plan: dict) -> str:
     lines = [
         "# Multi-cloud onboarding — ZERO BILLABLE PLAN",
         "",
-        "**No provider mutations; no billable allocations.** Auth ≠ free entitlement.",
+        "**No provider mutations; no billable allocations.** Auth != free entitlement.",
         "",
         "| Provider | Candidate | Region | Gate |",
         "| --- | --- | --- | --- |",
