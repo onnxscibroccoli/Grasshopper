@@ -1,0 +1,64 @@
+name: Llama Mainline Repository Research
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/llama-mainline-research.yml'
+      - 'scripts/research/**'
+      - 'test/llama-mainline-audit.test.mjs'
+  workflow_dispatch:
+    inputs:
+      repositories:
+        description: 'Comma-separated approved public repositories (main only)'
+        required: true
+        default: 'Grasshopper,broccoli-core,omn-kali-knowledge-graph-master'
+permissions:
+  contents: read
+concurrency:
+  group: llama-mainline-research-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test test/llama-mainline-audit.test.mjs
+  analyze:
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Start local Llama (not an external API)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve > /dev/null 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:11434/api/version > /dev/null; then break; fi
+            sleep 1
+          done
+          ollama pull llama3.2:1b-instruct-q4_K_M
+      - name: Analyze current main and merged-main history
+        env:
+          REPOSITORIES: ${{ inputs.repositories }}
+        run: |
+          python3 scripts/research/llama_mainline_audit.py \
+            --repositories "$REPOSITORIES" --out "$RUNNER_TEMP/llama-review"
+      - name: Publish deidentified review drafts only
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-review-drafts
+          path: ${{ runner.temp }}/llama-review/*-research-review.md
+          if-no-files-found: error
+          retention-days: 3
