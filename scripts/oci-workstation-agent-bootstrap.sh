@@ -89,3 +89,6 @@ EOF
 chmod 600 "${AUDIT_DIR}/current.json"
 echo "AGENT_BOOTSTRAP_COMPLETE $(date -u -Is)"
 echo "AUDIT_LOG=${LOG}"
+
+# Refresh capabilities after bootstrap; installed tools do not prove authentication.
+node "${WORKSPACE}/scripts/workstation-capabilities.mjs" "${AUDIT_DIR}/capabilities.json"
