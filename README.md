@@ -50,6 +50,7 @@ The repository contains an unusually large documentation/evidence surface becaus
 Important documentation includes:
 
 - `IMPLEMENTATION_SEED.md`
+- **[Grasshopper CLI OAuth recovery and current status](docs/recovery/GRASSHOPPER_CLOUD_OAUTH_SETUP_2026-10-12.md)** — Google Cloud ADC/OCI session bootstrap, secure operator handoff, verified/live vs pending conditions.
 - `docs/PRODUCTION_LIVE_EVIDENCE.md`
 - `docs/PRODUCTION_CONTRACT_INVENTORY.md`
 - `docs/PRODUCTION_EXECUTOR_PROVENANCE.md`
