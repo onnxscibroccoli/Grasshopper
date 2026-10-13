@@ -1,6 +1,7 @@
 """Offline tests for local-only human handoff queue (no provider API calls)."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +12,7 @@ spec = importlib.util.spec_from_file_location("handoffctl", module)
 handoff = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(handoff)
 
+@unittest.skipIf(os.name == 'nt', 'Queue requires POSIX private database; Windows ACL support pending')
 class HumanHandoffTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
