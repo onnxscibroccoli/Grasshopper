@@ -62,9 +62,20 @@ jobs:
           path: worker-network/android-companion/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
           if-no-files-found: error
+      - name: Assemble unsigned release for owner-held Android signing key
+        working-directory: worker-network/android-companion
+        run: gradle :app:assembleRelease --no-daemon --console=plain
+      - name: Upload UNSIGNED production-package APK (DO NOT INSTALL)
+        uses: actions/upload-artifact@v4
+        with:
+          name: broccoli-gateway-unsigned-release-${{ github.run_number }}
+          path: worker-network/android-companion/app/build/outputs/apk/release/app-release-unsigned.apk
+          retention-days: 7
+          if-no-files-found: error
       - name: Display installing instructions
         run: |
           echo "### Broccoli Gateway bootstrap APK" >> "$GITHUB_STEP_SUMMARY"
           echo "Download the **broccoli-gateway-bootstrap-apk** artifact from this job's page, unzip it and install **app-debug.apk** on Android." >> "$GITHUB_STEP_SUMMARY"
           echo "Preview package suffix **.bootstrap** prevents collision with your future personally signed release." >> "$GITHUB_STEP_SUMMARY"
+          echo "Optional **unsigned-release** artifact must NOT be installed directly. Download it to your Android and use your locally held release signing key; never share the key with CI." >> "$GITHUB_STEP_SUMMARY"
           echo "This preview pairs only after a verified public HTTPS gateway is available; Firebase push is not included." >> "$GITHUB_STEP_SUMMARY"
