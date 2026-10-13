@@ -43,6 +43,8 @@ Key source files:
 - `src/mcp/grok-control-plane-tools.mjs` — MCP interface.
 - `bin/omnikali.mjs` — reproducible CLI.
 
+> **ZERO-BILLABLE production constraint (mandatory):** [Free-only cloud policy](docs/operations/FREE_ONLY_CLOUD_POLICY_2026-10-12.md). Existing OCI/GCP authorization does **not** authorize provisioning paid resources. Run the [zero-billable preflight](scripts/cloud/grasshopper-free-only-preflight.py) before any cloud agent planning; it is advisory, not an IAM/billing hard cap. Android/MCP implementation plan: [self-hosted MCP and cloud Android](docs/architecture/SELF_HOSTED_MCP_ANDROID_FREE_ONLY_2026-10-12.md). Staged [Antigravity development mission](prompts/ANTIGRAVITY_CLOUD_ANDROID_MCP_FREE_ONLY_2026-10-12.md).
+
 ## Production evidence and recovery
 
 The repository contains an unusually large documentation/evidence surface because it is intended to prevent future agents from destroying validated infrastructure while “improving” it.
