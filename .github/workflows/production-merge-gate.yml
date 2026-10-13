@@ -4,16 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
-    inputs:
-      enable_auto_merge:
-        description: "Enable auto-merge after the complete gate passes"
-        required: true
-        default: "true"
-        type: boolean
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
   actions: read
 
 concurrency:
@@ -28,7 +22,7 @@ jobs:
       - name: Checkout proposed commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.head_ref || 'main' }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -109,13 +103,10 @@ jobs:
           printf '%s\n' "$runs"
           exit 1
 
-      - name: Enable auto-merge only after every gate passes
-        if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr merge "${{ github.event.pull_request.number }}"             --repo "${{ github.repository }}"             --auto             --squash             --delete-branch
+      - name: Report human-review gate passed
+        if: github.event_name == 'pull_request'
+        run: echo "Required checks passed. Operator approval is still required. No auto-merge or direct merge is allowed."
 
       - name: Report manual-dispatch gate result
         if: github.event_name == 'workflow_dispatch'
-        run: echo "Production merge gate passed. No pull request was mutated by manual dispatch."
+        run: echo "Production merge gate passed; no pull request mutated, and human approval remains mandatory."
