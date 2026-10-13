@@ -47,3 +47,28 @@ Detached, interactive tmux session **`grasshopper-cloud-oauth`** was started wit
 **Authentication context:** OCI interactive security-token sessions default to approximately **60-minute validity**; persistent unattended agents require separate authorized service/workload identity planning, not reused human tokens.
 
 No cloud resource modifications, password changes, or service restarts were performed by the bootstrap setup.
+
+## Corrective implementation: browser OAuth + RustDesk client (2026-10-12, ~23:30 EDT)
+
+**Previous implementation failed operator acceptance.** The previously documented `grasshopper-cloud-auth.sh all` used `--no-browser` and a one-shot `tmux` login session that exited on failure. It did not meet the requirement to use the **already working local noVNC desktop and Firefox**. The HTTPS URL `https://129-213-28-18.nip.io/vnc.html` had a **locally valid certificate but did not load on the operator's phone**. Local HTTPS success is not proof of externally accessible browser entry. Do not present that URL as working.
+
+### Replacement installed and started through RDC
+
+- **New canonical launcher** `~/.local/bin/grasshopper-cloud-browser-login.sh` and [source](../../scripts/cloud/grasshopper-cloud-browser-login.sh). Bash syntax PASS; X11 `DISPLAY=:1` with `~/.Xauthority` validated via `xset`; Xfce terminal launched successfully. No headless OAuth options used.
+- Persistent visible desktop terminal title: **Grasshopper Cloud Browser OAuth**. The script automatically attempts Google OAuth via `gcloud auth application-default login --project=omnikali`, opening Firefox and a local callback listener on **127.0.0.1:8085**; read-only process/listener validation PASS. **Google ADC sign-in is still pending operator browser interaction**, not yet PASS.
+- On successful Google authentication, script proceeds to `oci session authenticate --region us-ashburn-1 --profile-name OMNIKALI --config-location ~/.oci/config`, also with browser OAuth (not `--no-browser`). Backups of prior OCI config are local, private. **OCI authentication remains pending**, do not claim success.
+- **Resilience:** The new launcher stays open on errors and offers a persistent menu: 1 Google, 2 Oracle, 3 status, 4 retry both, 5 open Firefox, 0 exit. This eliminates the one-shot tmux issue. The old script/source is superseded; agents should use the browser-login launcher.
+- Existing Google CLI auth to `omnikali` remains PASS. Browser auth and validated ADC are distinct.
+- Avoid sharing browser OAuth URLs/callbacks or tokens in GitHub/chat, and avoid entering credentials via unsecured `http://129.213.28.18/vnc.html` when a secure operator control path is available.
+
+### RustDesk restoration completed on Grasshopper, operator-password handoff
+
+- Server already running on this Oracle host: RustDesk rendezvous `hbbs`, relay `hbbr` and console; these processes/services were NOT restarted.
+- Found existing `~/.config/rustdesk/RustDesk2.toml` user configuration pointing to `129.213.28.18` as custom rendezvous and relay, with **the exact same server public-key SHA256 fingerprint** as Kali's working client (`b25aff7df410e8591c515262836577e3e042939d6c2bdf44a5701b0aeb9db6b2`). No private server keys copied or modified.
+- User-level RustDesk client was absent. Downloaded official RustDesk 1.4.9 **ARM64 RPM**, validated SHA256 `3e523df7ceb6f3804b047a3cac797354c4bf46ec19f2d7ff5e198787003cb092` against the official release, extracted **rootlessly** under `~/.local/opt/rustdesk-1.4.9` without installing or replacing server RPM/system packages. Client binary `--version` returned **1.4.9**.
+- Prior `RustDesk2.toml` backed up mode 0600; verified configuration now allows `verification-method='use-both-passwords'` and `approve-mode='password'`. Existing host/relay/key retained.
+- Client GUI started on X11 `:1`; live process `rustdesk` found and Flutter window activity logged. Client ID via official CLI `--get-id`: **386544245** (**Grasshopper**, not Kali's **218812001**).
+- [Rootless restart supervisor](../../scripts/remote/grasshopper-rustdesk-supervisor.sh) installed at `~/.local/bin/grasshopper-rustdesk-supervisor.sh` and running. XFCE autostart `~/.config/autostart/grasshopper-rustdesk.desktop` configured for graphical-session persistence. Full OCI host reboot recovery and Android-to-Grasshopper RustDesk session **not yet verified**.
+- **User action:** Open the already visible RustDesk window; configure a private *permanent password* in RustDesk Security settings. **No password was generated, transmitted or committed.** Test Android RustDesk connectivity to **386544245**, optionally test one-time password and reconnect. Active client configuration already matches Kali's working server, but connectivity/authentication from Android is acceptance pending.
+
+**Important distinction:** Corrected **launchers and GUI/client state PASS**, actual Google ADC/OCI OAuth completion and Android RustDesk connection **PENDING**. The existing browser noVNC and production QEMU/RustDesk server were preserved.
