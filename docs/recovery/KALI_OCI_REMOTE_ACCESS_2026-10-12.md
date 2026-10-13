@@ -83,3 +83,18 @@ The operator explicitly requires IP-based HTTPS/noVNC, not a Cloudflare Quick Tu
 - After restarting only the RustDesk GUI, RustDesk 1.4.9 retained its ID and showed an ESTABLISHED TCP session to self-hosted `129.213.28.18:21116`. TCP probes of ports 21115, 21116 and 21117 all succeeded. Settings `verification-method=use-both-passwords` and `approve-mode=password` remained on disk. Android-to-Kali RustDesk connection and credential acceptance are still **NOT PROVEN**.
 - **Direct public-IP TLS is technically possible without a domain** using publicly trusted short-lived Let's Encrypt IP address certificates (available since 2026-01). Certbot >=5.4 supports IP issuance. The certificates last about 160 hours and require automatic renewal; host-level HTTP-01 validation on the existing port 80 and nginx WebSocket forwarding to the private gateway must be configured **only by an authorized OCI host administrator**. Do not install self-signed WSS or change existing host ingress blindly.
 - RustDesk's existing `verification-method=use-permanent-password` was the likely reason a mobile user attempting a *one-time* password was rejected; this is a configuration diagnosis, not evidence that Android login now succeeds.
+
+## October 12, 21:35 EDT: RustDesk permanent-password acceptance evidence
+
+Operator reports that the central RustDesk screen shows an active remote desktop terminal session with a permanent password, and considers unattended access established.
+
+Independent read-only RDC verification on the accessible Kali guest:
+- RustDesk 1.4.9 remains running with its original persistent device ID.
+- Config file mode `0600`, with `verification-method=use-both-passwords`, `approve-mode=password`, and a stored permanent-password field present. No passwords or keys were printed.
+- Runtime RustDesk log contains `permanent-password updated` events at **01:14:11, 01:23:46, and 01:24:31 UTC on October 13**.
+- Logs confirm multiple incoming peer connections; one negotiated VP9 desktop streaming (`connection count: 1`) at **01:18:41, 01:24:58, and 01:25:18 UTC**. This is materially stronger evidence than mere rendezvous TCP reachability.
+- A remote peer disconnected at **01:30:17 UTC**, so an active session at the time of a later status check is not proven merely by process uptime.
+- Logs also show repeated HTTP audit/heartbeat API timeouts and a missing audio-service dependency. These do not negate visual desktop streaming but remain service-quality defects.
+- The RustDesk GUI continues to run under an XFCE/tmux session and PID 1 is `vncserver`; **unattended access after full host/guest reboot, after XFCE stops, and through session expiry has not been tested**. Do not mark reboot persistence PASS without a non-destructive reboot/restore acceptance test.
+
+**Updated judgment:** External RustDesk desktop sessions and permanent-password changes are supported by logs, consistent with operator's report. Day-to-day unattended login is plausible/observed, but cold-boot unattended availability remains unverified.
