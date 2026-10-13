@@ -4,7 +4,7 @@ This repository is the clean reference/control-plane project for OmniKali. Exist
 
 ## Safety boundary
 
-The live AWS Helix/Kali system is a protected BASE SYSTEM / PROTOTYPE.
+The verified Grasshopper/Kali remote desktops and any independently validated production system are protected BASE SYSTEMS. OCI is the persistent Android-worker target. Historical AWS topology is not permission to redirect work to AWS.
 
 Agents must not, without an explicit migration plan and human authorization:
 
@@ -33,7 +33,7 @@ Before changing a shared host, record listeners, routes, container/network state
 
 ## OCI workstation
 
-The OCI workstation is experimental and disposable. It may install agent CLIs and build/test tooling. It must not be used as a trust dependency of the AWS production base.
+The OCI Grasshopper workstation and Kali container are **protected, working user access systems**, not disposable. The OCI host is shared across them and Android experiments. Never disrupt existing browser/noVNC/RustDesk/HTTPS access, operating services, mounts, container identities or their recovery channels when prototyping. New Android runtimes require explicit admission and rollback.
 
 The canonical convergence path is:
 
@@ -68,7 +68,7 @@ A clean source checkout plus a passing test suite is the minimum reproducibility
 
 ## Automatic merge gate
 
-Automatic merging is permitted only after the repository production-contract gate passes in full.
+**Automatic merging is not permitted.** The repository production-contract gate must pass, and explicit human approval is required for every merge. An agent may open a draft pull request but must never enable auto-merge or merge to main.
 
 The gate requires:
 
@@ -77,7 +77,7 @@ The gate requires:
 - a documented and verified recovery path to be present
 - no production credentials or production infrastructure mutation by the agent
 
-When the pull request is non-draft and every gate is green, the guarded merge workflow may enable GitHub auto-merge. A failing or incomplete gate must not merge.
+When a pull request is non-draft and every gate is green, obtain **explicit human approval** before merging. A failing, incomplete, or unapproved gate must not merge.
 
 The recovery evidence currently used by the gate is the verified OpenClaw backup plus disposable restore drill recorded in the dated OCI DEV_SANDBOX evidence. This is recovery readiness evidence, not a claim of automatic production rollback.
 
@@ -99,3 +99,15 @@ Do not repeat these:
 - treating a transport identity proof as end-to-end RDC or desktop proof
 
 Run `node scripts/verify-no-broccoli-degradation.mjs` after structural changes. `npm test` includes `test/degradation-guard.test.mjs`.
+
+## Main-only source reads and public privacy enforcement — 2026-10-13
+
+1. **Agent source reads must specify the canonical `main` branch. Never fetch a GitHub file via raw commit-SHA refs, unmerged branches, salvage worktrees or historical clones as a source of truth.** Git revision identifiers may be recorded as opaque evidence metadata, but are not retrieval targets.
+2. Propose modifications on isolated feature branches rooted in `main`; local generated files and changes are not production evidence until separately tested. PR reviews and CI may validate changes, but agents must not use branch snapshots as canonical architecture.
+3. **Never commit personal identifiers, private contact addresses/numbers, health information, account credentials, OAuth/authentication material, cloud identity keys, tokens, sessions, raw Android disks or unredacted user interaction logs.** This applies to documentation, tests, comments, prompts, CI artifacts, issues and PR bodies. A scanner is a supplement, not a replacement for privacy review. Never print matches in tool output.
+4. If a public file already exposes personal data, prepare a deidentified replacement immediately. A replacement in a feature branch does not remove the current public file or historical Git object; coordinate human-reviewed merge, history/cache remediation separately.
+5. A deidentified cross-device mission spec is recorded in `docs/architecture/UNIFIED_ACCESSIBLE_DEVICE_RUNTIME.md`. Always preserve its long-term goals even when a particular transport is currently blocked: physical Android, persistent cloud Android, remotely windowed Linux/Kali apps, semantic UI/action/control schemas, provider-independent model and MCP access, gated approvals, chat/voice development and self-hosted free-tier operation.
+6. Prior QEMU experiments may be removed **only** where proven inactive/nonfunctional, unique source and test findings are privately archived or deidentified in Git, and Kali, Android guest, RustDesk, viewers and recovery channels have passed continuity checks. Never remove the active QEMU merely because Redroid is proposed.
+7. A change/event observation must never replay the originating action. All cross-device execution must be idempotent, scoped and auditable.
+
+**Production promotion requires real user-visible acceptance, not a superficial process/transport PASS.**
