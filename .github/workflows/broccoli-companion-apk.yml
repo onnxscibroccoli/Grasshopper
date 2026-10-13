@@ -28,10 +28,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Install Android commandline tools
-        uses: android-actions/setup-android@v3
-      - name: Install Android platform 35
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Install Android platform 35 on hosted preinstalled SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Configure Gradle 8.9 for AGP 8.7.3
         uses: gradle/actions/setup-gradle@v6
         with:
