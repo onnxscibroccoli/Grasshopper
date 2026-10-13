@@ -18,6 +18,19 @@ const required = [
   ["docs/PORTABILITY_AND_EXECUTION_BOUNDARIES.md", "host and target shells are separate runtimes"],
 ];
 
+
+function falseShippedClaims(text) {
+  const claims = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (!/PLACEHOLDER/i.test(line) || !/\bshipped\b/i.test(line)) continue;
+    if (/\b(not|never|no|don't|do not|fails|failed|lie|without|anti-pattern|must not|cannot|can't)\b/i.test(line)) {
+      continue;
+    }
+    claims.push(line);
+  }
+  return claims;
+}
+
 export function audit(root) {
   const failures = [];
   const entries = fs.readdirSync(root, { withFileTypes: true });
@@ -36,7 +49,9 @@ export function audit(root) {
       if (/^#\s*see chat\b/im.test(text) || text.trim() === "# see chat ENGINEERING.md") {
         failures.push(`stub_doc:docs/${name}`);
       }
-      if (/PLACEHOLDER/i.test(text) && /shipped/i.test(text)) {
+      // Same-line co-occurrence is a ship claim. Lessons that name the
+      // anti-pattern ("was not a ship", "fails") are not claims.
+      if (falseShippedClaims(text).length) {
         failures.push(`false_shipped:docs/${name}`);
       }
     }

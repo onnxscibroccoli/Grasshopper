@@ -12,9 +12,7 @@ on:
         type: boolean
 
 permissions:
-  contents: write
-  pull-requests: write
-  actions: read
+  contents: read
 
 concurrency:
   group: production-merge-gate-${{ github.event.pull_request.number || github.ref }}
@@ -24,12 +22,17 @@ jobs:
   gate:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
     steps:
       - name: Checkout proposed commit
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -71,7 +74,7 @@ jobs:
             "Reference tests"
           )
 
-          for attempt in $(seq 1 30); do
+          for attempt in $(seq 1 45); do
             runs="$(gh api "repos/$REPO/actions/runs?head_sha=$SHA&per_page=100" --jq '.workflow_runs[] | [.name,.status,.conclusion] | @tsv')"
             missing=0
             failed=0
@@ -101,21 +104,48 @@ jobs:
               echo "All required contract workflows passed."
               exit 0
             fi
-            echo "Waiting for required workflows (attempt $attempt/30)."
-            sleep 10
+            echo "Waiting for required workflows (attempt $attempt/45)."
+            sleep 20
           done
 
           echo "Timed out waiting for required contract workflows."
           printf '%s\n' "$runs"
           exit 1
 
-      - name: Enable auto-merge only after every gate passes
-        if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr merge "${{ github.event.pull_request.number }}"             --repo "${{ github.repository }}"             --auto             --squash             --delete-branch
-
       - name: Report manual-dispatch gate result
         if: github.event_name == 'workflow_dispatch'
         run: echo "Production merge gate passed. No pull request was mutated by manual dispatch."
+
+  enable-automerge:
+    name: Enable auto-merge only after every gate passes
+    needs: gate
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # Regression: run 37147833604 / job on PR #136 passed contract checks,
+      # then failed only because protected branch rules are not configured
+      # for enablePullRequestAutoMerge. That is a repository setting.
+      - name: Enable auto-merge without executing pull request code
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set +e
+          out="$(gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash --delete-branch 2>&1)"
+          status=$?
+          printf '%s\n' "$out"
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          if printf '%s\n' "$out" | grep -Eqi "Protected branch rules not configured|auto[- ]merge is not allowed|enablePullRequestAutoMerge"; then
+            echo "Auto-merge not enabled. Contract checks already passed. Not failing the gate."
+            exit 0
+          fi
+          exit "$status"
