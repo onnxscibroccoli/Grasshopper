@@ -32,3 +32,15 @@ Broccoli Termux -> Rish with RISH_PRESERVE_ENV=0 printed uid=2000(shell) and SDK
 ## Canonical execution rule
 
 inspect -> establish provenance -> choose owner -> smallest change -> narrow test -> acceptance -> evidence -> graph update
+
+## Persistent architectural goals — unified accessibility runtime (2026-10-13)
+
+**Goal owners:** Broccoli Core owns normalized semantic UI graph, governor/event bus and action/control schema; Grasshopper owns device/provider orchestration and acceptance evidence; the Android companion owns secure user-mediated biometric/OAuth approval; Linux and Android adapters own their transport implementations. This is the north star even when only a subset is presently feasible.
+
+**Required endpoints:** physical Android, persistent cloud Android and remotely windowed Linux/Kali desktop; dynamic voice/chat/code-development workflows can move among them. Common API/model/MCP capability registry, provider-neutral intent schema, signed action grants, idempotent execution, human-in-loop gates, and privacy-preserving observations; free and self-hosted first.
+
+**Evidence and progress:** See `docs/architecture/UNIFIED_ACCESSIBLE_DEVICE_RUNTIME.md`, `docs/operations/OCI_ANDROID_QEMU_TRIAGE_2026-10-13.md` and `docs/operations/OCI_QEMU_RECLAMATION_RESULTS_2026-10-13.md`. Old QEMU experiment copies were removed only after private source archival and local desktop/Android transport checks. The active Android QEMU remains protected. Redroid is BLOCKED pending UEK Binder module support and secure resource admission.
+
+**Non-negotiable source and privacy rule:** Read GitHub project source only from `main`, never via raw commit SHA or unmerged branches. No personal identifiers, private health/contact information, payment information, credentials or authenticated Android data in commits, documentation, issue bodies or AI context handoffs. All new work enters reviewable feature branches; protected main merges require operator approval.
+
+**Invariant:** observing an event must not replay the command that caused it. Report executable acceptance evidence rather than process-only green status.
