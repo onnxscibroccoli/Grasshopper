@@ -2,7 +2,7 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-13 00:30 UTC
+**Documentation snapshot:** 2026-10-13 05:00 UTC
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
@@ -43,6 +43,10 @@ Key source files:
 - `src/mcp/grok-control-plane-tools.mjs` — MCP interface.
 - `bin/omnikali.mjs` — reproducible CLI.
 
+> **ZERO-BILLABLE production constraint (mandatory):** [Free-only cloud policy](docs/operations/FREE_ONLY_CLOUD_POLICY_2026-10-12.md). Existing OCI/GCP authorization does **not** authorize provisioning paid resources. Run the [zero-billable preflight](scripts/cloud/grasshopper-free-only-preflight.py) before any cloud agent planning; it is advisory, not an IAM/billing hard cap. Android/MCP implementation plan: [self-hosted MCP and cloud Android](docs/architecture/SELF_HOSTED_MCP_ANDROID_FREE_ONLY_2026-10-12.md). Staged [Antigravity development mission](prompts/ANTIGRAVITY_CLOUD_ANDROID_MCP_FREE_ONLY_2026-10-12.md).
+
+**[Complete eight-provider Android-first worker onboarding handbook](docs/worker-network/README.md)** — Oracle, Google Cloud, Azure, AWS, IBM, GitHub Actions, Cloudflare and Render; resumable CLI [workerctl](worker-network/README.md), security/billing policy, provider-specific human OAuth handoffs, [GitHub Actions plan workflow](.github/workflows/worker-network-plan.yml). All v0 actions default to **read-only and zero-billable**; real cloud provisioning remains unimplemented and unauthorized.
+
 ## Production evidence and recovery
 
 The repository contains an unusually large documentation/evidence surface because it is intended to prevent future agents from destroying validated infrastructure while “improving” it.
@@ -50,6 +54,7 @@ The repository contains an unusually large documentation/evidence surface becaus
 Important documentation includes:
 
 - `IMPLEMENTATION_SEED.md`
+- **[Grasshopper CLI OAuth recovery and current status](docs/recovery/GRASSHOPPER_CLOUD_OAUTH_SETUP_2026-10-12.md)** — Google Cloud ADC/OCI session bootstrap, secure operator handoff, verified/live vs pending conditions.
 - `docs/PRODUCTION_LIVE_EVIDENCE.md`
 - `docs/PRODUCTION_CONTRACT_INVENTORY.md`
 - `docs/PRODUCTION_EXECUTOR_PROVENANCE.md`
