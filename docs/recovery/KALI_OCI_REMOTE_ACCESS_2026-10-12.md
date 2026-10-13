@@ -74,3 +74,12 @@ The operator explicitly requires IP-based HTTPS/noVNC, not a Cloudflare Quick Tu
 | Separate offline Grasshopper workstation | NOT RECOVERED |
 
 **Safety rule:** Verify deployment boundary and restore points before any host-level ingress change, and never commit tokens, passwords or private RustDesk TOML files.
+
+### Later live findings (same maintenance session)
+
+- Native **landscape XRandR 1280×720** remained active; original 411×788 portrait was reproduced earlier and is no longer the selected mode.
+- `~/.local/opt/noVNC/mobile.html` is an additional phone-friendly viewer with **Zoom − / Zoom + / Fit / Pan / Fullscreen/Rotate** controls. The HTML, inline JS syntax and local HTTP 200 were checked, **but real Android gesture/click coordinate acceptance is still pending**. The standard `vnc.html` also has a conditional top-level zoom toolbar; the duplicate toolbar is hidden when inside the mobile iframe.
+- A **private IP-bound** authenticated gateway was also discovered at `10.42.1.26:6082` (HTTP 200 at `/login`, unauthenticated `/vnc.html` redirects). Its tmux service name is `kali-private-web`. The initiator of this extra process was not established; do not confuse it with a verified public ingress or create duplicate bindings. Public `129.213.28.18` still has an unrelated nginx listener on port 80, and its relation to the guest must be established via OCI host controls before proxy modification.
+- After restarting only the RustDesk GUI, RustDesk 1.4.9 retained its ID and showed an ESTABLISHED TCP session to self-hosted `129.213.28.18:21116`. TCP probes of ports 21115, 21116 and 21117 all succeeded. Settings `verification-method=use-both-passwords` and `approve-mode=password` remained on disk. Android-to-Kali RustDesk connection and credential acceptance are still **NOT PROVEN**.
+- **Direct public-IP TLS is technically possible without a domain** using publicly trusted short-lived Let's Encrypt IP address certificates (available since 2026-01). Certbot >=5.4 supports IP issuance. The certificates last about 160 hours and require automatic renewal; host-level HTTP-01 validation on the existing port 80 and nginx WebSocket forwarding to the private gateway must be configured **only by an authorized OCI host administrator**. Do not install self-signed WSS or change existing host ingress blindly.
+- RustDesk's existing `verification-method=use-permanent-password` was the likely reason a mobile user attempting a *one-time* password was rejected; this is a configuration diagnosis, not evidence that Android login now succeeds.
