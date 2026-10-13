@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 from pathlib import Path
 import re
 import sqlite3
@@ -54,6 +55,8 @@ def validate_instruction(instruction):
 
 def open_database(path):
     path = path.expanduser()
+    if os.name == "nt":
+        raise ValueError("Windows secure store requires a reviewed NTFS ACL implementation; use Android/Linux")
     if path.is_symlink():
         raise ValueError("Refusing symlink database")
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
