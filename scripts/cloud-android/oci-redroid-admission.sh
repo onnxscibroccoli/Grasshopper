@@ -42,7 +42,7 @@ if [[ "$mode" == "preflight" ]]; then
   if ! command -v "$engine" >/dev/null 2>&1; then block runtime_not_installed;
   elif [[ "$engine" == "podman" ]]; then
     if [[ "$(id -u)" != "0" ]]; then block podman_is_rootless_kernel_device_setup_unavailable; fi
-    root="$(podman info --format '{{.Store.GraphRoot}}' 2>/dev/null || true)"
+    root="$(timeout 5s podman info --format '{{.Store.GraphRoot}}' 2>/dev/null || true)"
     if [[ "$root" == "$work_root/"* ]]; then pass container_store_on_data_volume;
     else block container_store_not_on_data_volume; fi
   elif [[ "$(id -u)" != "0" ]]; then block root_privilege_for_kernel_runtime_unavailable;
