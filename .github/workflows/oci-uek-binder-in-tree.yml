@@ -1,0 +1,72 @@
+name: OCI UEK Binder in-tree compile probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/oci-uek-binder-in-tree.yml"
+      - "scripts/cloud-android/stage-uek-binder-config.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  binder-source-probe:
+    name: Compile upstream in-tree Binder against Oracle UEK source on ARM64
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - name: Install native offline compiler prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ca-certificates curl rpm2cpio cpio bzip2 make bc flex bison \
+            libelf-dev libssl-dev gcc-14 g++-14 perl python3 rsync
+
+      - name: Fetch the verified Oracle source package (not a Git ref)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/oci-uek-src"
+          cd "$RUNNER_TEMP/oci-uek-src"
+          curl --fail --location --retry 3 --max-time 240 \
+            -o kernel-uek.src.rpm \
+            https://yum.oracle.com/repo/OracleLinux/OL9/UEKR8/x86_64/getPackageSource/kernel-uek-6.12.0-206.104.4.4.el9uek.src.rpm
+          printf '%s  %s\n' \
+            'c72bdcfec66ade95b2735cc2d6f3cf0e3cabab6d992b8dcad6c2a06d8bb17536' \
+            kernel-uek.src.rpm | sha256sum -c -
+          rpm -qp --queryformat '%{NAME} %{VERSION}-%{RELEASE}\n' kernel-uek.src.rpm
+          rpm2cpio kernel-uek.src.rpm | cpio -idm --quiet --no-absolute-filenames \
+            config-aarch64 linux-6.12.0.tar.bz2
+
+      - name: Prepare in-tree Binder config without modifying production
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/oci-uek-src"
+          tar -xjf linux-6.12.0.tar.bz2
+          cd linux-6.12.0
+          cp ../config-aarch64 .config
+          scripts/config --enable ANDROID_BINDER_IPC \
+                         --enable ANDROID_BINDERFS \
+                         --set-str ANDROID_BINDER_DEVICES "binder,hwbinder,vndbinder"
+          make ARCH=arm64 CC=gcc-14 HOSTCC=gcc-14 olddefconfig
+          grep -qx 'CONFIG_ANDROID_BINDER_IPC=y' .config
+          grep -qx 'CONFIG_ANDROID_BINDERFS=y' .config
+          grep -qx 'CONFIG_ANDROID_BINDER_DEVICES="binder,hwbinder,vndbinder"' .config
+          echo 'CANDIDATE_IN_TREE_BINDER_CONFIG=PASS'
+
+      - name: Compile the Binder source objects
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/oci-uek-src/linux-6.12.0"
+          make ARCH=arm64 CC=gcc-14 HOSTCC=gcc-14 -j2 prepare
+          make ARCH=arm64 CC=gcc-14 HOSTCC=gcc-14 -j2 \
+            drivers/android/binder.o drivers/android/binder_alloc.o
+          test -s drivers/android/binder.o
+          test -s drivers/android/binder_alloc.o
+          echo 'IN_TREE_BINDER_SOURCE_OBJECTS=PASS'
+          echo 'FULL_VENDOR_KERNEL_BUILD=NOT_TESTED'
+          echo 'PRODUCTION_BOOT=NOT_TESTED'
+          echo 'NO_DEPLOYMENT_PERFORMED=YES'
