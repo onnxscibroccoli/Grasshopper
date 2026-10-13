@@ -1,0 +1,29 @@
+[Unit]
+Description=Grasshopper Remote Desktop Commander Remote Device
+Documentation=https://github.com/wonderwhy-er/DesktopCommanderMCP
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/home/grasshopper/.desktop-commander-device/device.json
+
+[Service]
+Type=simple
+User=grasshopper
+WorkingDirectory=/home/grasshopper
+Environment=HOME=/home/grasshopper
+Environment=XDG_CACHE_HOME=/home/grasshopper/.cache
+Environment=NPM_CONFIG_UPDATE_NOTIFIER=false
+ExecStart=/usr/bin/npx -y @wonderwhy-er/desktop-commander@0.2.52 remote
+Restart=always
+RestartSec=30s
+StartLimitIntervalSec=0
+TimeoutStopSec=30s
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+
+[Install]
+WantedBy=multi-user.target
