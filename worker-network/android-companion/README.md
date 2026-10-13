@@ -4,6 +4,8 @@
 
 ## Immediate installation
 
+**Verified prerelease APK:** [Download Broccoli Gateway Companion v0.2 Bootstrap APK](https://github.com/onnxscibroccoli/Grasshopper/releases/download/broccoli-companion-bootstrap-v0.2.0-20261013/Broccoli_Gateway_Companion_v0.2_Bootstrap_Debug.apk) — built by [GitHub Actions run #38459653622](https://github.com/onnxscibroccoli/Grasshopper/actions/runs/38459653622), successful SHA-256 `12005ccda84872529d9dea1b66659942f9bb5ebde452f69aec09ac4544be02db` (7,328,885 bytes). This is a **CI-debug-signed, non-production app**, not yet linked to a secure HTTPS gateway.
+
 1. In the `Grasshopper` repository, open **Actions → Build Broccoli Gateway Companion APK (preview)** and select the latest **successful** run.
 2. At the bottom of the run page, download the artifact named `broccoli-gateway-bootstrap-apk-...`, extract the ZIP, then tap `app-debug.apk` on Android. You may need to authorize app installation from your file manager. Do not grant unrelated permissions.
 3. The resulting **bootstrap preview package ID** is `org.broccoli.companion.gateway.bootstrap`. The **release ID** will be `org.broccoli.companion.gateway`, allowing your future privately signed release to coexist without uninstalling the preview.
