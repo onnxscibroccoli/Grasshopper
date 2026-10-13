@@ -1,0 +1,38 @@
+name: Desktop access boot-persistence contract
+on:
+  pull_request:
+    paths:
+      - "scripts/desktop-access/**"
+      - "test/desktop-boot-contract.test.py"
+      - ".github/workflows/desktop-access-boot-ci.yml"
+      - "docs/operations/OCI_DESKTOP_ACCESS_BOOT_PERSISTENCE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout proposed changes without persistence credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Validate script grammar
+        run: |
+          set -Eeuo pipefail
+          bash -n scripts/desktop-access/boot-system-services.sh
+          bash -n scripts/desktop-access/rdc-user-service.sh
+      - name: Test user systemd unit, fail-closed setup and secret controls
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s test -p 'desktop-boot-contract.test.py' -v
+      - name: Confirm no privileged runtime changes in CI
+        run: |
+          echo 'KERNEL_CHANGE=NO'
+          echo 'REMOTE_ACCESS_SERVICE_RESTART=NO'
+          echo 'SUDO_CREDENTIAL_PERSISTENCE=NO'
+          echo 'BOOT_RECONNECT_ACCEPTANCE=STILL_REQUIRED_ON_OCI'
