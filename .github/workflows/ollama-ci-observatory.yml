@@ -1,0 +1,107 @@
+name: Ollama CI Observatory
+
+on:
+  workflow_run:
+    workflows:
+      - "*"
+      - "!Ollama CI Observatory"
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ollama-observer-${{ github.event.workflow_run.id }}
+  cancel-in-progress: true
+
+jobs:
+  classify-failed-workflow:
+    if: >-
+      ${{ github.event.workflow_run.name != 'Ollama CI Observatory' &&
+          github.event.workflow_run.conclusion != 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+        env:
+          OLLAMA_HOST: "0.0.0.0:11434"
+          OLLAMA_NUM_PARALLEL: "1"
+        options: >-
+          --memory=4g
+          --cpus=2
+    steps:
+      - name: Only retrieve the trusted central harness on main
+        uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Wait for the local Ollama container
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for i in $(seq 1 45); do
+            if curl --silent --fail --max-time 3 \
+              http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+              echo "LOCAL_OLLAMA=AVAILABLE"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "LOCAL_OLLAMA=NOT_AVAILABLE" >&2
+          exit 1
+
+      - name: Pull a local diagnostic Llama, no cloud LLM credentials
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl --fail --silent --show-error --max-time 1500 \
+            -H 'Content-Type: application/json' \
+            --data '{"name":"llama3.2:3b","stream":false}' \
+            http://127.0.0.1:11434/api/pull > /dev/null
+
+      - name: Collect redacted failure evidence and classify it locally
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FAILED_RUN_ID: ${{ github.event.workflow_run.id }}
+          FAILED_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/ci-review"
+          chmod 700 "$RUNNER_TEMP/ci-review"
+          python3 .ci-harness/scripts/agentic-ci/workflow_run_diagnose.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --run-id "$FAILED_RUN_ID" \
+            --conclusion "$FAILED_CONCLUSION" \
+            --output "$RUNNER_TEMP/ci-review/coded-report.json"
+
+      - name: Upload only deidentified diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-workflow-classification
+          path: ${{ runner.temp }}/ci-review/coded-report.json
+          retention-days: 1
+          if-no-files-found: warn
+
+      - name: Record protected milestone
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Ollama self-test observatory"
+            echo "- Original failing workflow remains failed"
+            echo "- No upstream job re-execution or automatic source patch"
+            echo "- No untrusted PR checkout, no model-generated commands"
+            echo "- Read-only scoped GitHub token, Ollama on local runner"
+            echo "- Only coded deidentified diagnostics may be published"
+            echo "- Structural corrections require reviewed PR and acceptance"
+          } >> "$GITHUB_STEP_SUMMARY"
