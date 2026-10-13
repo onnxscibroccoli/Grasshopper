@@ -123,3 +123,12 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+
+## Unified accessible device runtime and OCI Android status (2026-10-13)
+
+Long-term source-of-truth goals: [Unified Accessible Device Runtime](docs/architecture/UNIFIED_ACCESSIBLE_DEVICE_RUNTIME.md). This defines provider- and device-neutral semantic application schemas, action/control contracts, human-authentication gates, model/MCP interchangeability, Android/cloud/Linux window streaming, voice/chat interaction and non-root accessibility-first operation.
+
+OCI Android migration status: [QEMU evidence and retirement criteria](docs/operations/OCI_ANDROID_QEMU_TRIAGE_2026-10-13.md), [measured cleanup results](docs/operations/OCI_QEMU_RECLAMATION_RESULTS_2026-10-13.md) and the [Redroid handoff](docs/chatgpt-handoff-redroid-oci.md). The live QEMU Android is still running and partially responds to ADB; Redroid deployment **remains blocked** on Oracle UEK Binder support, rootful container admission, persistent image-store placement and memory safeguards. No production replacement is claimed.
+
+**Source/privacy policy for development agents:** read source exclusively from `main` (never raw commit-SHA refs or unmerged branches); use an isolated feature branch for proposed writes; do not commit personal names, direct-contact details, medical details, session data or credentials. Human approval is required for merges. Older public history may require separately authorized exposure remediation.
