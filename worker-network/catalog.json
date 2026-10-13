@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-13",
+  "cost_policy": "zero-billable",
+  "default_allow_mutations": false,
+  "providers": {
+    "oci": {
+      "name": "Oracle Cloud Infrastructure",
+      "offering": "A1 Flex or E2.1.Micro in home region, pooled Always Free usage",
+      "candidate_region": "us-ashburn-1",
+      "sizes": [
+        "VM.Standard.A1.Flex",
+        "VM.Standard.E2.1.Micro"
+      ],
+      "free_tier": "2 OCPU / 12 GB continuous-equivalent A1; up to 2 E2 micro; 200 GB combined boot/block storage; depends on home-region allowance",
+      "account_url": "https://cloud.oracle.com/",
+      "docs_url": "https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm",
+      "cli": "oci",
+      "auth_command": [
+        "oci",
+        "session",
+        "authenticate",
+        "--region",
+        "us-ashburn-1",
+        "--profile-name",
+        "OMNIKALI"
+      ],
+      "verify_command": [
+        "oci",
+        "iam",
+        "region",
+        "list",
+        "--auth",
+        "security_token",
+        "--profile",
+        "OMNIKALI"
+      ],
+      "risk": "EXISTING_CAPACITY_USED",
+      "automatic_provisioning": false
+    },
+    "gcp": {
+      "name": "Google Cloud",
+      "offering": "e2-micro instance-month (pooled) in us-east1/us-central1/us-west1",
+      "candidate_region": "us-east1",
+      "sizes": [
+        "e2-micro"
+      ],
+      "free_tier": "one e2-micro instance-month, 30 GB-month standard persistent disk; active Cloud Billing required",
+      "account_url": "https://console.cloud.google.com/",
+      "docs_url": "https://docs.cloud.google.com/free/docs/free-cloud-features",
+      "cli": "gcloud",
+      "auth_command": [
+        "gcloud",
+        "auth",
+        "login"
+      ],
+      "verify_command": [
+        "gcloud",
+        "projects",
+        "list",
+        "--limit=10",
+        "--format=json"
+      ],
+      "risk": "BILLING_REQUIRED",
+      "automatic_provisioning": false
+    },
+    "azure": {
+      "name": "Microsoft Azure",
+      "offering": "12-month trial VM benefits (B1s, B2pts_v2 Arm, B2ats_v2 AMD), when eligible",
+      "candidate_region": "eastus",
+      "sizes": [
+        "Standard_B1s",
+        "Standard_B2pts_v2",
+        "Standard_B2ats_v2"
+      ],
+      "free_tier": "up to 750 hours/month each for eligible first-12-month account, with disk/IP charges separately evaluated",
+      "account_url": "https://portal.azure.com/",
+      "docs_url": "https://azure.microsoft.com/en-us/pricing/free-services/",
+      "cli": "az",
+      "auth_command": [
+        "az",
+        "login",
+        "--use-device-code"
+      ],
+      "verify_command": [
+        "az",
+        "account",
+        "show",
+        "--output",
+        "json"
+      ],
+      "risk": "TRIAL_OR_CREDIT_LIMITED",
+      "automatic_provisioning": false
+    },
+    "aws": {
+      "name": "Amazon Web Services",
+      "offering": "time/credit-limited EC2 Free plan for eligible new accounts",
+      "candidate_region": "us-east-1",
+      "sizes": [
+        "t3.micro",
+        "t4g.micro"
+      ],
+      "free_tier": "post-Jul-15-2025 accounts: maximum six months / credits; legacy accounts differ",
+      "account_url": "https://console.aws.amazon.com/",
+      "docs_url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-free-tier-usage.html",
+      "cli": "aws",
+      "auth_command": [
+        "aws",
+        "configure",
+        "sso",
+        "--use-device-code"
+      ],
+      "verify_command": [
+        "aws",
+        "sts",
+        "get-caller-identity",
+        "--output",
+        "json"
+      ],
+      "risk": "TRIAL_OR_CREDIT_LIMITED",
+      "automatic_provisioning": false
+    },
+    "ibm": {
+      "name": "IBM Cloud",
+      "offering": "Code Engine free-usage quota on eligible accounts; not a free perpetual VPC VM",
+      "candidate_region": "us-east",
+      "sizes": [
+        "Code Engine scale-to-zero job"
+      ],
+      "free_tier": "account is generally Pay-As-You-Go, exceeding per-month resource limits can charge",
+      "account_url": "https://cloud.ibm.com/",
+      "docs_url": "https://cloud.ibm.com/docs/codeengine?topic=codeengine-pricing",
+      "cli": "ibmcloud",
+      "auth_command": [
+        "ibmcloud",
+        "login",
+        "--sso"
+      ],
+      "verify_command": [
+        "ibmcloud",
+        "account",
+        "show"
+      ],
+      "risk": "OVERAGE_POSSIBLE",
+      "automatic_provisioning": false
+    },
+    "github": {
+      "name": "GitHub Actions",
+      "offering": "Standard ephemeral Linux x64/ARM64, Windows, macOS runners for eligible public repos",
+      "candidate_region": "GitHub-managed",
+      "sizes": [
+        "ubuntu-latest",
+        "ubuntu-24.04-arm",
+        "windows-latest",
+        "macos-latest"
+      ],
+      "free_tier": "standard hosted runners are free for public repositories; private repos, larger runners and storage vary",
+      "account_url": "https://github.com/",
+      "docs_url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+      "cli": "gh",
+      "auth_command": [
+        "gh",
+        "auth",
+        "login",
+        "--web"
+      ],
+      "verify_command": [
+        "gh",
+        "auth",
+        "status"
+      ],
+      "risk": "PUBLIC_REPO_ONLY",
+      "automatic_provisioning": false
+    },
+    "cloudflare": {
+      "name": "Cloudflare Workers",
+      "offering": "Free lightweight HTTP edge worker; no VM, no Android emulator",
+      "candidate_region": "Cloudflare global edge",
+      "sizes": [
+        "Workers Free"
+      ],
+      "free_tier": "100,000 requests/day and 10 ms CPU per invocation on Free plan, quotas subject to change",
+      "account_url": "https://dash.cloudflare.com/",
+      "docs_url": "https://developers.cloudflare.com/workers/platform/pricing/",
+      "cli": "wrangler",
+      "auth_command": [
+        "wrangler",
+        "login"
+      ],
+      "verify_command": [
+        "wrangler",
+        "whoami"
+      ],
+      "risk": "FREE_PLAN_REQUIRED",
+      "automatic_provisioning": false
+    },
+    "render": {
+      "name": "Render",
+      "offering": "Free web services that sleep when idle; not a persistent VM",
+      "candidate_region": "select on dashboard",
+      "sizes": [
+        "Free web service"
+      ],
+      "free_tier": "750 instance-hours per workspace/month; bandwidth/build overruns could bill with payment method",
+      "account_url": "https://dashboard.render.com/",
+      "docs_url": "https://render.com/docs/free",
+      "cli": null,
+      "auth_command": null,
+      "verify_command": null,
+      "risk": "PAYMENT_METHOD_OVERRUN",
+      "automatic_provisioning": false
+    }
+  }
+}
