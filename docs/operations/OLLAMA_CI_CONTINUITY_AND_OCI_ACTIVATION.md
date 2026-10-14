@@ -21,6 +21,25 @@ A GitHub-hosted runner cannot execute indefinitely. To fulfill continuous develo
 
 **Continuity is recurring bounded progress, not an infinite loop inside one runner.**
 
+## Model acquisition and specialist routing (PR #193)
+
+The central **three-attempt Llama 3.2 pull** is implemented in `scripts/agentic-ci/pull_ollama_model.sh`, shared by the activation gate, reusable self-test, central observatory, delegated observatory and continuity controller. It attempts the approved model at most **three times total**, checking both a successful `/api/pull` JSON status and presence of the *exact requested model* in `/api/tags`. Between attempts it waits **10 seconds, then 20 seconds** (linear backoff, no wait after attempt 3). Exhaustion returns a nonzero exit code; it never skips inference or reports a synthetic PASS. Offline tests simulate first-attempt success, one/two temporary failures, total exhaustion, malformed success responses, absent tags and rejected model names.
+
+**Specialist routing:** The activation workflow adds an independent, two-model ARM64 job. `llama3.2:3b` maps current canonical-main repository structure and dependencies. `deepseek-coder:6.7b-instruct` performs granular code/syntax/refactoring inspection of explicitly selected source files from an independent checkout of **main**. Both models run only against local Ollama; model text is never treated as shell code or a verified implementation. DeepSeek uses the same verified three-attempt downloader, with the larger model run on a GitHub-hosted 16 GiB ARM64 VM and bounded, sequential model loading. The second model's code findings are grounded in mainline evidence references and the first model's structured system context. The CI job emits only model IDs, evidence counts and a content hash as an artifact; its complete model response remains private to the ephemeral runner.
+
+**Promotion:** The native reviewer-protected gate additionally requires `two-model-specialists` to pass. Until real DeepSeek inference and private-model validation complete successfully, the proposal stays a draft; neither the specialized review nor the Llama routing may auto-edit source code, bypass tests or deploy to OCI.
+
+| Condition | Expected behavior |
+| --- | --- |
+| First model pull succeeds | Exactly 1 attempt, zero delays |
+| First failure, second success | 2 attempts, 10-second delay |
+| First two failures, third success | 3 attempts, 10- and 20-second delays |
+| All three attempts fail | Nonzero exit, fail-closed |
+| HTTP 200 with malformed/incomplete response | Retry; cannot mark ready |
+| Ollama reports model absent in tags | Retry; cannot mark ready |
+| Llama overview succeeds but DeepSeek fails | Block specialist and deployment gate, preserve all working services |
+| DeepSeek suggests code changes | Record for review; tests and human PR remain mandatory |
+
 ## 2. Required Step 5 pre-activation gate
 
 `.github/workflows/ollama-ci-activation-gate.yml` enforces the following:
