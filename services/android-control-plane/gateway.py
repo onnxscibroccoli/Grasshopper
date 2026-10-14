@@ -407,53 +407,54 @@ class ControlPlaneService(control_pb2_grpc.ControlPlaneServicer):
         server_state = "unknown"
         detail = "Result rejected"
         if ID_RE.fullmatch(job_id):
-            valid_evidence, evidence_detail, evidence = validate_result_payload(
-                payload, result.state, result.sha256
-            )
-            if not valid_evidence:
-                detail = evidence_detail
-            else:
-                reported_status = evidence["status"]
-                async with self.pool.acquire() as connection:
-                        async with connection.transaction():
-                            job = await connection.fetchrow(
-                                """
-                                SELECT job_id, state, result_sha256
-                                FROM controller_jobs
-                                WHERE job_id = $1 AND device_id = $2
-                                FOR UPDATE
-                                """,
-                                job_id, session.device_id,
-                            )
-                            if job is None:
-                                detail = "Job is not owned by this device"
-                            elif job["result_sha256"] is not None:
-                                ok = hmac.compare_digest(job["result_sha256"].strip(), digest)
-                                server_state = job["state"]
-                                detail = "Previously persisted result acknowledged" if ok else "Conflicting duplicate result rejected"
-                                if ok:
-                                    await connection.execute(
-                                        "UPDATE controller_jobs SET result_acknowledged = true WHERE job_id = $1",
-                                        job_id,
-                                    )
-                            elif job["state"] not in ("offered", "accepted", "indeterminate"):
-                                detail = "Job is not in a result-accepting state"
-                            else:
-                                server_state = "completed" if reported_status == "PASS" else "not_proven"
-                                await connection.execute(
+            try:
+                valid_evidence, evidence_detail, evidence = validate_result_payload(
+                    payload, result.state, result.sha256
+                )
+                if not valid_evidence:
+                    detail = evidence_detail
+                else:
+                    reported_status = evidence["status"]
+                    async with self.pool.acquire() as connection:
+                            async with connection.transaction():
+                                job = await connection.fetchrow(
                                     """
-                                    UPDATE controller_jobs
-                                    SET state = $2, result_state = $3, result_payload = $4,
-                                        result_sha256 = $5, result_detail = $6,
-                                        result_acknowledged = true, finished_at = now(), updated_at = now()
-                                    WHERE job_id = $1
+                                    SELECT job_id, state, result_sha256
+                                    FROM controller_jobs
+                                    WHERE job_id = $1 AND device_id = $2
+                                    FOR UPDATE
                                     """,
-                                    job_id, server_state, reported_status, payload, digest,
-                                    "Verified proof marker accepted" if reported_status == "PASS"
-                                    else str(evidence.get("reason", "Evidence is not proven"))[:1000],
+                                    job_id, session.device_id,
                                 )
-                                ok = True
-                                detail = "Result durably persisted"
+                                if job is None:
+                                    detail = "Job is not owned by this device"
+                                elif job["result_sha256"] is not None:
+                                    ok = hmac.compare_digest(job["result_sha256"].strip(), digest)
+                                    server_state = job["state"]
+                                    detail = "Previously persisted result acknowledged" if ok else "Conflicting duplicate result rejected"
+                                    if ok:
+                                        await connection.execute(
+                                            "UPDATE controller_jobs SET result_acknowledged = true WHERE job_id = $1",
+                                            job_id,
+                                        )
+                                elif job["state"] not in ("offered", "accepted", "indeterminate"):
+                                    detail = "Job is not in a result-accepting state"
+                                else:
+                                    server_state = "completed" if reported_status == "PASS" else "not_proven"
+                                    await connection.execute(
+                                        """
+                                        UPDATE controller_jobs
+                                        SET state = $2, result_state = $3, result_payload = $4,
+                                            result_sha256 = $5, result_detail = $6,
+                                            result_acknowledged = true, finished_at = now(), updated_at = now()
+                                        WHERE job_id = $1
+                                        """,
+                                        job_id, server_state, reported_status, payload, digest,
+                                        "Verified proof marker accepted" if reported_status == "PASS"
+                                        else str(evidence.get("reason", "Evidence is not proven"))[:1000],
+                                    )
+                                    ok = True
+                                    detail = "Result durably persisted"
                     if ok:
                         await self._audit(
                             "job_result_persisted", device_id=session.device_id, job_id=job_id,
