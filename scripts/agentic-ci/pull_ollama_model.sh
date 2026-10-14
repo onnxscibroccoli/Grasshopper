@@ -6,7 +6,7 @@ set -Eeuo pipefail
 umask 077
 
 model="${1:-llama3.2:3b}"
-if [[ "$model" != 'llama3.2:3b' ]]; then
+if [[ "$model" != 'llama3.2:3b' && "$model" != 'deepseek-coder:6.7b-instruct' ]]; then
   echo 'OLLAMA_PULL=BLOCKED_UNAPPROVED_MODEL' >&2
   exit 2
 fi
@@ -21,7 +21,7 @@ for attempt in 1 2 3; do
   tags="$tmp/tags-${attempt}.json"
   if curl --fail --silent --show-error --connect-timeout 15 --max-time 540 \
       --header 'Content-Type: application/json' \
-      --data '{"name":"llama3.2:3b","stream":false}' \
+      --data "$(printf '{\"name\":\"%s\",\"stream\":false}' \"$model\")" \
       --output "$response" "$endpoint/api/pull"; then
     if python3 - "$response" <<'PY'
 import json, sys
@@ -36,13 +36,13 @@ PY
     then
       if curl --fail --silent --show-error --connect-timeout 15 --max-time 15 \
           --output "$tags" "$endpoint/api/tags"; then
-        if python3 - "$tags" <<'PY'
+        if python3 - "$tags" "$model" <<'PY'
 import json, sys
 try:
     with open(sys.argv[1], encoding='utf-8') as handle:
         data = json.load(handle)
     available = isinstance(data, dict) and any(
-        isinstance(item, dict) and 'llama3.2:3b' in (item.get('name'), item.get('model'))
+        isinstance(item, dict) and sys.argv[2] in (item.get('name'), item.get('model'))
         for item in data.get('models', [])
     )
 except (OSError, UnicodeError, ValueError, TypeError):
