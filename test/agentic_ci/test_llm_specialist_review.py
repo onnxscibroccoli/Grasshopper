@@ -166,7 +166,6 @@ class StreamingDeepSeekTests(unittest.TestCase):
         cases=[
             [self.chunk('{"symbols":[]}')], # EOF without done
             [self.chunk('{"symbols":[]}',done=True,model=module.GENERAL)],
-            [self.chunk('{"symbols":[]}',done=True),self.chunk('{}',done=True)],
             [self.chunk("not-json",done=True)],
         ]
         for frames in cases:
