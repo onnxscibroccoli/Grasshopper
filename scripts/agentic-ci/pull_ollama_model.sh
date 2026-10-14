@@ -21,7 +21,7 @@ for attempt in 1 2 3; do
   tags="$tmp/tags-${attempt}.json"
   if curl --fail --silent --show-error --connect-timeout 15 --max-time 540 \
       --header 'Content-Type: application/json' \
-      --data "$(printf '{\"name\":\"%s\",\"stream\":false}' \"$model\")" \
+      --data "$(printf '{"name":"%s","stream":false}' "$model")" \
       --output "$response" "$endpoint/api/pull"; then
     if python3 - "$response" <<'PY'
 import json, sys
