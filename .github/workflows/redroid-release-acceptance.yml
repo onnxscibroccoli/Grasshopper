@@ -37,7 +37,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           python3 -m py_compile scripts/cloud-android/redroid-acceptance.py test/redroid-acceptance.test.py
-          python3 -m unittest discover -s test -p 'redroid-acceptance.test.py' -v
+          python3 test/redroid-acceptance.test.py -v
           bash -n scripts/cloud-android/termux-physical-parity.sh
           bash -n scripts/cloud-android/oci-redroid-admission.sh
           bash -n scripts/cloud-android/redroid-device.sh
