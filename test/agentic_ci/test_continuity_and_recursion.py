@@ -21,6 +21,22 @@ def event(name="Reference tests", cause="push", conclusion="failure",
                              "conclusion": conclusion, "head_branch": "main",
                              "actor": {"login": actor}}}
 
+class PreactivationSafetyTests(unittest.TestCase):
+    def test_observatory_is_disabled_by_default(self):
+        path = pathlib.Path(__file__).resolve().parents[2] / ".github/workflows/ollama-ci-observatory.yml"
+        workflow = path.read_text(encoding="utf8")
+        self.assertIn("vars.AGENTIC_SELFTEST_ACTIVATED == 'true'", workflow)
+        self.assertIn("vars.OLLAMA_OBSERVER_CANARY_ENABLED == 'true'", workflow)
+        self.assertIn("github.event.workflow_run.name == 'Ollama CI failure canary'", workflow)
+        self.assertIn("needs.lineage.result == 'success'", workflow)
+
+    def test_dispatch_does_not_activate_unreviewed_continuity(self):
+        path = pathlib.Path(__file__).resolve().parents[2] / ".github/workflows/ollama-ci-continuity.yml"
+        workflow = path.read_text(encoding="utf8")
+        self.assertIn("vars.AGENTIC_SELFTEST_ACTIVATED == 'true'", workflow)
+        self.assertIn("github.actor != 'github-actions[bot]'", workflow)
+
+
 class RecursionContracts(unittest.TestCase):
     def test_allows_exactly_one_first_generation_failure(self):
         obj = guard.decide(event())
