@@ -7,6 +7,8 @@ import com.omnikali.protocol.v1.Heartbeat
 import com.omnikali.protocol.v1.Hello
 import com.omnikali.protocol.v1.JobAccepted
 import com.omnikali.protocol.v1.JobFailure
+import com.omnikali.protocol.v1.JobResult
+import com.google.protobuf.ByteString
 import com.omnikali.protocol.v1.ServerMessage
 import io.grpc.ManagedChannel
 import io.grpc.stub.StreamObserver
@@ -51,6 +53,7 @@ class ControlPlaneClient(
     private val running = AtomicBoolean(false)
     private val sequence = AtomicLong(0)
     private val reconnectAttempt = AtomicLong(0)
+    private val authenticated = AtomicBoolean(false)
     private val scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
     private val lock = Any()
 
@@ -84,6 +87,16 @@ class ControlPlaneClient(
         send(ClientMessage.newBuilder().setFailure(payload))
     }
 
+    fun sendResult(jobId: String, state: String, payloadJson: String, sha256: String): Boolean {
+        val payload = JobResult.newBuilder()
+            .setJobId(jobId)
+            .setState(state.take(64))
+            .setPayload(ByteString.copyFrom(payloadJson.take(4096).toByteArray(Charsets.UTF_8)))
+            .setSha256(sha256)
+            .build()
+        return send(ClientMessage.newBuilder().setResult(payload))
+    }
+
     private fun connectAttempt() {
         if (!running.get()) return
         var newChannel: ManagedChannel? = null
@@ -99,6 +112,7 @@ class ControlPlaneClient(
             }
 
             val localChannel = newChannel
+            authenticated.set(false)
             val lastServerSequence = AtomicLong(0)
             val responses = object : StreamObserver<ServerMessage> {
                 override fun onNext(value: ServerMessage) {
@@ -113,6 +127,10 @@ class ControlPlaneClient(
                             }
                             if (lastServerSequence.compareAndSet(previous, incoming)) break
                         }
+                    }
+                    if (value.payloadCase == ServerMessage.PayloadCase.WELCOME) {
+                        authenticated.set(true)
+                        reconnectAttempt.set(0)
                     }
                     events.onServerMessage(value)
                 }
@@ -187,20 +205,24 @@ class ControlPlaneClient(
         send(ClientMessage.newBuilder().setHeartbeat(heartbeat))
     }
 
-    private fun send(builder: ClientMessage.Builder) {
-        val stream = requestStream ?: return
-        val message = builder
-            .setDeviceId(deviceId)
-            .setSessionId(sessionId)
-            .setSequence(sequence.incrementAndGet())
-            .build()
-        try {
-            synchronized(lock) {
-                if (running.get() && stream === requestStream) stream.onNext(message)
+    private fun send(builder: ClientMessage.Builder, allowBeforeWelcome: Boolean = false): Boolean {
+        synchronized(lock) {
+            val stream = requestStream ?: return false
+            if (!running.get() || stream !== requestStream) return false
+            if (!allowBeforeWelcome && !authenticated.get()) return false
+            val message = builder
+                .setDeviceId(deviceId)
+                .setSessionId(sessionId)
+                .setSequence(sequence.incrementAndGet())
+                .build()
+            return try {
+                stream.onNext(message)
+                true
+            } catch (e: Exception) {
+                val current = channel
+                if (current != null) handleStreamFailure(current, e)
+                false
             }
-        } catch (e: Exception) {
-            val current = channel
-            if (current != null) handleStreamFailure(current, e)
         }
     }
 
@@ -212,6 +234,7 @@ class ControlPlaneClient(
             if (channel === failedChannel) {
                 channel = null
                 requestStream = null
+                authenticated.set(false)
                 shouldRetry = running.get()
             }
         }
@@ -246,6 +269,7 @@ class ControlPlaneClient(
         scheduler.shutdownNow()
         synchronized(lock) {
             requestStream = null
+            authenticated.set(false)
             channel?.shutdownNow()
             channel = null
         }
