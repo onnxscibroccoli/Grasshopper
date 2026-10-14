@@ -30,10 +30,35 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  offline-contract:
-    name: Deterministic false-PASS and recursion regression tests
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow ollama-ci-activation-gate.yml
+  offline-contract:
+    needs: timeout-budget
+    name: Deterministic false-PASS and recursion regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['offline-contract'] }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,9 +75,9 @@ jobs:
 
   containerized-ollama-live:
     name: Execute Llama 3.2, capture failure, validate safe retry
-    needs: offline-contract
+    needs: [timeout-budget, offline-contract]
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['containerized-ollama-live'] }}
     services:
       ollama:
         image: ollama/ollama:latest
@@ -153,9 +178,9 @@ jobs:
 
   two-model-specialists:
     name: Llama mainline architecture and DeepSeek detailed code validation
-    needs: [offline-contract, containerized-ollama-live]
+    needs: [timeout-budget, offline-contract, containerized-ollama-live]
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 180
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['two-model-specialists'] }}
     services:
       ollama:
         image: ollama/ollama:latest
@@ -204,7 +229,7 @@ jobs:
           bash .candidate/scripts/agentic-ci/pull_ollama_model.sh deepseek-coder:6.7b-instruct
       - name: Execute sequential, non-executable Llama and DeepSeek reviews
         shell: bash
-        timeout-minutes: 125
+        timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['two-model-specialists'] }}
         env:
           PYTHONUNBUFFERED: '1'
         run: |
@@ -246,9 +271,9 @@ jobs:
       ${{ github.event_name == 'workflow_dispatch' &&
           github.ref == 'refs/heads/main' &&
           inputs.canary_run_id != '' }}
-    needs: [offline-contract, containerized-ollama-live]
+    needs: [timeout-budget, offline-contract, containerized-ollama-live]
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['live-recursion'] }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -274,14 +299,14 @@ jobs:
 
   reviewer-configured:
     name: Prove native environment reviewer protection before publication
-    needs: [offline-contract, containerized-ollama-live, two-model-specialists, live-recursion]
+    needs: [timeout-budget, offline-contract, containerized-ollama-live, two-model-specialists, live-recursion]
     if: >-
       ${{ github.event_name == 'workflow_dispatch' &&
           github.ref == 'refs/heads/main' &&
           inputs.publish_proof == true &&
           needs.live-recursion.result == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['reviewer-configured'] }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -297,7 +322,7 @@ jobs:
 
   publish-protected-proof:
     name: GitHub Environment HITL — Proceed / Hold Off / Inspect Logs
-    needs: [offline-contract, containerized-ollama-live, two-model-specialists, live-recursion, reviewer-configured]
+    needs: [timeout-budget, offline-contract, containerized-ollama-live, two-model-specialists, live-recursion, reviewer-configured]
     if: >-
       ${{ github.event_name == 'workflow_dispatch' &&
           github.ref == 'refs/heads/main' &&
@@ -308,7 +333,7 @@ jobs:
           needs.reviewer-configured.result == 'success' }}
     environment: oci-grasshopper-production
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['publish-protected-proof'] }}
     steps:
       - uses: actions/checkout@v4
         with:
