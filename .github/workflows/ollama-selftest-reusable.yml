@@ -79,11 +79,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          curl --fail --silent --show-error --max-time 1800 \
-            -H 'Content-Type: application/json' \
-            --data '{"name":"llama3.2:3b","stream":false}' \
-            http://127.0.0.1:11434/api/pull >/dev/null
-          echo "OLLAMA_LOCAL_MODEL_AVAILABLE=YES"
+          bash .ci-harness/scripts/agentic-ci/pull_ollama_model.sh
 
       - name: Execute exact check and bounded local diagnostics
         id: selftest
