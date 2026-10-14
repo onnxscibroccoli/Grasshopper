@@ -1,6 +1,7 @@
 """Verify 2x-5x job budget plans and workflow timeout wiring."""
 import importlib.util
 import json
+import re
 from pathlib import Path
 import unittest
 
@@ -76,11 +77,15 @@ class TimeoutPolicyTests(unittest.TestCase):
                 self.assertEqual(set(headers), set(definitions) | {"timeout-budget"})
                 self.assertIn("    timeout-minutes: 12", body)
                 for job in definitions:
-                    piece = body.split("\n  " + job + ":\n", 1)[1]
-                    import re
-                    boundary = re.search(r"(?m)^  [a-z][a-z0-9-]*:\\n", piece)
-                    if boundary:
-                        piece = piece[:boundary.start()]
+                    start = body.find("\n  " + job + ":\n")
+                    self.assertGreaterEqual(start, 0, f"job {job} not found")
+                    piece_start = start + len("\n  " + job + ":\n")
+                    # Find next top-level job header
+                    next_job = re.search(r"\n  [a-z][a-z0-9-]*:\n", body[piece_start:])
+                    if next_job:
+                        piece = body[piece_start:piece_start + next_job.start()]
+                    else:
+                        piece = body[piece_start:]
                     expr = ("timeout-minutes: " + "$" +
                             "{{ fromJSON(needs['timeout-budget'].outputs.budgets)['" +
                             job + "'] }}")
