@@ -20,6 +20,17 @@ import urllib.request
 
 GENERAL = "llama3.2:3b"
 CODE = "deepseek-coder:6.7b-instruct"
+CODE_FORMAT_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["symbols", "code_risks", "refactoring_candidates", "evidence_refs"],
+    "properties": {
+        "symbols": {"type": "array", "items": {"type": "string", "maxLength": 90}, "maxItems": 4},
+        "code_risks": {"type": "array", "items": {"type": "string", "maxLength": 140}, "maxItems": 4},
+        "refactoring_candidates": {"type": "array", "items": {"type": "string", "maxLength": 140}, "maxItems": 4},
+        "evidence_refs": {"type": "array", "items": {"type": "string", "maxLength": 110}, "minItems": 1, "maxItems": 4},
+    },
+}
 ENDPOINT = "http://127.0.0.1:11434/api/generate"
 ARCH_PATHS = ("README.md", "AGENTS.md", "src/model.mjs",
               "src/control-plane.mjs", "src/executor.mjs")
@@ -51,7 +62,9 @@ def is_canonical_main(root: Path) -> bool:
                        cwd=root, capture_output=True, text=True, timeout=8)
     return p.returncode == 0 and p.stdout.strip() == "main"
 
-def evidence(root: Path, files: tuple[str, ...]) -> tuple[list[dict], str]:
+def evidence(root: Path, files: tuple[str, ...], *, per_file_chars: int = 3000) -> tuple[list[dict], str]:
+    if not 400 <= per_file_chars <= 3000:
+        raise ValueError("Invalid source sampling budget")
     out, budget = [], MAX_TOTAL
     for name in files:
         target = root / name
@@ -66,7 +79,7 @@ def evidence(root: Path, files: tuple[str, ...]) -> tuple[list[dict], str]:
         # Exclude unsafe material entirely instead of asking the model to filter.
         if "-----BEGIN" in text and "PRIVATE KEY" in text:
             continue
-        excerpt = scrub(text[: min(budget, 3000)])
+        excerpt = scrub(text[: min(budget, per_file_chars)])
         if not excerpt or EMAIL.search(excerpt) or PRIVATE.search(excerpt):
             continue
         out.append({"ref": "main:" + name,
@@ -180,13 +193,18 @@ def _deepseek_stream(req: urllib.request.Request, *,
                 if tokens_seen == 1 or tokens_seen % 64 == 0:
                     print(f"DEEPSEEK_STREAM_HEARTBEAT_CHUNKS={tokens_seen}", flush=True)
             if data.get("done") is True:
+                finish_reason = data.get("done_reason")
+                if finish_reason == "length":
+                    raise ValueError("DEEPSEEK_OUTPUT_TRUNCATED")
+                if finish_reason is not None and finish_reason not in ("stop",):
+                    raise ValueError("DEEPSEEK_UNEXPECTED_FINISH_REASON")
                 seen_done = True
                 if not parts:
                     raise ValueError("DeepSeek returned done without model output")
                 try:
                     obj = json.loads("".join(parts))
                 except json.JSONDecodeError as exc:
-                    raise ValueError("DeepSeek output is not complete JSON") from exc
+                    raise ValueError("DEEPSEEK_INCOMPLETE_JSON") from exc
                 if not isinstance(obj, dict):
                     raise ValueError("DeepSeek final output must be a JSON object")
                 # Continue to drain so a trailing frame still fails closed.
@@ -206,9 +224,10 @@ def generate(model: str, instruction: str, payload: str) -> dict:
               "\nNo shell commands, patches, executable instructions, secrets, URLs or private identifiers."
               "\nReturn exactly one JSON object. No text outside JSON.\n" +
               scrub(payload)[:24_000])
-    num_predict = 400 if model == CODE else 650
+    num_predict = 1200 if model == CODE else 650
     body = json.dumps({
-        "model": model, "prompt": prompt, "stream": model == CODE, "format": "json",
+        "model": model, "prompt": prompt, "stream": model == CODE,
+        "format": CODE_FORMAT_SCHEMA if model == CODE else "json",
         "keep_alive": "0", "options": {"temperature": 0, "num_predict": num_predict, "num_ctx": 4096}
     }).encode()
     req = urllib.request.Request(ENDPOINT, data=body,
@@ -250,7 +269,7 @@ def analyze(root: Path, output: Path) -> dict:
     arch_refs = [x for x in typed_statements(architecture, "evidence_refs") if x in allowed_a]
     if not arch_refs:
         raise ValueError("Llama output lacks canonical evidence reference")
-    code, c_prompt = evidence(root, CODE_PATHS)
+    code, c_prompt = evidence(root, CODE_PATHS, per_file_chars=1750)
     code_output = generate(CODE,
        "Role: source-code implementation reviewer. Return JSON lists: symbols, code_risks, "
        "refactoring_candidates, evidence_refs. Focus on specific functions, types, and control flow; "
@@ -306,7 +325,12 @@ def main() -> int:
         result = analyze(Path(args.main_root).resolve(strict=True), Path(args.output))
     except (OSError, ValueError, json.JSONDecodeError, subprocess.TimeoutExpired,
             TypeError, TimeoutError) as exc:
-        print("SPECIALIST_REVIEW=BLOCKED_" + type(exc).__name__, file=sys.stderr)
+        safe_reasons = {
+            "DEEPSEEK_INCOMPLETE_JSON", "DEEPSEEK_OUTPUT_TRUNCATED",
+            "DEEPSEEK_UNEXPECTED_FINISH_REASON",
+        }
+        diagnostic = str(exc) if str(exc) in safe_reasons else type(exc).__name__
+        print("SPECIALIST_REVIEW=BLOCKED_" + diagnostic, file=sys.stderr)
         return 2
     print("SPECIALIST_REVIEW=" + result["status"])
     print("ARCHITECTURE_MODEL=" + result["architecture_model"])
