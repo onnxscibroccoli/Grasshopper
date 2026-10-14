@@ -143,16 +143,31 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p "$RUNNER_TEMP/android-evidence"
-          timeout 900 "$ANDROID_HOME/emulator/emulator" \
+          # Emulator process must outlive the boot poll (job timeout is 110m).
+          # Previously a 900s timeout killed the emulator while the poll ran to 30m.
+          "$ANDROID_HOME/emulator/emulator" \
             -avd broccoli-api35 -no-snapshot -no-audio -no-window -no-boot-anim \
             -gpu swiftshader_indirect -memory 2048 -cores 2 -accel "$EMULATOR_ACCEL" >"$RUNNER_TEMP/android-evidence/emulator.log" 2>&1 &
+          emu_pid=$!
+          adb start-server >/dev/null 2>&1 || true
           booted=0
-          for i in $(seq 1 360); do
+          for i in $(seq 1 480); do
             value="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
             if [[ "$value" == 1 ]]; then booted=1; break; fi
+            if ! kill -0 "$emu_pid" 2>/dev/null; then
+              echo "ANDROID15_EMULATOR=EMULATOR_PROCESS_EXITED"
+              break
+            fi
             sleep 5
           done
-          [[ "$booted" == 1 ]] || { echo "ANDROID15_EMULATOR=FAIL_BOOT"; exit 2; }
+          if [[ "$booted" != 1 ]]; then
+            echo "ANDROID15_EMULATOR=FAIL_BOOT"
+            echo "=== adb devices ==="
+            adb devices -l || true
+            echo "=== emulator.log (tail) ==="
+            tail -n 200 "$RUNNER_TEMP/android-evidence/emulator.log" || true
+            exit 2
+          fi
           sdk="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
           [[ "$sdk" == 35 ]] || { echo "ANDROID15_EMULATOR=UNEXPECTED_SDK"; exit 2; }
           adb shell wm size | grep -qi size
