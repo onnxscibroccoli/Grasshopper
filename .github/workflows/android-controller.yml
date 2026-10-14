@@ -38,7 +38,9 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
-      - uses: android-actions/setup-android@v3
+      # v4 drops the deprecated 'tools' package that no longer exists in the SDK repo
+      # Regression: setup-android@v3 failed with 'Failed to find package tools' (run 38509103908)
+      - uses: android-actions/setup-android@v4
       - name: Install pinned Android SDK packages
         run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
       - name: Unit tests and debug build
@@ -66,7 +68,7 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - name: Install pinned Android SDK packages
         run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
       - name: Require protected signing material and decode keystore
