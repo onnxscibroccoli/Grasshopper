@@ -1,7 +1,6 @@
 package com.omnikali.controller
 
 import android.app.Activity
-import android.app.BroadcastOptions
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
@@ -65,8 +64,8 @@ class TermuxResultReceiver : BroadcastReceiver() {
         val exitCode = bundle.getInt(EXTRA_TERMUX_EXIT_CODE, Int.MIN_VALUE)
         val stdout = bundle.getString(EXTRA_TERMUX_STDOUT).orEmpty().take(MAX_OUTPUT_CHARS)
         val stderr = bundle.getString(EXTRA_TERMUX_STDERR).orEmpty().take(MAX_OUTPUT_CHARS)
-        val originalOut = bundle.getString(EXTRA_TERMUX_STDOUT_LENGTH)?.toLongOrNull()
-        val originalErr = bundle.getString(EXTRA_TERMUX_STDERR_LENGTH)?.toLongOrNull()
+        val originalOut = readLength(bundle, EXTRA_TERMUX_STDOUT_LENGTH)
+        val originalErr = readLength(bundle, EXTRA_TERMUX_STDERR_LENGTH)
         val stdoutDigest = sha256(stdout.toByteArray(Charsets.UTF_8))
         val stderrDigest = sha256(stderr.toByteArray(Charsets.UTF_8))
 
@@ -127,6 +126,13 @@ class TermuxResultReceiver : BroadcastReceiver() {
             json
         )
     }
+
+    private fun readLength(bundle: Bundle, key: String): Long? =
+        when (val value = bundle.get(key)) {
+            is Number -> value.toLong()
+            is String -> value.toLongOrNull()
+            else -> null
+        }
 
     private fun notProven(reason: String, supplied: String?): CheckedResult {
         val json = supplied ?: JSONObject()
