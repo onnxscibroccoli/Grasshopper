@@ -123,7 +123,10 @@ class StreamingDeepSeekTests(unittest.TestCase):
         self.assertEqual(result["symbols"],["execute"])
         self.assertEqual(received[0]["model"],module.CODE)
         self.assertTrue(received[0]["stream"])
-        self.assertEqual(received[0]["format"],"json")
+        self.assertIsInstance(received[0]["format"], dict)
+        self.assertEqual(received[0]["format"]["type"], "object")
+        self.assertEqual(received[0]["format"]["properties"]["evidence_refs"]["minItems"], 1)
+        self.assertEqual(received[0]["options"]["num_predict"], 1200)
         self.assertFalse(received[0]["options"]["temperature"])
 
     def test_each_response_fragment_renews_inactivity_deadline(self):
@@ -152,6 +155,22 @@ class StreamingDeepSeekTests(unittest.TestCase):
             with self.assertRaises(TimeoutError):
                 module._deepseek_stream(object(),idle_seconds=0.07,
                          startup_seconds=0.09,total_seconds=0.8)
+
+    def test_length_finished_stream_rejected_with_diagnostic(self):
+        frames=[self.chunk('{"symbols":[',done=False),
+                dict(self.chunk('"incomplete',done=True),done_reason="length")]
+        with patch.object(module.urllib.request,"urlopen",
+                          return_value=self.frames(frames)):
+            with self.assertRaisesRegex(ValueError,"DEEPSEEK_OUTPUT_TRUNCATED"):
+                module._deepseek_stream(object(),idle_seconds=1,total_seconds=3)
+
+    def test_evidence_sampling_is_bounded_for_code_model(self):
+        root, out = self.create_repo()
+        (root / "src/executor.mjs").write_text("x" * 8000)
+        rows, raw = module.evidence(root,module.CODE_PATHS,per_file_chars=1750)
+        self.assertTrue(rows)
+        self.assertLessEqual(max(len(item["excerpt"]) for item in rows),1750)
+        self.assertNotIn("x" * 1751,raw)
 
     def test_stall_after_first_token_expires(self):
         class Pausing:
