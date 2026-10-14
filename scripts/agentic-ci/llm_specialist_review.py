@@ -84,14 +84,16 @@ def generate(model: str, instruction: str, payload: str) -> dict:
               "\nNo shell commands, patches, executable instructions, secrets, URLs or private identifiers."
               "\nReturn exactly one JSON object. No text outside JSON.\n" +
               scrub(payload)[:24_000])
+    # DeepSeek on ubuntu-24.04-arm (3 CPU / 10g) previously exceeded 300s; 600s + lower num_predict avoids cutoff.
+    num_predict = 400 if model == CODE else 650
     body = json.dumps({
         "model": model, "prompt": prompt, "stream": False, "format": "json",
-        "keep_alive": "0", "options": {"temperature": 0, "num_predict": 650, "num_ctx": 4096}
+        "keep_alive": "0", "options": {"temperature": 0, "num_predict": num_predict, "num_ctx": 4096}
     }).encode()
     req = urllib.request.Request(ENDPOINT, data=body,
                                  headers={"Content-Type": "application/json"},
                                  method="POST")
-    with urllib.request.urlopen(req, timeout=300) as res:
+    with urllib.request.urlopen(req, timeout=600) as res:
         answer = json.load(res)
     if not isinstance(answer, dict) or answer.get("model") != model:
         raise ValueError("Unexpected Ollama responder model")
