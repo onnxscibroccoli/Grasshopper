@@ -92,6 +92,10 @@ jobs:
                    "$base/initramfs/sys" "$base/initramfs/dev"
           cp "$(command -v busybox)" "$base/initramfs/bin/busybox"
           ln -s busybox "$base/initramfs/bin/sh"
+          ln -s busybox "$base/initramfs/bin/mount"
+          ln -s busybox "$base/initramfs/bin/grep"
+          ln -s busybox "$base/initramfs/bin/mkdir"
+          ln -s busybox "$base/initramfs/bin/poweroff"
           cat > "$base/initramfs/init" <<'INIT'
           #!/bin/sh
           PATH=/bin
