@@ -21,6 +21,8 @@ import java.util.UUID
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import javax.net.ssl.SSLContext
@@ -56,6 +58,7 @@ class ControlPlaneClient(
     private val authenticated = AtomicBoolean(false)
     private val scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
     private val lock = Any()
+    @Volatile private var welcomeTimeout: ScheduledFuture<*>? = null
 
     @Volatile private var channel: ManagedChannel? = null
     @Volatile private var requestStream: StreamObserver<ClientMessage>? = null
@@ -131,6 +134,8 @@ class ControlPlaneClient(
                     if (value.payloadCase == ServerMessage.PayloadCase.WELCOME) {
                         authenticated.set(true)
                         reconnectAttempt.set(0)
+                        welcomeTimeout?.cancel(false)
+                        welcomeTimeout = null
                     }
                     events.onServerMessage(value)
                 }
@@ -160,9 +165,15 @@ class ControlPlaneClient(
                 .addCapabilities("android.rish.transport.probe")
                 .addCapabilities("android.status")
                 .build()
-            send(ClientMessage.newBuilder().setHello(hello))
-            reconnectAttempt.set(0)
             events.onConnectionState("CONNECTING", "TLS stream requested; awaiting an authenticated server welcome")
+            if (!send(ClientMessage.newBuilder().setHello(hello), allowBeforeWelcome = true)) {
+                throw IllegalStateException("Unable to send gRPC hello")
+            }
+            welcomeTimeout = scheduler.schedule({
+                if (!authenticated.get() && running.get()) {
+                    handleStreamFailure(localChannel, TimeoutException("server welcome timeout"))
+                }
+            }, 15, TimeUnit.SECONDS)
         } catch (e: Exception) {
             newChannel?.shutdownNow()
             events.onConnectionState("DISCONNECTED", "Connection attempt failed: ${safeError(e)}")
@@ -235,6 +246,8 @@ class ControlPlaneClient(
                 channel = null
                 requestStream = null
                 authenticated.set(false)
+                welcomeTimeout?.cancel(false)
+                welcomeTimeout = null
                 shouldRetry = running.get()
             }
         }
@@ -270,6 +283,8 @@ class ControlPlaneClient(
         synchronized(lock) {
             requestStream = null
             authenticated.set(false)
+            welcomeTimeout?.cancel(false)
+            welcomeTimeout = null
             channel?.shutdownNow()
             channel = null
         }
