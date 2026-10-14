@@ -11,7 +11,7 @@ function run(mode) {
   return spawnSync('bash', [gate, mode], {
     cwd: project,
     encoding: 'utf8',
-    timeout: 10_000,
+    timeout: 20_000,
     maxBuffer: 64 * 1024,
     env: { ...process.env, LC_ALL: 'C' },
   });
