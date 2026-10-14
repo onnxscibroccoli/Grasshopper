@@ -7,6 +7,7 @@ on:
       - ".github/workflows/ollama-selftest-contract.yml"
       - ".github/workflows/ollama-ci-observatory.yml"
       - "scripts/agentic-ci/**"
+      - "config/agentic-ci-time-budgets.json"
       - "test/agentic_ci/**"
   push:
     branches: [main]
