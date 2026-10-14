@@ -20,9 +20,34 @@ permissions:
   contents: read
 
 jobs:
-  contract:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow ollama-selftest-contract.yml
+  contract:
+    needs: timeout-budget
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['contract'] }}
     steps:
       - name: Checkout candidate for isolated tests (not as architectural authority)
         uses: actions/checkout@v4
