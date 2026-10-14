@@ -81,12 +81,11 @@ jobs:
           done
           exit 2
       - name: Fetch local Llama 3.2 diagnostic model
+        shell: bash
         run: |
           set -Eeuo pipefail
-          curl -fsS --max-time 1500 \
-            -H 'Content-Type: application/json' \
-            --data '{"name":"llama3.2:3b","stream":false}' \
-            http://127.0.0.1:11434/api/pull >/dev/null
+          bash .ci-harness/scripts/agentic-ci/pull_ollama_model.sh
+
       - name: Analyze sanitized failure evidence with read-only token
         env:
           GITHUB_TOKEN: ${{ github.token }}
