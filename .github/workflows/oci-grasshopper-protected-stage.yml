@@ -1,0 +1,114 @@
+name: OCI Grasshopper protected Redroid staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_proof_run_id:
+        description: "Passed Ollama CI activation gate mainline run ID (not a PR run)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: protected-oci-grasshopper-stage
+  cancel-in-progress: false
+
+jobs:
+  authenticate-proof:
+    name: Verify signed-off CI lineage and native HITL configuration
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Fetch approved central CI proof from real successful run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROOF_RUN: ${{ inputs.approved_proof_run_id }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$PROOF_RUN" =~ ^[1-9][0-9]*$ ]] || exit 2
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PROOF_RUN" \
+            --jq '[.name,.conclusion,.head_branch] | @tsv' |
+            grep -Fx $'Ollama CI activation gate\tsuccess\tmain'
+          echo "CENTRAL_PROOF_RUN=VERIFIED_MAIN_SUCCESS" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify mandatory GitHub environment approval protection
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/agentic-ci/environment_guard.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --environment oci-grasshopper-production
+      - name: Download SHA-256 proof artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: approved-oci-readiness-sha256-ledger
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.approved_proof_run_id }}
+          github-token: ${{ github.token }}
+          path: artifacts/proof
+      - name: Verify proof hash and show review links
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/proof_ledger.py verify \
+            --file artifacts/proof/diagnostic-codes.json \
+            --manifest artifacts/proof/proof.json
+          python3 - <<'PY'
+          import json
+          doc=json.load(open("artifacts/proof/proof.json"))
+          if not doc["gate"]["zero_recursion_verified"]:raise SystemExit(2)
+          if doc["source_ref"]!="main":raise SystemExit(2)
+          print("APPROVED_SHA256="+doc["sha256"])
+          PY
+          {
+            echo "### OCI stage awaiting human approval"
+            echo "Proof from mainline run: ${{ inputs.approved_proof_run_id }}"
+            echo "Inspect Logs: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Proceed: Approve and deploy with GitHub Environment Review."
+            echo "Hold Off: Reject or leave approval pending."
+            echo "No host modification occurs before review; the next step is read-only."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oci-verified-staging-proof
+          path: artifacts/proof/
+          retention-days: 7
+          if-no-files-found: error
+
+  stage-on-grasshopper:
+    name: Human-approved, non-disruptive OCI preflight
+    needs: authenticate-proof
+    if: needs.authenticate-proof.result == 'success'
+    environment: oci-grasshopper-production
+    runs-on: [self-hosted, Linux, ARM64, oci-grasshopper]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: oci-verified-staging-proof
+          path: artifacts/proof
+      - name: Validate OCI no-static-key access and existing service continuity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/proof_ledger.py verify \
+            --file artifacts/proof/diagnostic-codes.json \
+            --manifest artifacts/proof/proof.json
+          python3 scripts/agentic-ci/oci_auth_gate.py
+          bash scripts/agentic-ci/oci_deploy_preflight.sh
+          echo "RESTARTS=NONE"
+          echo "SUDO_TOKENS_USED=NONE"
+          echo "KERNEL_PATCH_APPLIED=NO"
+          echo "REDROID_DEPLOYMENT=NOT_UNTIL_BINDER_AND_RECOVERY_VERIFIED"
