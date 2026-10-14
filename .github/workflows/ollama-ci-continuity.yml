@@ -14,13 +14,38 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow ollama-ci-continuity.yml
   recheck-or-handoff:
+    needs: timeout-budget
     if: >-
       ${{ github.ref == 'refs/heads/main' &&
           vars.AGENTIC_SELFTEST_ACTIVATED == 'true' &&
           github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 48
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['recheck-or-handoff'] }}
     services:
       ollama:
         image: ollama/ollama:latest
