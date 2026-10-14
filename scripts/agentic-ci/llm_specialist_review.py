@@ -10,6 +10,9 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import queue
+import threading
+import time
 import re
 import subprocess
 import sys
@@ -76,6 +79,112 @@ def evidence(root: Path, files: tuple[str, ...]) -> tuple[list[dict], str]:
         raise ValueError("No eligible canonical-main source evidence")
     return out, json.dumps(out, ensure_ascii=True)
 
+# Per-token inactivity is the DeepSeek timeout. A separate hard deadline bounds
+# total runner cost even if Ollama emits an endless trickle of response chunks.
+DEEPSEEK_IDLE_SECONDS = 600
+DEEPSEEK_TOTAL_SECONDS = 5400
+DEEPSEEK_MAX_RESPONSE_BYTES = 256_000
+LLAMA_HTTP_TIMEOUT_SECONDS = 900
+
+
+def _deepseek_stream(req: urllib.request.Request, *,
+                     idle_seconds: float = DEEPSEEK_IDLE_SECONDS,
+                     total_seconds: float = DEEPSEEK_TOTAL_SECONDS) -> dict:
+    """Consume Ollama JSONL with a renewed idle deadline on each *actual token*.
+
+    urllib's socket timeout alone cannot enforce token inactivity when a server
+    emits periodic empty frames. A daemon reader and deadline-based queue wait
+    guard both the token-free interval and the overall request duration.
+    Model text is never written to stdout, CI logs, public artifacts or shell.
+    """
+    if not (0 < idle_seconds < total_seconds):
+        raise ValueError("Invalid stream timeout configuration")
+    events: queue.Queue = queue.Queue(maxsize=512)
+    complete = threading.Event()
+
+    def reader() -> None:
+        try:
+            with urllib.request.urlopen(req, timeout=idle_seconds) as response:
+                for line in response:
+                    if complete.is_set():
+                        break
+                    if not line.strip():
+                        continue
+                    if len(line) > 128_000:
+                        raise ValueError("Oversized Ollama response frame")
+                    try:
+                        frame = json.loads(line)
+                    except (json.JSONDecodeError, UnicodeError) as exc:
+                        raise ValueError("Invalid Ollama JSONL response frame") from exc
+                    if not isinstance(frame, dict):
+                        raise ValueError("Invalid Ollama response frame type")
+                    events.put(("frame", frame, time.monotonic()), timeout=2)
+                else:
+                    events.put(("eof", None, time.monotonic()), timeout=2)
+        except (OSError, TimeoutError, ValueError, TypeError) as exc:
+            # Never log exception detail; remote frame text could carry secrets.
+            try:
+                events.put(("error", type(exc).__name__, time.monotonic()), timeout=2)
+            except queue.Full:
+                pass
+
+    worker = threading.Thread(target=reader, name="ollama-jsonl-reader", daemon=True)
+    worker.start()
+    start = time.monotonic()
+    idle_deadline = start + idle_seconds
+    hard_deadline = start + total_seconds
+    parts: list[str] = []
+    bytes_seen = 0
+    tokens_seen = 0
+    try:
+        while True:
+            remaining = min(idle_deadline, hard_deadline) - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("DeepSeek stream inactivity or total budget exceeded")
+            try:
+                kind, data, seen_at = events.get(timeout=remaining)
+            except queue.Empty as exc:
+                raise TimeoutError("DeepSeek stream inactivity or total budget exceeded") from exc
+            if seen_at > idle_deadline or seen_at > hard_deadline:
+                raise TimeoutError("DeepSeek emitted data after stream deadline")
+            if kind == "error":
+                raise ValueError("DeepSeek stream read failed: " + str(data))
+            if kind == "eof":
+                raise ValueError("DeepSeek stream ended without Ollama done=true")
+            if data.get("model") != CODE:
+                raise ValueError("DeepSeek stream returned unexpected model")
+            if data.get("error"):
+                raise ValueError("DeepSeek stream reported a model error")
+            fragment = data.get("response", "")
+            if not isinstance(fragment, str):
+                raise ValueError("Invalid DeepSeek response fragment")
+            if fragment:
+                bytes_seen += len(fragment.encode("utf-8"))
+                if bytes_seen > DEEPSEEK_MAX_RESPONSE_BYTES:
+                    raise ValueError("DeepSeek response exceeded bounded size")
+                parts.append(fragment)
+                tokens_seen += 1
+                # Renewal is based on actual *response text*; empty keep-alives
+                # and metadata must not postpone a stalled inference forever.
+                idle_deadline = seen_at + idle_seconds
+                if tokens_seen == 1 or tokens_seen % 64 == 0:
+                    print(f"DEEPSEEK_STREAM_HEARTBEAT_CHUNKS={tokens_seen}", flush=True)
+            if data.get("done") is True:
+                if not parts:
+                    raise ValueError("DeepSeek returned done without model output")
+                try:
+                    obj = json.loads("".join(parts))
+                except json.JSONDecodeError as exc:
+                    raise ValueError("DeepSeek output is not complete JSON") from exc
+                if not isinstance(obj, dict):
+                    raise ValueError("DeepSeek final output must be a JSON object")
+                print(f"DEEPSEEK_STREAM_COMPLETED_CHUNKS={tokens_seen}", flush=True)
+                return obj
+    finally:
+        complete.set()
+        worker.join(timeout=0.25)
+
+
 def generate(model: str, instruction: str, payload: str) -> dict:
     if model not in (GENERAL, CODE):
         raise ValueError("Unapproved model")
@@ -84,16 +193,17 @@ def generate(model: str, instruction: str, payload: str) -> dict:
               "\nNo shell commands, patches, executable instructions, secrets, URLs or private identifiers."
               "\nReturn exactly one JSON object. No text outside JSON.\n" +
               scrub(payload)[:24_000])
-    # DeepSeek on ubuntu-24.04-arm (3 CPU / 10g) previously exceeded 300s; 600s + lower num_predict avoids cutoff.
     num_predict = 400 if model == CODE else 650
     body = json.dumps({
-        "model": model, "prompt": prompt, "stream": False, "format": "json",
+        "model": model, "prompt": prompt, "stream": model == CODE, "format": "json",
         "keep_alive": "0", "options": {"temperature": 0, "num_predict": num_predict, "num_ctx": 4096}
     }).encode()
     req = urllib.request.Request(ENDPOINT, data=body,
                                  headers={"Content-Type": "application/json"},
                                  method="POST")
-    with urllib.request.urlopen(req, timeout=600) as res:
+    if model == CODE:
+        return _deepseek_stream(req)
+    with urllib.request.urlopen(req, timeout=LLAMA_HTTP_TIMEOUT_SECONDS) as res:
         answer = json.load(res)
     if not isinstance(answer, dict) or answer.get("model") != model:
         raise ValueError("Unexpected Ollama responder model")
