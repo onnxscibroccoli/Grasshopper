@@ -40,6 +40,21 @@ The central **three-attempt Llama 3.2 pull** is implemented in `scripts/agentic-
 | Llama overview succeeds but DeepSeek fails | Block specialist and deployment gate, preserve all working services |
 | DeepSeek suggests code changes | Record for review; tests and human PR remain mandatory |
 
+## Incremental DeepSeek inference and renewed timeout
+
+**Observed blocker:** A real prior two-model workflow successfully pulled both models, then failed at the sequential review step with `SPECIALIST_REVIEW=BLOCKED_TimeoutError` after waiting for a non-streamed response. Model installation alone was not an inference PASS.
+
+**Implementation in PR #193:**
+- `llm_specialist_review.py` still invokes Llama 3.2 3B for high-level architecture mapping; it is capped at 900 seconds on the local Ollama HTTP request.
+- For `deepseek-coder:6.7b-instruct`, the API request explicitly uses `stream: true` and `format: json`. Ollama sends **newline-delimited JSON** frames with `model`, incremental `response` text and a terminal `done: true` frame.
+- The inference reader collects frames in a private in-process queue. The main controller uses a **600-second inactivity deadline, renewed at the monotonic arrival time of each nonempty response fragment**. An empty keepalive/metadata frame does **not** reset the deadline.
+- A separate hard 5,400-second deadline limits total compute consumption even if a stream never finishes. A missing `done: true`, malformed frame, model-name mismatch, invalid final JSON, unexpected EOF or output larger than 256 KiB fails closed.
+- Progress logs reveal **only chunk counts** (first frame and every 64 subsequent fragments), never model text, user data, source excerpts or secret-bearing API payloads. The model output stays private to the disposable runner.
+- The sequential review step is allowed **125 minutes** and its specialist job **180 minutes**, independently capped by the streaming hard limit. GitHub-runner resource quotas and deployment gates remain authoritative.
+- Offline regression tests simulate token events spanning longer than the idle limit, a model stall, empty keepalives, an absolute timeout, missing completion frames, mismatched models and truncated JSON. Each case either validates legitimate token-by-token renewal or produces a deterministic failure without fabricating an acceptance PASS.
+
+**Acceptance:** A fully completed, exact-head GitHub Actions run must show Llama and DeepSeek returning evidence-linked JSON and the `ollama-specialist-routing-proof` artifact. Offline mock tests or partial chunk heartbeats are not sufficient. Production OCI/Redroid activation remains blocked until the existing independent zero-recursion, native HITL and Binder recovery gates pass.
+
 ## 2. Required Step 5 pre-activation gate
 
 `.github/workflows/ollama-ci-activation-gate.yml` enforces the following:
