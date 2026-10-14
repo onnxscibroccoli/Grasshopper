@@ -21,6 +21,28 @@ A GitHub-hosted runner cannot execute indefinitely. To fulfill continuous develo
 
 **Continuity is recurring bounded progress, not an infinite loop inside one runner.**
 
+## Dynamic CI job timeouts: 200–500% of expected duration
+
+**Scope:** All **16 existing execution jobs** across the eight central agentic Ollama / OCI staging workflows in PR #193. Each workflow also has one bootstrap `timeout-budget` planning job, set to 12 minutes (three times its estimated four-minute runtime). Other existing Grasshopper workflows and the five unmerged dependent-repository proposals require separately reviewed adoption; this PR does not silently rewrite their jobs.
+
+**Mechanism:** `scripts/agentic-ci/timeout_budget.py` runs in a separate, least-privileged GitHub-hosted preparation job. It reads explicit job-specific expected duration and a 2.0–5.0 multiplier from `config/agentic-ci-time-budgets.json`. When a read-only GitHub Actions metadata query succeeds, it samples the **75th percentile of at least three successful runs from canonical main** for that exact workflow/job and uses the greater of that duration and the reviewed expected baseline. It computes `ceil(expected * multiplier)`, never above GitHub-hosted runner's **360-minute hard maximum**. Failed, cancelled, incomplete, unmerged, and unrelated job durations do not supply successful performance evidence. Missing metadata falls back to documented reviewed expected durations, never an unlimited or fail-open timeout.
+
+The planner passes a JSON map of numeric budgets to downstream jobs using `needs['timeout-budget'].outputs.budgets`. Each job uses `timeout-minutes: fromJSON(...)` to apply the computed value **before it starts**. GitHub does not support renewing its job-level timeout in flight; network/model streaming uses a separate inactivity watchdog and independent hard deadline. The two-model job's sequential execution step now uses the computed job budget rather than an outdated fixed 125-minute step limit, avoiding unexpected step truncation.
+
+| Job class | Configured expected time | Multiplier | Default job allowance |
+| --- | ---: | ---: | ---: |
+| Quick contract/lineage checks | 1–4 minutes | 3× | 3–12 minutes |
+| Llama live canary | 22 minutes | 3× | 66 minutes |
+| Llama + DeepSeek detailed source review | 65 minutes | 4× | **260 minutes** |
+| Read-only CI failure diagnosis | 16 minutes | 3× | 48 minutes |
+| Continuity episode recheck | 18 minutes | 3× | 54 minutes |
+| Reusable self-test | 25 minutes | 3× | 75 minutes |
+| OCI staging validation | 5 minutes | 3× | 15 minutes |
+
+**Safety and coverage acceptance:** CI unit tests validate duration calculations, percentile adaptation, insufficient metadata, credential-free output, 360-minute cap, invalid multipliers, and presence of the planner/dependency/timeout expression in **every registered job**. New agentic workflow jobs must be explicitly added to the policy catalog and unit-tested; unregistered jobs must not silently inherit the GitHub 360-minute default. The actual runner/API acceptance remains mandatory before the central PR becomes merge-ready.
+
+**Operational caution:** Multipliers increase *time allowances*, not guaranteed runtime; they do not justify infinite retries, budget waste or stalled model generation. Ollama token streams still obey their independent idle and total execution guards. Protected CI, verification, OCI boot access and human approval remain fail-closed.
+
 ## Model acquisition and specialist routing (PR #193)
 
 The central **three-attempt Llama 3.2 pull** is implemented in `scripts/agentic-ci/pull_ollama_model.sh`, shared by the activation gate, reusable self-test, central observatory, delegated observatory and continuity controller. It attempts the approved model at most **three times total**, checking both a successful `/api/pull` JSON status and presence of the *exact requested model* in `/api/tags`. Between attempts it waits **10 seconds, then 20 seconds** (linear backoff, no wait after attempt 3). Exhaustion returns a nonzero exit code; it never skips inference or reports a synthetic PASS. Offline tests simulate first-attempt success, one/two temporary failures, total exhaustion, malformed success responses, absent tags and rejected model names.
