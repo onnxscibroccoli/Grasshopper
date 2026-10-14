@@ -1,0 +1,4 @@
+-keep class rikka.shizuku.** { *; }
+-keep class com.omnikali.protocol.v1.** { *; }
+-keep class io.grpc.** { *; }
+-dontwarn javax.annotation.**

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OmniKali Controller</string>
+    <string name="notification_channel_name">OmniKali controller</string>
+    <string name="notification_title">OmniKali edge connection</string>
+    <string name="notification_boot_title">OmniKali requires post-boot verification</string>
+    <string name="notification_boot_body">Open the controller to re-check Shizuku authorization, Termux Rish, and the secure control-plane connection.</string>
+</resources>
