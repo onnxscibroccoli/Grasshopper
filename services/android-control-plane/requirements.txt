@@ -1,0 +1,6 @@
+aiohttp==3.11.11
+asyncpg==0.30.0
+cryptography==44.0.0
+grpcio==1.68.1
+grpcio-tools==1.68.1
+PyJWT[crypto]==2.10.1
