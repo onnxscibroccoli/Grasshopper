@@ -55,10 +55,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          curl --fail --silent --show-error --max-time 1500 \
-            -H 'Content-Type: application/json' \
-            --data '{"name":"llama3.2:3b","stream":false}' \
-            http://127.0.0.1:11434/api/pull > /dev/null
+          bash scripts/agentic-ci/pull_ollama_model.sh
 
       - name: Evaluate current episode, perform bounded check, persist handoff
         shell: bash
