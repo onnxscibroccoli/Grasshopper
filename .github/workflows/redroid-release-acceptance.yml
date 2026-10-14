@@ -8,6 +8,7 @@ on:
       - "scripts/cloud-android/termux-physical-parity.sh"
       - "test/redroid-acceptance.test.py"
       - "docs/operations/REDROID_RELEASE_ACCEPTANCE.md"
+      - "android/remote-input-probe/**"
   workflow_dispatch:
     inputs:
       android15_emulator:
@@ -38,12 +39,58 @@ jobs:
           set -Eeuo pipefail
           python3 -m py_compile scripts/cloud-android/redroid-acceptance.py test/redroid-acceptance.test.py
           python3 test/redroid-acceptance.test.py -v
+          python3 android/remote-input-probe/smoke_ui.py --self-test
           bash -n scripts/cloud-android/termux-physical-parity.sh
           echo "REDROID_CONTRACT=PASS_OFFLINE_NOT_PRODUCTION_PROOF" >> "$GITHUB_STEP_SUMMARY"
 
+
+  build-test-apk:
+    name: Build isolated Android 15-compatible keyboard probe APK
+    needs: offline-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Gradle build tool
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Build and inspect test-only APK
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gradle -p android/remote-input-probe --no-daemon :app:assembleDebug
+          path="android/remote-input-probe/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$path"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump permissions "$path" \
+            > "$RUNNER_TEMP/probe-permissions.txt"
+          if grep -E 'uses-permission:' "$RUNNER_TEMP/probe-permissions.txt"; then
+            echo 'FIXTURE_UNEXPECTED_ANDROID_PERMISSION=BLOCKED'
+            exit 2
+          fi
+          sha256sum "$path" > android/remote-input-probe/test-apk.sha256
+          echo "TEST_ONLY_APK_BUILD=PASS" >> "$GITHUB_STEP_SUMMARY"
+          echo "APK_SIGNING=EPHEMERAL_DEBUG_ONLY" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: broccoli-android-ime-debug-fixture
+          path: |
+            android/remote-input-probe/app/build/outputs/apk/debug/app-debug.apk
+            android/remote-input-probe/test-apk.sha256
+          retention-days: 7
+          if-no-files-found: error
+
   android15-emulator:
     name: Real hosted Android 15 API 35 emulator read-only compatibility
-    needs: offline-contract
+    needs: [offline-contract, build-test-apk]
     if: github.event_name == 'workflow_dispatch' && inputs.android15_emulator == true
     runs-on: ubuntu-24.04
     timeout-minutes: 65
@@ -52,6 +99,17 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+      - name: Download exact fixture built in the same CI run
+        uses: actions/download-artifact@v4
+        with:
+          name: broccoli-android-ime-debug-fixture
+          path: android/remote-input-probe
+      - name: Validate fixture SHA-256 before use
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd android/remote-input-probe
+          sha256sum -c test-apk.sha256
       - name: Assert KVM and Android SDK available
         shell: bash
         run: |
@@ -89,7 +147,11 @@ jobs:
           [[ "$sdk" == 35 ]] || { echo "ANDROID15_EMULATOR=UNEXPECTED_SDK"; exit 2; }
           adb shell wm size | grep -qi size
           adb shell wm density | grep -qi density
-          echo "ANDROID15_EMULATOR=API35_BOOT_PASS"
+          python3 android/remote-input-probe/smoke_ui.py \
+            --serial emulator-5554 \
+            --apk android/remote-input-probe/app/build/outputs/apk/debug/app-debug.apk \
+            --approve-test-apk-install
+          echo "ANDROID15_EMULATOR=API35_BOOT_AND_INPUT_PASS"
           echo "PHYSICAL_ARM64_TERMUX_PARITY=NOT_PROVEN"
           echo "REDROID_BINDER_KERNEL_PROOF=NOT_PROVEN"
           echo "BROWSER_AND_COMPANION_INPUT=NOT_PROVEN"
