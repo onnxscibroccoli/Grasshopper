@@ -17,11 +17,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow oci-grasshopper-protected-stage.yml
   authenticate-proof:
+    needs: timeout-budget
     name: Verify central CI proof and mandatory native reviewer configuration
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['authenticate-proof'] }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -75,11 +100,11 @@ jobs:
 
   host-handoff:
     name: Protected staging authorization — no public self-hosted runner
-    needs: authenticate-proof
+    needs: [timeout-budget, authenticate-proof]
     if: needs.authenticate-proof.result == 'success'
     environment: oci-grasshopper-production
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 12
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['host-handoff'] }}
     steps:
       - uses: actions/checkout@v4
         with:
