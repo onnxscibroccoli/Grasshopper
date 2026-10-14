@@ -1,0 +1,173 @@
+name: Redroid release and Android 15 parity contracts
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/redroid-release-acceptance.yml"
+      - "scripts/cloud-android/redroid-acceptance.py"
+      - "scripts/cloud-android/termux-physical-parity.sh"
+      - "test/redroid-acceptance.test.py"
+      - "docs/operations/REDROID_RELEASE_ACCEPTANCE.md"
+      - "android/remote-input-probe/**"
+      - "scripts/oci-recovery/boot-readiness.sh"
+  workflow_dispatch:
+    inputs:
+      android15_emulator:
+        description: "Run actual Android 15 hosted emulator compatibility smoke"
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: redroid-release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  offline-contract:
+    name: Verify release fails closed without witnessed transport proofs
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify parsers and Termux commands without private account data
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile scripts/cloud-android/redroid-acceptance.py test/redroid-acceptance.test.py
+          python3 test/redroid-acceptance.test.py -v
+          python3 android/remote-input-probe/smoke_ui.py --self-test
+          python3 -m py_compile android/remote-input-probe/termux_rish_ui.py
+          bash -n scripts/cloud-android/termux-physical-parity.sh
+          bash -n scripts/oci-recovery/boot-readiness.sh
+          echo "REDROID_CONTRACT=PASS_OFFLINE_NOT_PRODUCTION_PROOF" >> "$GITHUB_STEP_SUMMARY"
+
+
+  build-test-apk:
+    name: Build isolated Android 15-compatible keyboard probe APK
+    needs: offline-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Gradle build tool
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Build and inspect test-only APK
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gradle -p android/remote-input-probe --no-daemon :app:assembleDebug
+          path="android/remote-input-probe/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$path"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump permissions "$path" \
+            > "$RUNNER_TEMP/probe-permissions.txt"
+          if grep -E 'uses-permission:' "$RUNNER_TEMP/probe-permissions.txt"; then
+            echo 'FIXTURE_UNEXPECTED_ANDROID_PERMISSION=BLOCKED'
+            exit 2
+          fi
+          (cd android/remote-input-probe && sha256sum app/build/outputs/apk/debug/app-debug.apk > test-apk.sha256)
+          echo "TEST_ONLY_APK_BUILD=PASS" >> "$GITHUB_STEP_SUMMARY"
+          echo "APK_SIGNING=EPHEMERAL_DEBUG_ONLY" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: broccoli-android-ime-debug-fixture
+          path: |
+            android/remote-input-probe/app/build/outputs/apk/debug/app-debug.apk
+            android/remote-input-probe/test-apk.sha256
+          retention-days: 7
+          if-no-files-found: error
+
+  android15-emulator:
+    name: Real hosted Android 15 API 35 emulator read-only compatibility
+    needs: [offline-contract, build-test-apk]
+    if: github.event_name == 'pull_request' || inputs.android15_emulator == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Download exact fixture built in the same CI run
+        uses: actions/download-artifact@v4
+        with:
+          name: broccoli-android-ime-debug-fixture
+          path: android/remote-input-probe
+      - name: Validate fixture SHA-256 before use
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd android/remote-input-probe
+          sha256sum -c test-apk.sha256
+      - name: Detect acceleration and choose safe software emulation fallback
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "${ANDROID_HOME:-}" || exit 2
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" || exit 2
+          mode=off
+          if [[ -c /dev/kvm ]]; then
+            sudo chmod a+rw /dev/kvm || true
+            if [[ -r /dev/kvm && -w /dev/kvm ]]; then
+              mode=on
+            fi
+          fi
+          echo "EMULATOR_ACCEL=$mode" >> "$GITHUB_ENV"
+          echo "EMULATOR_ACCELERATION_MODE=$mode" >> "$GITHUB_STEP_SUMMARY"
+          echo "The emulator is an isolated CI fixture, never the OCI production host." >> "$GITHUB_STEP_SUMMARY"
+      - name: Provision actual Android 15 emulator image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            'platform-tools' 'emulator' 'system-images;android-35;google_apis;x86_64'
+          echo 'no' | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
+            -n broccoli-api35 -k 'system-images;android-35;google_apis;x86_64' --force
+      - name: Boot emulator, verify SDK and non-sensitive ADB state
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/android-evidence"
+          timeout 900 "$ANDROID_HOME/emulator/emulator" \
+            -avd broccoli-api35 -no-snapshot -no-audio -no-window -no-boot-anim \
+            -gpu swiftshader_indirect -memory 2048 -cores 2 -accel "$EMULATOR_ACCEL" >"$RUNNER_TEMP/android-evidence/emulator.log" 2>&1 &
+          booted=0
+          for i in $(seq 1 360); do
+            value="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+            if [[ "$value" == 1 ]]; then booted=1; break; fi
+            sleep 5
+          done
+          [[ "$booted" == 1 ]] || { echo "ANDROID15_EMULATOR=FAIL_BOOT"; exit 2; }
+          sdk="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+          [[ "$sdk" == 35 ]] || { echo "ANDROID15_EMULATOR=UNEXPECTED_SDK"; exit 2; }
+          adb shell wm size | grep -qi size
+          adb shell wm density | grep -qi density
+          python3 android/remote-input-probe/smoke_ui.py \
+            --serial emulator-5554 \
+            --apk android/remote-input-probe/app/build/outputs/apk/debug/app-debug.apk \
+            --approve-test-apk-install
+          echo "ANDROID15_EMULATOR=API35_BOOT_AND_INPUT_PASS"
+          echo "PHYSICAL_ARM64_TERMUX_PARITY=NOT_PROVEN"
+          echo "REDROID_BINDER_KERNEL_PROOF=NOT_PROVEN"
+          echo "BROWSER_AND_COMPANION_INPUT=NOT_PROVEN"
+          echo "ANDROID15_API35_EMULATOR_SMOKE=PASS" >> "$GITHUB_STEP_SUMMARY"
+      - name: Shutdown emulator only
+        if: always()
+        shell: bash
+        run: |
+          adb emu kill >/dev/null 2>&1 || true
