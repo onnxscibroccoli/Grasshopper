@@ -79,9 +79,12 @@ class TermuxResultReceiver : BroadcastReceiver() {
                 "NOT_PROVEN", internalError, exitCode, stdoutDigest, stderrDigest, null, null, null
             ))
         }
-        if ((originalOut != null && originalOut > stdout.length) ||
-            (originalErr != null && originalErr > stderr.length)
-        ) {
+        if (originalOut == null || originalErr == null) {
+            return notProven("Termux did not return original output lengths; truncation cannot be ruled out", evidenceJson(
+                "NOT_PROVEN", internalError, exitCode, stdoutDigest, stderrDigest, null, null, null
+            ))
+        }
+        if (originalOut > stdout.length || originalErr > stderr.length) {
             return notProven("Termux truncated command output; evidence is incomplete", evidenceJson(
                 "NOT_PROVEN", internalError, exitCode, stdoutDigest, stderrDigest, null, null, null
             ))
