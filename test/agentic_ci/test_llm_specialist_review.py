@@ -91,7 +91,7 @@ class SpecialistTests(unittest.TestCase):
             def __exit__(self, *args): return False
         with patch.object(module.urllib.request, "urlopen", return_value=MockAPI()), \
              patch.object(module.json, "load", return_value={
-                 "model": "llama3.2:3b", "response": '{"symbols":[],"evidence_refs":[]}' }):
+                 "model": "deepseek-coder:6.7b-instruct", "response": '{"symbols":[],"evidence_refs":[]}' }):
             with self.assertRaises(ValueError):
                 module.generate("llama3.2:3b", "task", "data")
 
