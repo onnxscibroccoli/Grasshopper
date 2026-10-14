@@ -76,7 +76,11 @@ class TimeoutPolicyTests(unittest.TestCase):
                 self.assertEqual(set(headers), set(definitions) | {"timeout-budget"})
                 self.assertIn("    timeout-minutes: 12", body)
                 for job in definitions:
-                    piece = body.split("\n  " + job + ":\n", 1)[1].split("\n  ", 1)[0]
+                    piece = body.split("\n  " + job + ":\n", 1)[1]
+                    import re
+                    boundary = re.search(r"(?m)^  [a-z][a-z0-9-]*:\\n", piece)
+                    if boundary:
+                        piece = piece[:boundary.start()]
                     expr = ("timeout-minutes: " + "$" +
                             "{{ fromJSON(needs['timeout-budget'].outputs.budgets)['" +
                             job + "'] }}")
