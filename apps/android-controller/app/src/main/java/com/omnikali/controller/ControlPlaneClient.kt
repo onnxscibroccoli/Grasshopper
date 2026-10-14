@@ -162,7 +162,7 @@ class ControlPlaneClient(
                 .build()
             send(ClientMessage.newBuilder().setHello(hello))
             reconnectAttempt.set(0)
-            events.onConnectionState("CONNECTED", "Mutually authenticated gRPC stream opened")
+            events.onConnectionState("CONNECTING", "TLS stream requested; awaiting an authenticated server welcome")
         } catch (e: Exception) {
             newChannel?.shutdownNow()
             events.onConnectionState("DISCONNECTED", "Connection attempt failed: ${safeError(e)}")
@@ -261,7 +261,7 @@ class ControlPlaneClient(
 
     private fun safeError(error: Throwable): String {
         val value = error.message ?: error.javaClass.simpleName
-        return value.replace(Regex("(?i)(token|password|secret|authorization)=\\\\S+"), "$1=[redacted]").take(500)
+        return value.replace(Regex("(?i)(token|password|secret|authorization)=\\S+"), "$1=[redacted]").take(500)
     }
 
     override fun close() {
