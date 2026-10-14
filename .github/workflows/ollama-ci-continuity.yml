@@ -1,0 +1,107 @@
+name: Ollama self-test continuity controller
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: broccoli-agentic-continuity-issue-194
+  cancel-in-progress: false
+
+jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow ollama-ci-continuity.yml
+  recheck-or-handoff:
+    needs: timeout-budget
+    if: >-
+      ${{ github.ref == 'refs/heads/main' &&
+          vars.AGENTIC_SELFTEST_ACTIVATED == 'true' &&
+          github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['recheck-or-handoff'] }}
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+        env:
+          OLLAMA_HOST: 0.0.0.0:11434
+          OLLAMA_NUM_PARALLEL: "1"
+        options: >-
+          --memory=4g
+          --cpus=2
+    steps:
+      - name: Check out only canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Wait for localhost Ollama
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for i in $(seq 1 45); do
+            curl --silent --fail --max-time 3 \
+              http://127.0.0.1:11434/api/tags >/dev/null 2>&1 && exit 0
+            sleep 2
+          done
+          exit 2
+
+      - name: Pull advisory Llama model
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash scripts/agentic-ci/pull_ollama_model.sh
+
+      - name: Evaluate current episode, perform bounded check, persist handoff
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/issue_ledger.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --issue-number 194 \
+            --run-id "$GITHUB_RUN_ID"
+
+      - name: Record continuity boundaries
+        if: always()
+        run: |
+          {
+            echo "### Bounded agentic development continuity"
+            echo "Each run is finite; recurring schedule provides continuation."
+            echo "The GitHub issue persists only deidentified milestone codes."
+            echo "Three same-fingerprint failures or structural blockers trigger a conclusive agent handoff."
+            echo "Human OAuth pauses for browser completion instead of exposing tokens."
+            echo "No source patches, untrusted commands, direct production deploys or automatic merge."
+            echo "Branch creation is at handoff only; no prior tests are weakened."
+          } >> "$GITHUB_STEP_SUMMARY"

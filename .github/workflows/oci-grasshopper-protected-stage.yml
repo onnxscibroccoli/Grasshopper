@@ -1,0 +1,135 @@
+name: OCI Grasshopper protected Redroid staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_proof_run_id:
+        description: "Passed mainline Ollama CI activation gate run ID"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: protected-oci-grasshopper-stage
+  cancel-in-progress: false
+
+jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow oci-grasshopper-protected-stage.yml
+  authenticate-proof:
+    needs: timeout-budget
+    name: Verify central CI proof and mandatory native reviewer configuration
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['authenticate-proof'] }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Prove central run success on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROOF_RUN: ${{ inputs.approved_proof_run_id }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$PROOF_RUN" =~ ^[1-9][0-9]*$ ]] || exit 2
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PROOF_RUN" \
+            --jq '[.name,.conclusion,.head_branch] | @tsv' |
+            grep -Fx $'Ollama CI activation gate\tsuccess\tmain'
+      - name: Require configured environment protection rules
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/agentic-ci/environment_guard.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --environment oci-grasshopper-production
+      - uses: actions/download-artifact@v4
+        with:
+          name: approved-oci-readiness-sha256-ledger
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.approved_proof_run_id }}
+          github-token: ${{ github.token }}
+          path: artifacts/proof
+      - name: Verify input SHA-256 proof and publish review instructions
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/proof_ledger.py verify \
+            --file artifacts/proof/diagnostic-codes.json \
+            --manifest artifacts/proof/proof.json
+          {
+            echo "### OCI readiness milestone — human review required"
+            echo "Verified prior run: ${{ inputs.approved_proof_run_id }}"
+            echo "Inspect Logs: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Proceed: Approve and deploy in the GitHub Environment review."
+            echo "Hold Off: Reject or leave the review pending."
+            echo "No OCI kernel or container mutation has occurred."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oci-verified-staging-proof
+          path: artifacts/proof/
+          retention-days: 7
+          if-no-files-found: error
+
+  host-handoff:
+    name: Protected staging authorization — no public self-hosted runner
+    needs: [timeout-budget, authenticate-proof]
+    if: needs.authenticate-proof.result == 'success'
+    environment: oci-grasshopper-production
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['host-handoff'] }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: oci-verified-staging-proof
+          path: artifacts/proof
+      - name: Validate reviewed evidence
+        run: |
+          python3 scripts/agentic-ci/proof_ledger.py verify \
+            --file artifacts/proof/diagnostic-codes.json \
+            --manifest artifacts/proof/proof.json
+      - name: Fail closed until OCI OIDC federation and recovery channel pass
+        shell: bash
+        run: |
+          {
+            echo "### OCI staging authorized, host mutation NOT executed"
+            echo "The production OCI workstation must not be a persistent self-hosted runner of this public repository."
+            echo "Required OCI trust: scoped GitHub OIDC to OCI JWT-RPST federation (not yet configured)."
+            echo "Required alternate: locally approved operator script using OCI instance principal."
+            echo "Required kernel: verified matching UEK Binder/BinderFS image, boot rollback and recovery."
+            echo "No reboot, no RustDesk/noVNC restart, no credential export."
+            echo "Deployment remains BLOCKED_PENDING_TARGET_AUTH_AND_KERNEL_ARTIFACT."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "OCI_DEPLOYMENT=BLOCKED_PENDING_TARGET_AUTH_AND_KERNEL_ARTIFACT" >&2
+          exit 2

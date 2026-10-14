@@ -1,0 +1,154 @@
+name: Ollama CI Observatory
+
+on:
+  workflow_run:
+    workflows:
+      - "*"
+      - "!Ollama CI Observatory"
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ollama-observer-${{ github.event.workflow_run.id }}
+  cancel-in-progress: true
+
+jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow ollama-ci-observatory.yml
+  lineage:
+    needs: timeout-budget
+    name: Reject nested or self-triggered observatory runs
+    if: >-
+      ${{ github.event.workflow_run.name != 'Ollama CI Observatory' &&
+          github.event.workflow_run.conclusion != 'success' &&
+          (vars.AGENTIC_SELFTEST_ACTIVATED == 'true' ||
+           (vars.OLLAMA_OBSERVER_CANARY_ENABLED == 'true' &&
+            github.event.workflow_run.name == 'Ollama CI failure canary')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['lineage'] }}
+    steps:
+      - name: Checkout ONLY trusted central main
+        uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Gate source workflow actor, event, run lineage and ancestry
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 .ci-harness/scripts/agentic-ci/event_guard.py \
+            --event "$GITHUB_EVENT_PATH" \
+            --output "$RUNNER_TEMP/lineage.json"
+          echo "ZERO_RECURSION_LINEAGE=FIRST_GENERATION_ONLY" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ollama-observer-lineage-codes
+          path: ${{ runner.temp }}/lineage.json
+          retention-days: 1
+          if-no-files-found: error
+
+  classify-failed-workflow:
+    name: Advise on original failure without replay or false PASS
+    needs: [timeout-budget, lineage]
+    if: needs.lineage.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['classify-failed-workflow'] }}
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+        env:
+          OLLAMA_HOST: "0.0.0.0:11434"
+          OLLAMA_NUM_PARALLEL: "1"
+        options: >-
+          --memory=4g
+          --cpus=2
+    steps:
+      - name: Only retrieve the trusted central harness on main
+        uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Wait for the local Ollama container
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for i in $(seq 1 45); do
+            if curl --silent --fail --max-time 3 \
+              http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then exit 0; fi
+            sleep 2
+          done
+          echo "LOCAL_OLLAMA=NOT_AVAILABLE" >&2
+          exit 1
+      - name: Pull local advisory model only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash .ci-harness/scripts/agentic-ci/pull_ollama_model.sh
+
+      - name: Collect redacted failure evidence and classify locally
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FAILED_RUN_ID: ${{ github.event.workflow_run.id }}
+          FAILED_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -m 700 -p "$RUNNER_TEMP/ci-review"
+          python3 .ci-harness/scripts/agentic-ci/workflow_run_diagnose.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --run-id "$FAILED_RUN_ID" \
+            --conclusion "$FAILED_CONCLUSION" \
+            --output "$RUNNER_TEMP/ci-review/coded-report.json"
+      - name: Upload only deidentified diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-workflow-classification
+          path: ${{ runner.temp }}/ci-review/coded-report.json
+          retention-days: 1
+          if-no-files-found: warn
+      - name: Record protected milestone
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Ollama CI observatory"
+            echo "- First-generation failed source only, no recursive child dispatch"
+            echo "- Original failing workflow remains failed"
+            echo "- No upstream job rerun, arbitrary model commands or source patch"
+            echo "- Only coded diagnostic results are published"
+            echo "- Structural corrections require separate reviewed PR"
+          } >> "$GITHUB_STEP_SUMMARY"

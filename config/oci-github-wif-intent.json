@@ -1,0 +1,20 @@
+{
+  "schema": "broccoli.oci.github-wif-trust-intent/v1",
+  "status": "DOCUMENTATION_ONLY_NOT_PROVISIONED",
+  "source_provider": "https://token.actions.githubusercontent.com",
+  "source_audience": "oci-grasshopper-deploy",
+  "github_allowed_repository": "onnxscibroccoli/Grasshopper",
+  "github_allowed_ref": "refs/heads/main",
+  "github_required_environment": "oci-grasshopper-production",
+  "required_subject": "repo:onnxscibroccoli/Grasshopper:environment:oci-grasshopper-production",
+  "oci_resource_identity": "dedicated_least_privilege_resource_principal",
+  "oci_permissions": [
+    "inspect_instance_agent_run_command",
+    "read_object_storage_proof_bucket",
+    "write_immutable_proof_manifest_only_if_retention_policy_configured"
+  ],
+  "operator_bootstrap": "interactive_browser_login_at_oci_instance_or_console",
+  "client_credentials_in_github": "FORBIDDEN",
+  "status_probe": "oci iam region list --auth instance_principal",
+  "warning": "The OCI IdentityPropagationTrust and ID-domain setup must be validated interactively; no WIF exchange is asserted by this file."
+}

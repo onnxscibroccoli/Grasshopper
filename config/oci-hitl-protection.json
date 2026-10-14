@@ -1,0 +1,22 @@
+{
+  "schema": "broccoli.oci.deployment-protection/v1",
+  "environment": "oci-grasshopper-production",
+  "require_reviewers": true,
+  "prevent_self_review": "configure_when_separate_reviewer_available",
+  "allowed_source_ref": "refs/heads/main",
+  "required_checks": [
+    "containerized_ollama_live",
+    "failure_canary_preserved",
+    "zero_recursion_live",
+    "oci_preflight",
+    "sha256_proof_valid"
+  ],
+  "email_channel": "github_native_deployment_review_notification",
+  "email_delivery": "depends_on_reviewer_github_notification_preferences",
+  "proceed": "approve_deployment",
+  "hold_off": "leave_pending_or_reject",
+  "inspect_logs": "open_actions_run_url",
+  "github_environment_setup_required": true,
+  "privileged_host_install": "separate_interactive_sudo_only",
+  "no_static_api_keys": true
+}

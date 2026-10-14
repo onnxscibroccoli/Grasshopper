@@ -1,0 +1,383 @@
+name: Ollama CI activation gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ollama-ci-activation-gate.yml"
+      - ".github/workflows/ollama-selftest-reusable.yml"
+      - "scripts/agentic-ci/**"
+      - "config/agentic-ci-time-budgets.json"
+      - "test/agentic_ci/**"
+  workflow_dispatch:
+    inputs:
+      canary_run_id:
+        description: "Real failed mainline canary run ID; mandatory for promotion"
+        required: false
+        type: string
+      publish_proof:
+        description: "Request environment-protected evidence review, not automatic deployment"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ollama-preactivation-${{ github.ref }}
+  # Superseded PR analyses should stop consuming model-runner time; manual
+  # release evidence must never be silently cancelled by another run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow ollama-ci-activation-gate.yml
+  offline-contract:
+    needs: timeout-budget
+    name: Deterministic false-PASS and recursion regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['offline-contract'] }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Run complete isolated harness contract suite
+        run: |
+          set -Eeuo pipefail
+          python3 -m compileall -q scripts/agentic-ci
+          python3 -m unittest discover -s test/agentic_ci -p "test_*.py" -v
+          python3 -m json.tool config/oci-hitl-protection.json >/dev/null
+          echo "OFFLINE_CONTRACTS=PASS" >> "$GITHUB_STEP_SUMMARY"
+
+  containerized-ollama-live:
+    name: Execute Llama 3.2, capture failure, validate safe retry
+    needs: [timeout-budget, offline-contract]
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['containerized-ollama-live'] }}
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+        env:
+          OLLAMA_HOST: 0.0.0.0:11434
+          OLLAMA_NUM_PARALLEL: "1"
+          OLLAMA_MAX_LOADED_MODELS: "1"
+        options: >-
+          --cpus=2
+          --memory=4g
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Start local inference and pull test model
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for i in $(seq 1 60); do
+            if curl --fail -s --max-time 3 http://127.0.0.1:11434/api/tags >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent --max-time 3 http://127.0.0.1:11434/api/tags >/dev/null
+          bash scripts/agentic-ci/pull_ollama_model.sh
+          echo "LOCAL_OLLAMA_CONTAINER=UP"
+
+      - name: Probe real Llama JSON inference and decision
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json,urllib.request
+          body={"model":"llama3.2:3b","format":"json","stream":False,
+                "options":{"temperature":0,"num_predict":150},
+                "prompt":"Return JSON object with classification=transient and remedy=retry for a simulated EAI_AGAIN DNS outage. No commands."}
+          req=urllib.request.Request("http://127.0.0.1:11434/api/generate",
+                json.dumps(body).encode(),{"Content-Type":"application/json"})
+          with urllib.request.urlopen(req,timeout=180) as r: obj=json.load(r)
+          result=json.loads(obj["response"])
+          if not isinstance(result,dict):raise SystemExit("OLLAMA_INVALID_JSON")
+          if result.get("classification")!="transient" or result.get("remedy")!="retry":
+              raise SystemExit("OLLAMA_INFERENCE_CONTRACT_UNPROVEN")
+          print("LOCAL_LLAMA_INFERENCE=PASS")
+          PY
+
+      - name: Empirical controlled failure and unchanged-command recovery
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/ollama-private" artifacts
+          chmod 700 "$RUNNER_TEMP/ollama-private"
+          python3 scripts/agentic-ci/ollama_selftest.py \
+            --argv-json '["python3","scripts/agentic-ci/failure_canary.py"]' \
+            --required-outputs-json '["artifacts/ollama-transient-canary.ok"]' \
+            --needs-json '{"prerequisite":{"result":"success"}}' \
+            --workspace "$GITHUB_WORKSPACE" \
+            --report "$RUNNER_TEMP/ollama-private/selftest.json" \
+            --max-retries 2 --command-timeout 120
+          python3 - "$RUNNER_TEMP/ollama-private/selftest.json" <<'PY'
+          import json,sys
+          p=json.load(open(sys.argv[1]))
+          assert p["status"]=="PASS_AFTER_RETRY",p["status"]
+          assert len(p["attempts"])==2
+          assert p["attempts"][0]["exit_code"]==42
+          assert p["attempts"][1]["exit_code"]==0
+          assert p["source_mutated"] is False
+          assert p["human_review_required"] is True
+          print("FAILURE_INTERCEPT_RETRY_EVIDENCE=PASS")
+          PY
+          cp "$RUNNER_TEMP/ollama-private/selftest.json" "$RUNNER_TEMP/ollama-private/selftest-kept-private.json"
+          python3 scripts/agentic-ci/public_report.py \
+            --input "$RUNNER_TEMP/ollama-private/selftest.json" \
+            --output artifacts/diagnostic-codes.json
+          sha256sum artifacts/diagnostic-codes.json > artifacts/diagnostic-codes.sha256
+
+      - name: Check structured outputs and export minimal proof
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sha256sum -c artifacts/diagnostic-codes.sha256
+          python3 -m json.tool artifacts/diagnostic-codes.json >/dev/null
+          echo "LIVE_OLLAMA_AND_FAILURE_RECHECK=PASS" >> "$GITHUB_STEP_SUMMARY"
+          echo "ZERO_RECURSION_LIVE=NOT_YET_PROVEN" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ollama-live-diagnostic-codes
+          path: |
+            artifacts/diagnostic-codes.json
+            artifacts/diagnostic-codes.sha256
+          retention-days: 1
+          if-no-files-found: error
+
+
+  two-model-specialists:
+    name: Llama mainline architecture and DeepSeek detailed code validation
+    needs: [timeout-budget, offline-contract, containerized-ollama-live]
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['two-model-specialists'] }}
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+        env:
+          OLLAMA_HOST: "0.0.0.0:11434"
+          OLLAMA_NUM_PARALLEL: "1"
+          OLLAMA_MAX_LOADED_MODELS: "1"
+        options: >-
+          --cpus=3
+          --memory=10g
+    steps:
+      - name: Checkout proposed analyzer for isolated PR tests
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          path: .candidate
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Checkout separate canonical main as evidence
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: .canonical-main
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify local model transport
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for attempt in $(seq 1 60); do
+            if curl -fsS --max-time 3 http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          curl -fsS --max-time 5 http://127.0.0.1:11434/api/tags >/dev/null
+      - name: Pull Llama overview model with 3 linear-backoff attempts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash .candidate/scripts/agentic-ci/pull_ollama_model.sh llama3.2:3b
+      - name: Pull DeepSeek Coder specialist with 3 linear-backoff attempts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash .candidate/scripts/agentic-ci/pull_ollama_model.sh deepseek-coder:6.7b-instruct
+      - name: Execute sequential, non-executable Llama and DeepSeek reviews
+        shell: bash
+        timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['two-model-specialists'] }}
+        env:
+          PYTHONUNBUFFERED: '1'
+        run: |
+          set -Eeuo pipefail
+          mkdir -m 700 -p "$RUNNER_TEMP/specialists"
+          python3 .candidate/scripts/agentic-ci/llm_specialist_review.py \
+            --main-root .canonical-main \
+            --output "$RUNNER_TEMP/specialists"
+          python3 - "$RUNNER_TEMP/specialists/specialist-proof.json" <<'PY'
+          import json,sys
+          proof=json.load(open(sys.argv[1],encoding="utf8"))
+          assert proof["schema"]=="grasshopper.local-specialist-proof/v1"
+          assert proof["architecture_model"]=="llama3.2:3b"
+          assert proof["code_model"]=="deepseek-coder:6.7b-instruct"
+          assert proof["architecture_refs"]>0 and proof["code_refs"]>0
+          assert proof["source_branch"]=="main"
+          assert proof["review_required"] is True
+          assert proof["model_commands_executed"] is False
+          print("MODEL_SPECIALIZATION_ACCEPTANCE=PASS")
+          PY
+          {
+            echo "LLAMA_ARCHITECTURE_REVIEW=PASS"
+            echo "DEEPSEEK_FINE_GRAIN_CODE_REVIEW=PASS"
+            echo "CODE_EXECUTED_FROM_MODEL=NO"
+            echo "ARCHITECTURE_SOURCE=CANONICAL_MAIN"
+            echo "PUBLIC_MODEL_TEXT_EXPORTED=NO"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Export only model IDs, reference counts and review hash
+        uses: actions/upload-artifact@v4
+        with:
+          name: ollama-specialist-routing-proof
+          path: ${{ runner.temp }}/specialists/specialist-proof.json
+          retention-days: 1
+          if-no-files-found: error
+
+  live-recursion:
+    name: Verify actual canary observer lineage after central main activation
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main' &&
+          inputs.canary_run_id != '' }}
+    needs: [timeout-budget, offline-contract, containerized-ollama-live]
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['live-recursion'] }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Check GitHub workflow_run metadata across real observation window
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CANARY_RUN_ID: ${{ inputs.canary_run_id }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/zero_recursion_live.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --canary-id "$CANARY_RUN_ID" \
+            --output recursion-proof.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ollama-real-zero-recursion-proof
+          path: recursion-proof.json
+          retention-days: 7
+          if-no-files-found: error
+
+  reviewer-configured:
+    name: Prove native environment reviewer protection before publication
+    needs: [timeout-budget, offline-contract, containerized-ollama-live, two-model-specialists, live-recursion]
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main' &&
+          inputs.publish_proof == true &&
+          needs.live-recursion.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['reviewer-configured'] }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Require actual environment reviewers
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/agentic-ci/environment_guard.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --environment oci-grasshopper-production
+
+  publish-protected-proof:
+    name: GitHub Environment HITL — Proceed / Hold Off / Inspect Logs
+    needs: [timeout-budget, offline-contract, containerized-ollama-live, two-model-specialists, live-recursion, reviewer-configured]
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main' &&
+          needs.offline-contract.result == 'success' &&
+          needs.containerized-ollama-live.result == 'success' &&
+          needs.two-model-specialists.result == 'success' &&
+          needs.live-recursion.result == 'success' &&
+          needs.reviewer-configured.result == 'success' }}
+    environment: oci-grasshopper-production
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['publish-protected-proof'] }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ollama-live-diagnostic-codes
+          path: verified-results
+      - name: Verify code artifact and issue SHA-256 provenance
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd verified-results
+          sha256sum -c diagnostic-codes.sha256
+          cd ..
+          python3 scripts/agentic-ci/proof_ledger.py create \
+            --file verified-results/diagnostic-codes.json \
+            --output verified-results/proof.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --run-id "$GITHUB_RUN_ID" \
+            --ref "$GITHUB_REF" \
+            --tests-passed --recursion-proven
+          python3 scripts/agentic-ci/proof_ledger.py verify \
+            --file verified-results/diagnostic-codes.json \
+            --manifest verified-results/proof.json
+      - name: Publish reviewed proof, no OCI host mutation
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: approved-oci-readiness-sha256-ledger
+          path: verified-results/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Native review notification summary
+        run: |
+          {
+            echo "### Implementation-ready milestone"
+            echo "Validated Llama execution, failure interception, and live observatory lineage."
+            echo "SHA-256 proof artifact: ${{ steps.upload.outputs.artifact-url }}"
+            echo "GitHub artifact digest: ${{ steps.upload.outputs.artifact-digest }}"
+            echo "Inspect Logs: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "Proceed: Approve and deploy in GitHub Review deployments."
+            echo "Hold Off: Reject or leave the review pending."
+            echo "No OCI instance was rebooted, patched, or deployed by this proof-only workflow."
+          } >> "$GITHUB_STEP_SUMMARY"

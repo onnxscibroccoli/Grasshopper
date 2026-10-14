@@ -1,0 +1,163 @@
+name: Reusable Ollama agentic self-test (fail closed)
+
+on:
+  workflow_call:
+    inputs:
+      check_argv_json:
+        type: string
+        required: true
+        description: "JSON argv of the exact existing project check, e.g. [\"npm\",\"test\"]"
+      upstream_needs_json:
+        type: string
+        required: false
+        default: "{}"
+        description: "toJson(needs); any failed, skipped or cancelled prerequisite blocks PASS"
+      required_outputs_json:
+        type: string
+        required: false
+        default: "[]"
+      max_retries:
+        type: number
+        required: false
+        default: 2
+
+permissions:
+  contents: read
+
+jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 .ci-harness/scripts/agentic-ci/timeout_budget.py \
+            --config .ci-harness/config/agentic-ci-time-budgets.json \
+            --workflow ollama-selftest-reusable.yml
+  verify:
+    needs: timeout-budget
+    name: Recheck production contracts and diagnose bounded failures
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['verify'] }}
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+        env:
+          OLLAMA_HOST: "0.0.0.0:11434"
+          OLLAMA_NUM_PARALLEL: "1"
+          OLLAMA_MAX_LOADED_MODELS: "1"
+        options: >-
+          --memory=4g
+          --cpus=2
+    steps:
+      - name: Checkout caller canonical main only
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Obtain canonical CI harness from central main
+        uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install runtimes for selected verification command
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check containerized Ollama service on loopback
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for i in $(seq 1 50); do
+            if curl --fail --silent --show-error --max-time 2 \
+              http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+              echo "OLLAMA_CONTAINER_HEALTH=PASS"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "OLLAMA_CONTAINER_HEALTH=NOT_READY"
+          exit 1
+
+      - name: Pull local diagnostic model only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash .ci-harness/scripts/agentic-ci/pull_ollama_model.sh
+
+      - name: Execute exact check and bounded local diagnostics
+        id: selftest
+        shell: bash
+        env:
+          CHECK_ARGV: ${{ inputs.check_argv_json }}
+          REQUIRED_OUTPUTS: ${{ inputs.required_outputs_json }}
+          PRIOR_JOBS: ${{ inputs.upstream_needs_json }}
+          RETRIES: ${{ inputs.max_retries }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/broccoli-ci-private" "$RUNNER_TEMP/broccoli-ci-public"
+          chmod 700 "$RUNNER_TEMP/broccoli-ci-private" "$RUNNER_TEMP/broccoli-ci-public"
+          set +e
+          python3 .ci-harness/scripts/agentic-ci/ollama_selftest.py \
+            --argv-json "$CHECK_ARGV" \
+            --required-outputs-json "$REQUIRED_OUTPUTS" \
+            --needs-json "$PRIOR_JOBS" \
+            --workspace "$GITHUB_WORKSPACE" \
+            --report "$RUNNER_TEMP/broccoli-ci-private/report.json" \
+            --max-retries "$RETRIES" \
+            --command-timeout 480
+          result=$?
+          set -e
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          if [ -s "$RUNNER_TEMP/broccoli-ci-private/report.json" ]; then
+            python3 .ci-harness/scripts/agentic-ci/public_report.py \
+              --input "$RUNNER_TEMP/broccoli-ci-private/report.json" \
+              --output "$RUNNER_TEMP/broccoli-ci-public/report.json"
+          fi
+          exit "$result"
+
+      - name: Reviewable codes only, never raw CI or model logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentic-selftest-coded-diagnostics
+          path: ${{ runner.temp }}/broccoli-ci-public/report.json
+          retention-days: 1
+          if-no-files-found: warn
+
+      - name: Fail-closed milestone summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Broccoli agentic CI diagnosis"
+            echo "- Original source read from canonical main"
+            echo "- Local containerized Ollama used for bounded diagnosis"
+            echo "- Only allowlisted deterministic repairs; no model shell commands"
+            echo "- No source patches, PRs, merges or infrastructure changes"
+            echo "- A failed prerequisite job is never converted into success"
+            echo "- Human review required for structural fixes"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,145 @@
+name: Reusable read-only Ollama CI failure observer
+
+on:
+  workflow_call:
+    inputs:
+      failed_run_id:
+        required: true
+        type: number
+      failed_conclusion:
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 .ci-harness/scripts/agentic-ci/timeout_budget.py \
+            --config .ci-harness/config/agentic-ci-time-budgets.json \
+            --workflow ollama-ci-observer-reusable.yml
+  lineage:
+    needs: timeout-budget
+    name: Ensure exactly one first-generation failed workflow source
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['lineage'] }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+      - name: Check real parent event and trusted caller-provided run metadata
+        shell: bash
+        env:
+          CALLER_RUN_ID: ${{ inputs.failed_run_id }}
+          CALLER_CONCLUSION: ${{ inputs.failed_conclusion }}
+        run: |
+          set -Eeuo pipefail
+          python3 .ci-harness/scripts/agentic-ci/event_guard.py \
+            --event "$GITHUB_EVENT_PATH" \
+            --output "$RUNNER_TEMP/lineage.json"
+          python3 - "$GITHUB_EVENT_PATH" <<'PY'
+          import json,os,sys
+          event=json.load(open(sys.argv[1]))
+          parent=event["workflow_run"]
+          if int(os.environ["CALLER_RUN_ID"]) != parent["id"]:
+              raise SystemExit("LINEAGE_RUN_ID_MISMATCH")
+          if os.environ["CALLER_CONCLUSION"] != parent["conclusion"]:
+              raise SystemExit("LINEAGE_CONCLUSION_MISMATCH")
+          print("REUSABLE_OBSERVER_PARENT_PROOF=PASS")
+          PY
+
+  diagnose:
+    name: Classify original failure without mutating caller
+    needs: [timeout-budget, lineage]
+    if: needs.lineage.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['diagnose'] }}
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
+        env:
+          OLLAMA_HOST: "0.0.0.0:11434"
+          OLLAMA_NUM_PARALLEL: "1"
+        options: >-
+          --memory=4g
+          --cpus=2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Wait for local model service
+        run: |
+          set -Eeuo pipefail
+          for i in $(seq 1 45); do
+            if curl -fsS --max-time 3 http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then exit 0; fi
+            sleep 2
+          done
+          exit 2
+      - name: Fetch local Llama 3.2 diagnostic model
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash .ci-harness/scripts/agentic-ci/pull_ollama_model.sh
+
+      - name: Analyze sanitized failure evidence with read-only token
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FAILED_RUN_ID: ${{ inputs.failed_run_id }}
+          FAILED_CONCLUSION: ${{ inputs.failed_conclusion }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -m 700 -p "$RUNNER_TEMP/ci-coded"
+          python3 .ci-harness/scripts/agentic-ci/workflow_run_diagnose.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --run-id "$FAILED_RUN_ID" \
+            --conclusion "$FAILED_CONCLUSION" \
+            --output "$RUNNER_TEMP/ci-coded/summary.json"
+      - name: Publish only controlled diagnostic codes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ollama-ci-failure-codes
+          path: ${{ runner.temp }}/ci-coded/summary.json
+          retention-days: 1
+          if-no-files-found: warn
+      - name: Record fail-closed supervision
+        if: always()
+        run: |
+          {
+            echo "### Central Ollama diagnostic handoff"
+            echo "First-generation source lineage passed before inference."
+            echo "Upstream failure remains failed; no replay or source mutation."
+            echo "Only coded diagnostics, not model prose or private logs."
+          } >> "$GITHUB_STEP_SUMMARY"
