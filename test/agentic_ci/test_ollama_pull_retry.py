@@ -19,7 +19,7 @@ if [[ "$*" == *'/api/tags'* ]]; then
   if [[ "${SCENARIO:-}" == 'no_tags' ]]; then
     echo '{"models":[]}' > "$out"
   else
-    echo '{"models":[{"name":"llama3.2:3b"}]}' > "$out"
+    echo '{"models":[{"name":"llama3.2:3b"},{"name":"deepseek-coder:6.7b-instruct"}]}' > "$out"
   fi
   exit 0
 fi
@@ -38,7 +38,7 @@ echo '{"status":"success"}' > "$out"
 '''
 
 class PullRetryTests(unittest.TestCase):
-    def exercise(self, scenario='success'):
+    def exercise(self, scenario='success', model='llama3.2:3b'):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
             fake_bin = folder / 'bin'
@@ -53,7 +53,7 @@ class PullRetryTests(unittest.TestCase):
             log = folder / 'sleep.log'
             env = dict(os.environ, PATH=str(fake_bin) + os.pathsep + os.environ['PATH'],
                        STATE_FILE=str(state), SLEEP_LOG=str(log), SCENARIO=scenario)
-            result = subprocess.run(['bash', str(SCRIPT)], text=True, capture_output=True,
+            result = subprocess.run(['bash', str(SCRIPT), model], text=True, capture_output=True,
                                     timeout=12, env=env)
             calls = int(state.read_text()) if state.exists() else 0
             sleeps = log.read_text().splitlines() if log.exists() else []
@@ -89,6 +89,10 @@ class PullRetryTests(unittest.TestCase):
     def test_http_success_without_registered_model_fails_closed(self):
         result, calls, sleeps = self.exercise('no_tags')
         self.assertEqual((result.returncode, calls, sleeps), (1, 3, ['10', '20']))
+
+    def test_deepseek_specialist_uses_same_retry_semantics(self):
+        result, calls, sleeps = self.exercise('fail_twice', 'deepseek-coder:6.7b-instruct')
+        self.assertEqual((result.returncode, calls, sleeps), (0, 3, ['10', '20']), result.stderr)
 
     def test_unsupported_model_is_rejected_before_network(self):
         r = subprocess.run(['bash', str(SCRIPT), 'unreviewed:model'], capture_output=True, text=True)
