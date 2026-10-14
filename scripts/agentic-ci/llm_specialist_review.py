@@ -136,6 +136,7 @@ def _deepseek_stream(req: urllib.request.Request, *,
     parts: list[str] = []
     bytes_seen = 0
     tokens_seen = 0
+    seen_done = False
     try:
         while True:
             remaining = min(idle_deadline, hard_deadline) - time.monotonic()
@@ -150,7 +151,11 @@ def _deepseek_stream(req: urllib.request.Request, *,
             if kind == "error":
                 raise ValueError("DeepSeek stream read failed: " + str(data))
             if kind == "eof":
-                raise ValueError("DeepSeek stream ended without Ollama done=true")
+                if not seen_done:
+                    raise ValueError("DeepSeek stream ended without Ollama done=true")
+                break
+            if seen_done:
+                raise ValueError("DeepSeek stream emitted frame after done=true")
             if data.get("model") != CODE:
                 raise ValueError("DeepSeek stream returned unexpected model")
             if data.get("error"):
@@ -170,6 +175,7 @@ def _deepseek_stream(req: urllib.request.Request, *,
                 if tokens_seen == 1 or tokens_seen % 64 == 0:
                     print(f"DEEPSEEK_STREAM_HEARTBEAT_CHUNKS={tokens_seen}", flush=True)
             if data.get("done") is True:
+                seen_done = True
                 if not parts:
                     raise ValueError("DeepSeek returned done without model output")
                 try:
@@ -178,8 +184,10 @@ def _deepseek_stream(req: urllib.request.Request, *,
                     raise ValueError("DeepSeek output is not complete JSON") from exc
                 if not isinstance(obj, dict):
                     raise ValueError("DeepSeek final output must be a JSON object")
-                print(f"DEEPSEEK_STREAM_COMPLETED_CHUNKS={tokens_seen}", flush=True)
-                return obj
+                # Continue to drain so a trailing frame still fails closed.
+                continue
+        print(f"DEEPSEEK_STREAM_COMPLETED_CHUNKS={tokens_seen}", flush=True)
+        return obj  # type: ignore[possibly-undefined]
     finally:
         complete.set()
         worker.join(timeout=0.25)
@@ -213,6 +221,8 @@ def generate(model: str, instruction: str, payload: str) -> dict:
     obj = json.loads(response)
     if not isinstance(obj, dict):
         raise ValueError("Model response must be a JSON object")
+    if model == GENERAL and any(k in obj for k in ("symbols", "code_risks", "refactoring_candidates")):
+        raise ValueError("Architecture model returned code-review fields")
     return obj
 
 def typed_statements(obj: dict, key: str) -> list[str]:
