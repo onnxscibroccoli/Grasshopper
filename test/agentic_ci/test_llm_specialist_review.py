@@ -165,12 +165,14 @@ class StreamingDeepSeekTests(unittest.TestCase):
                 module._deepseek_stream(object(),idle_seconds=1,total_seconds=3)
 
     def test_evidence_sampling_is_bounded_for_code_model(self):
-        root, out = self.create_repo()
-        (root / "src/executor.mjs").write_text("x" * 8000)
-        rows, raw = module.evidence(root,module.CODE_PATHS,per_file_chars=1750)
-        self.assertTrue(rows)
-        self.assertLessEqual(max(len(item["excerpt"]) for item in rows),1750)
-        self.assertNotIn("x" * 1751,raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "src/executor.mjs").write_text("x" * 8000)
+            rows, raw = module.evidence(root, module.CODE_PATHS, per_file_chars=1750)
+            self.assertTrue(rows)
+            self.assertLessEqual(max(len(item["excerpt"]) for item in rows), 1750)
+            self.assertNotIn("x" * 1751, raw)
 
     def test_stall_after_first_token_expires(self):
         class Pausing:
