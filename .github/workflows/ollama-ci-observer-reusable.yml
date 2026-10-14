@@ -15,8 +15,42 @@ permissions:
   contents: read
 
 jobs:
+  lineage:
+    name: Ensure exactly one first-generation failed workflow source
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+      - name: Check real parent event and trusted caller-provided run metadata
+        shell: bash
+        env:
+          CALLER_RUN_ID: ${{ inputs.failed_run_id }}
+          CALLER_CONCLUSION: ${{ inputs.failed_conclusion }}
+        run: |
+          set -Eeuo pipefail
+          python3 .ci-harness/scripts/agentic-ci/event_guard.py \
+            --event "$GITHUB_EVENT_PATH" \
+            --output "$RUNNER_TEMP/lineage.json"
+          python3 - "$GITHUB_EVENT_PATH" <<'PY'
+          import json,os,sys
+          event=json.load(open(sys.argv[1]))
+          parent=event["workflow_run"]
+          if int(os.environ["CALLER_RUN_ID"]) != parent["id"]:
+              raise SystemExit("LINEAGE_RUN_ID_MISMATCH")
+          if os.environ["CALLER_CONCLUSION"] != parent["conclusion"]:
+              raise SystemExit("LINEAGE_CONCLUSION_MISMATCH")
+          print("REUSABLE_OBSERVER_PARENT_PROOF=PASS")
+          PY
+
   diagnose:
-    name: Classify workflow failure without mutating caller
+    name: Classify original failure without mutating caller
+    needs: lineage
+    if: needs.lineage.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     services:
@@ -31,35 +65,29 @@ jobs:
           --memory=4g
           --cpus=2
     steps:
-      - name: Checkout trusted central main (never the triggering PR)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: onnxscibroccoli/Grasshopper
           ref: main
           path: .ci-harness
           persist-credentials: false
           fetch-depth: 1
-      - name: Wait for local container
-        shell: bash
+      - name: Wait for local model service
         run: |
           set -Eeuo pipefail
           for i in $(seq 1 45); do
-            if curl -fsS --max-time 3 http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-              exit 0
-            fi
+            if curl -fsS --max-time 3 http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then exit 0; fi
             sleep 2
           done
-          exit 1
-      - name: Fetch local Ollama model
-        shell: bash
+          exit 2
+      - name: Fetch local Llama 3.2 diagnostic model
         run: |
           set -Eeuo pipefail
           curl -fsS --max-time 1500 \
             -H 'Content-Type: application/json' \
             --data '{"name":"llama3.2:3b","stream":false}' \
             http://127.0.0.1:11434/api/pull >/dev/null
-      - name: Inspect bounded failure data using read-only repository API
-        shell: bash
+      - name: Analyze sanitized failure evidence with read-only token
         env:
           GITHUB_TOKEN: ${{ github.token }}
           FAILED_RUN_ID: ${{ inputs.failed_run_id }}
@@ -72,7 +100,7 @@ jobs:
             --run-id "$FAILED_RUN_ID" \
             --conclusion "$FAILED_CONCLUSION" \
             --output "$RUNNER_TEMP/ci-coded/summary.json"
-      - name: Publish only controlled result codes
+      - name: Publish only controlled diagnostic codes
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -80,12 +108,12 @@ jobs:
           path: ${{ runner.temp }}/ci-coded/summary.json
           retention-days: 1
           if-no-files-found: warn
-      - name: State acceptance boundaries
+      - name: Record fail-closed supervision
         if: always()
         run: |
           {
-            echo "### Ollama diagnosis"
-            echo "Read-only upstream failure analysis; no model commands executed."
-            echo "Original failed workflow remains failed."
-            echo "No secrets, raw logs, model prose, or source patches published."
+            echo "### Central Ollama diagnostic handoff"
+            echo "First-generation source lineage passed before inference."
+            echo "Upstream failure remains failed; no replay or source mutation."
+            echo "Only coded diagnostics, not model prose or private logs."
           } >> "$GITHUB_STEP_SUMMARY"
