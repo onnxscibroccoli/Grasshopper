@@ -94,7 +94,7 @@ class SheveryForegroundService : Service(), ControlPlaneEvents {
     override fun onServerMessage(message: ServerMessage) {
         when (message.payloadCase) {
             ServerMessage.PayloadCase.WELCOME -> {
-                updateConnectionState("CONNECTED", "Authenticated gRPC session; server=\${message.welcome.serverVersion}")
+                updateConnectionState("CONNECTED", "Authenticated gRPC session; server=${message.welcome.serverVersion}")
             }
             ServerMessage.PayloadCase.HEARTBEAT -> Unit
             ServerMessage.PayloadCase.COMMAND -> {
@@ -149,7 +149,7 @@ class SheveryForegroundService : Service(), ControlPlaneEvents {
             activeClient.sendFailure(
                 jobId,
                 "DUPLICATE_FENCED",
-                "The job or idempotency key was already recorded; no second dispatch was attempted. Existing state=\${existing?.state ?: "unknown"}.",
+                "The job or idempotency key was already recorded; no second dispatch was attempted. Existing state=${existing?.state ?: "unknown"}.",
                 false
             )
             return
