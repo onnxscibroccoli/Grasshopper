@@ -16,13 +16,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'main' }}
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/agentic-ci/timeout_budget.py \
+            --config config/agentic-ci-time-budgets.json \
+            --workflow ollama-ci-observatory.yml
   lineage:
+    needs: timeout-budget
     name: Reject nested or self-triggered observatory runs
     if: >-
       ${{ github.event.workflow_run.name != 'Ollama CI Observatory' &&
           github.event.workflow_run.conclusion != 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['lineage'] }}
     steps:
       - name: Checkout ONLY trusted central main
         uses: actions/checkout@v4
@@ -49,10 +74,10 @@ jobs:
 
   classify-failed-workflow:
     name: Advise on original failure without replay or false PASS
-    needs: lineage
+    needs: [timeout-budget, lineage]
     if: needs.lineage.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['classify-failed-workflow'] }}
     services:
       ollama:
         image: ollama/ollama:latest
