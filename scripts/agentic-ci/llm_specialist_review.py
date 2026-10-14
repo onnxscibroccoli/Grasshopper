@@ -82,6 +82,7 @@ def evidence(root: Path, files: tuple[str, ...]) -> tuple[list[dict], str]:
 # Per-token inactivity is the DeepSeek timeout. A separate hard deadline bounds
 # total runner cost even if Ollama emits an endless trickle of response chunks.
 DEEPSEEK_IDLE_SECONDS = 600
+DEEPSEEK_STARTUP_SECONDS = 900
 DEEPSEEK_TOTAL_SECONDS = 5400
 DEEPSEEK_MAX_RESPONSE_BYTES = 256_000
 LLAMA_HTTP_TIMEOUT_SECONDS = 900
@@ -89,7 +90,8 @@ LLAMA_HTTP_TIMEOUT_SECONDS = 900
 
 def _deepseek_stream(req: urllib.request.Request, *,
                      idle_seconds: float = DEEPSEEK_IDLE_SECONDS,
-                     total_seconds: float = DEEPSEEK_TOTAL_SECONDS) -> dict:
+                     total_seconds: float = DEEPSEEK_TOTAL_SECONDS,
+                     startup_seconds: float | None = None) -> dict:
     """Consume Ollama JSONL with a renewed idle deadline on each *actual token*.
 
     urllib's socket timeout alone cannot enforce token inactivity when a server
@@ -97,14 +99,17 @@ def _deepseek_stream(req: urllib.request.Request, *,
     guard both the token-free interval and the overall request duration.
     Model text is never written to stdout, CI logs, public artifacts or shell.
     """
-    if not (0 < idle_seconds < total_seconds):
+    if startup_seconds is None:
+        startup_seconds = idle_seconds
+    if not (0 < idle_seconds < total_seconds and
+            0 < startup_seconds < total_seconds):
         raise ValueError("Invalid stream timeout configuration")
     events: queue.Queue = queue.Queue(maxsize=512)
     complete = threading.Event()
 
     def reader() -> None:
         try:
-            with urllib.request.urlopen(req, timeout=idle_seconds) as response:
+            with urllib.request.urlopen(req, timeout=startup_seconds) as response:
                 for line in response:
                     if complete.is_set():
                         break
@@ -131,7 +136,7 @@ def _deepseek_stream(req: urllib.request.Request, *,
     worker = threading.Thread(target=reader, name="ollama-jsonl-reader", daemon=True)
     worker.start()
     start = time.monotonic()
-    idle_deadline = start + idle_seconds
+    idle_deadline = start + startup_seconds
     hard_deadline = start + total_seconds
     parts: list[str] = []
     bytes_seen = 0
@@ -210,7 +215,7 @@ def generate(model: str, instruction: str, payload: str) -> dict:
                                  headers={"Content-Type": "application/json"},
                                  method="POST")
     if model == CODE:
-        return _deepseek_stream(req)
+        return _deepseek_stream(req, startup_seconds=DEEPSEEK_STARTUP_SECONDS)
     with urllib.request.urlopen(req, timeout=LLAMA_HTTP_TIMEOUT_SECONDS) as res:
         answer = json.load(res)
     if not isinstance(answer, dict) or answer.get("model") != model:
