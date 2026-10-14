@@ -26,6 +26,21 @@ class TermuxResultReceiver : BroadcastReceiver() {
             .apply()
 
         if (jobId.isNotBlank()) {
+            if (jobId.matches(Regex("[A-Za-z0-9._:-]{1,128}"))) {
+                val ledger = JobLedger(context)
+                try {
+                    val outcome = if (checked.status == "PROOF_VERIFIED") "PROOF_VERIFIED" else "FAILED"
+                    val digest = sha256(checked.json.toByteArray(Charsets.UTF_8))
+                    ledger.completeWithProof(jobId, outcome, checked.status, checked.detail, checked.json, digest)
+                } catch (e: Exception) {
+                    context.getSharedPreferences("controller_state", Context.MODE_PRIVATE).edit()
+                        .putString("last_probe_detail", "Result received but durable job recording failed: " + (e.message ?: e.javaClass.simpleName).take(300))
+                        .apply()
+                } finally {
+                    ledger.close()
+                }
+            }
+
             val resultIntent = Intent(ACTION_RESULT_READY)
                 .setPackage(context.packageName)
                 .putExtra(EXTRA_JOB_ID, jobId)
