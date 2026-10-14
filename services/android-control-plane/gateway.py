@@ -39,6 +39,8 @@ MAX_RESULT_BYTES = 4096
 MAX_QUEUE_DEPTH = 256
 ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 SHA_RE = re.compile(r"^[a-f0-9]{64}$")
+TARGET_MARKER_RE = re.compile(r"^RDC_RISH_TARGET_OK_[a-f0-9]{16}$")
+TERMUX_RESULT_OK = -1
 STOP = None
 
 
@@ -71,6 +73,55 @@ def certificate_identity_and_sha256(certificate: x509.Certificate) -> tuple[str,
     if len(identities) != 1:
         raise ValueError("Client certificate must have exactly one OmniKali URI identity")
     return identities[0], certificate.fingerprint(hashes.SHA256()).hex()
+
+
+
+def validate_result_payload(payload: bytes, reported_state: str, reported_sha256: str) -> tuple[bool, str, dict[str, Any] | None]:
+    """Validate bounded client evidence before a DB transaction acknowledges it."""
+    if len(payload) > MAX_RESULT_BYTES:
+        return False, "Result payload exceeds the protocol limit", None
+    if not SHA_RE.fullmatch(reported_sha256):
+        return False, "Result SHA-256 format is invalid", None
+    digest = hashlib.sha256(payload).hexdigest()
+    if not hmac.compare_digest(digest, reported_sha256):
+        return False, "Result SHA-256 does not match the received payload", None
+    try:
+        evidence = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False, "Result payload is not valid UTF-8 JSON", None
+    if not isinstance(evidence, dict):
+        return False, "Result evidence must be a JSON object", None
+
+    status = evidence.get("status")
+    if status == "NOT_PROVEN" and reported_state == "NOT_PROVEN":
+        return True, "Evidence is explicitly not proven", evidence
+    if status != "PASS" or reported_state != "PROOF_VERIFIED":
+        return False, "Result state does not match its evidence payload", None
+
+    if evidence.get("termuxInternalError") != TERMUX_RESULT_OK:
+        return False, "Termux internal result status was not success", None
+    if evidence.get("exitCode") != 0:
+        return False, "Canonical Rish probe exit code was not zero", None
+    if not all(
+        isinstance(evidence.get(key), str) and SHA_RE.fullmatch(evidence[key])
+        for key in ("stdoutSha256", "stderrSha256")
+    ):
+        return False, "Output digest evidence is missing or malformed", None
+    marker = evidence.get("targetMarker")
+    if not isinstance(marker, str) or not TARGET_MARKER_RE.fullmatch(marker):
+        return False, "Rish target nonce marker is invalid", None
+    artifact = evidence.get("artifactPath")
+    if (
+        not isinstance(artifact, str)
+        or not (artifact.startswith("/sdcard/") or artifact.startswith("/storage/emulated/0/"))
+        or ".." in Path(artifact).parts
+        or len(artifact) > 512
+    ):
+        return False, "Shared-storage artifact path is invalid", None
+    sdk = evidence.get("androidSdk")
+    if not isinstance(sdk, int) or isinstance(sdk, bool) or not 26 <= sdk <= 99:
+        return False, "Android SDK evidence is invalid", None
+    return True, "Rish identity and proof metadata validated", evidence
 
 
 def peer_certificate_from_auth_context(context: grpc.aio.ServicerContext) -> x509.Certificate:
@@ -282,6 +333,7 @@ class ControlPlaneService(control_pb2_grpc.ControlPlaneServicer):
                             ORDER BY created_at
                             FOR UPDATE SKIP LOCKED
                             LIMIT 1
+                            FOR UPDATE SKIP LOCKED
                             """,
                             session.device_id,
                         )
@@ -354,18 +406,15 @@ class ControlPlaneService(control_pb2_grpc.ControlPlaneServicer):
         ok = False
         server_state = "unknown"
         detail = "Result rejected"
-        if ID_RE.fullmatch(job_id) and len(payload) <= MAX_RESULT_BYTES and SHA_RE.fullmatch(result.sha256):
-            try:
-                evidence = json.loads(payload.decode("utf-8"))
-                reported_status = evidence.get("status")
-                if not hmac.compare_digest(digest, result.sha256):
-                    detail = "Result SHA-256 does not match the received payload"
-                elif reported_status not in ("PASS", "NOT_PROVEN") or result.state != (
-                    "PROOF_VERIFIED" if reported_status == "PASS" else "NOT_PROVEN"
-                ):
-                    detail = "Result state does not match its evidence payload"
-                else:
-                    async with self.pool.acquire() as connection:
+        if ID_RE.fullmatch(job_id):
+            valid_evidence, evidence_detail, evidence = validate_result_payload(
+                payload, result.state, result.sha256
+            )
+            if not valid_evidence:
+                detail = evidence_detail
+            else:
+                reported_status = evidence["status"]
+                async with self.pool.acquire() as connection:
                         async with connection.transaction():
                             job = await connection.fetchrow(
                                 """
@@ -670,9 +719,10 @@ async def serve() -> None:
         server_settings={"application_name": "grasshopper-android-control-plane"},
     )
     try:
-        schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
-        async with pool.acquire() as connection:
-            await connection.execute(schema)
+        if os.environ.get("AUTO_MIGRATE", "false").lower() in {"1", "true", "yes"}:
+            schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
+            async with pool.acquire() as connection:
+                await connection.execute(schema)
 
         grpc_server = grpc.aio.server(
             options=[
