@@ -29,8 +29,8 @@ class MainActivity : Activity() {
     private var selectedPkcs12: ByteArray? = null
 
     private val permissionRequestCode = 27014
-    private val binderReceivedListener = Runnable { runOnUiThread { refreshStatus() } }
-    private val binderDeadListener = Runnable { runOnUiThread { refreshStatus() } }
+    private val binderReceivedListener = Shizuku.OnBinderReceivedListener { runOnUiThread { refreshStatus() } }
+    private val binderDeadListener = Shizuku.OnBinderDeadListener { runOnUiThread { refreshStatus() } }
     private val permissionResultListener = Shizuku.OnRequestPermissionResultListener { requestCode, _ ->
         if (requestCode == permissionRequestCode) runOnUiThread { refreshStatus() }
     }
@@ -55,10 +55,10 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        buildUi()
         Shizuku.addBinderReceivedListener(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)
         Shizuku.addRequestPermissionResultListener(permissionResultListener)
-        buildUi()
         requestNotificationPermissionIfNeeded()
         restoreEndpoint()
         handleDeepLink(intent)
