@@ -136,6 +136,23 @@ class StreamingDeepSeekTests(unittest.TestCase):
             result=module._deepseek_stream(object(),idle_seconds=0.11,total_seconds=1.5)
         self.assertEqual(result["symbols"],["function"])
 
+    def test_slow_first_token_has_longer_cold_start_budget(self):
+        content='{"symbols":["handler"],"evidence_refs":["main:src/executor.mjs"]}'
+        chunks=[self.chunk(content[:20]),self.chunk(content[20:],done=True)]
+        with patch.object(module.urllib.request,"urlopen",
+                          return_value=self.frames(chunks,delay=0.08)):
+            result=module._deepseek_stream(object(),idle_seconds=0.12,
+                       startup_seconds=0.2,total_seconds=0.7)
+        self.assertEqual(result["symbols"],["handler"])
+
+    def test_first_token_timeout_expires_even_if_total_budget_remains(self):
+        content='{"symbols":["handler"]}'
+        with patch.object(module.urllib.request,"urlopen",
+                          return_value=self.frames([self.chunk(content,done=True)],delay=0.15)):
+            with self.assertRaises(TimeoutError):
+                module._deepseek_stream(object(),idle_seconds=0.07,
+                         startup_seconds=0.09,total_seconds=0.8)
+
     def test_stall_after_first_token_expires(self):
         class Pausing:
             def __enter__(self): return self
