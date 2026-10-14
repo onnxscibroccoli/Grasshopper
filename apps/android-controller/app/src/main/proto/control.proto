@@ -30,6 +30,7 @@ message ServerMessage {
     JobCommand command = 11;
     CancelJob cancel = 12;
     ServerHeartbeat heartbeat = 13;
+    JobResultAck result_ack = 14;
   }
 }
 
@@ -84,4 +85,11 @@ message JobFailure {
 message CancelJob {
   string job_id = 1;
   string reason = 2;
+}
+
+message JobResultAck {
+  string job_id = 1;
+  bool accepted = 2;
+  string server_state = 3;
+  string detail = 4;
 }
