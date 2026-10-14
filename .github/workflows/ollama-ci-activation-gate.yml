@@ -25,7 +25,9 @@ permissions:
 
 concurrency:
   group: ollama-preactivation-${{ github.ref }}
-  cancel-in-progress: false
+  # Superseded PR analyses should stop consuming model-runner time; manual
+  # release evidence must never be silently cancelled by another run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   offline-contract:
