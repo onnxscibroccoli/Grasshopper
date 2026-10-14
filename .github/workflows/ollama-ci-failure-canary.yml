@@ -1,0 +1,20 @@
+name: Ollama CI failure canary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emit-controlled-failure:
+    if: github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Emit a single intentional failing test for observer proof
+        shell: bash
+        run: |
+          echo "CANARY_FAILURE_CLASS=simulated_transient_ci"
+          echo "ORIGINAL_RESULT=MUST_REMAIN_FAILED"
+          exit 27
