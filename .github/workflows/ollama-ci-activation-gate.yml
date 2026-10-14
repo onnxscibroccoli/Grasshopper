@@ -6,6 +6,7 @@ on:
       - ".github/workflows/ollama-ci-activation-gate.yml"
       - ".github/workflows/ollama-selftest-reusable.yml"
       - "scripts/agentic-ci/**"
+      - "config/agentic-ci-time-budgets.json"
       - "test/agentic_ci/**"
   workflow_dispatch:
     inputs:
