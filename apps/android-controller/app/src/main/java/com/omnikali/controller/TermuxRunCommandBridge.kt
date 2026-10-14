@@ -3,7 +3,6 @@ package com.omnikali.controller
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 
 object TermuxRunCommandBridge {
     const val ACTION_RUN = "com.termux.RUN_COMMAND"
@@ -22,7 +21,7 @@ object TermuxRunCommandBridge {
     fun dispatchTransportProbe(context: Context) {
         val packageManager = context.packageManager
         try {
-            packageManager.getPackageInfo(TERMUX_PACKAGE, PackageManager.PackageInfoFlags.of(0))
+            packageManager.getPackageInfo(TERMUX_PACKAGE, 0)
         } catch (e: Exception) {
             throw IllegalStateException("Termux is not installed", e)
         }
