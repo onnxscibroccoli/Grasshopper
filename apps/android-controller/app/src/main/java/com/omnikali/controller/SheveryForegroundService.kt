@@ -5,20 +5,36 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import com.omnikali.protocol.v1.ServerMessage
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 class SheveryForegroundService : Service(), ControlPlaneEvents {
     private var client: ControlPlaneClient? = null
     private var ledger: JobLedger? = null
     private var commandExecutor: ExecutorService? = null
+    private var resultRetryExecutor: ScheduledExecutorService? = null
+    private var resultReceiverRegistered = false
+    private val resultReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: Intent?) {
+            if (intent?.action != TermuxResultReceiver.ACTION_RESULT_READY) return
+            val state = intent.getStringExtra(TermuxResultReceiver.EXTRA_RESULT_STATUS).orEmpty()
+            val detail = intent.getStringExtra(TermuxResultReceiver.EXTRA_RESULT_DETAIL).orEmpty()
+            updateConnectionState(if (state == "PROOF_VERIFIED") "CONNECTED" else "REQUIRES_OPERATOR_ACTION", detail)
+            flushPendingResults()
+        }
+    }
     private lateinit var preferences: android.content.SharedPreferences
     private val notificationId = 18420
     private val channelId = "omnikali-controller"
@@ -30,6 +46,15 @@ class SheveryForegroundService : Service(), ControlPlaneEvents {
         ledger = JobLedger(this)
         commandExecutor = Executors.newSingleThreadExecutor()
         ensureNotificationChannel()
+        ContextCompat.registerReceiver(
+            this,
+            resultReceiver,
+            IntentFilter(TermuxResultReceiver.ACTION_RESULT_READY),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+        resultReceiverRegistered = true
+        resultRetryExecutor = Executors.newSingleThreadScheduledExecutor()
+        resultRetryExecutor?.scheduleAtFixedRate({ flushPendingResults() }, 15, 15, TimeUnit.SECONDS)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -95,8 +120,18 @@ class SheveryForegroundService : Service(), ControlPlaneEvents {
         when (message.payloadCase) {
             ServerMessage.PayloadCase.WELCOME -> {
                 updateConnectionState("CONNECTED", "Authenticated gRPC session; server=${message.welcome.serverVersion}")
+                flushPendingResults()
             }
             ServerMessage.PayloadCase.HEARTBEAT -> Unit
+            ServerMessage.PayloadCase.RESULT_ACK -> {
+                val ack = message.resultAck
+                if (ack.accepted) {
+                    ledger?.markResultAcknowledged(ack.jobId)
+                    updateConnectionState("CONNECTED", "Control plane acknowledged the durable result for job ${ack.jobId.take(100)}")
+                } else {
+                    updateConnectionState("REQUIRES_OPERATOR_ACTION", "Control plane rejected result for job ${ack.jobId.take(100)}: ${ack.detail.take(300)}")
+                }
+            }
             ServerMessage.PayloadCase.COMMAND -> {
                 commandExecutor?.execute { dispatchCommand(message.command) }
             }
@@ -170,7 +205,7 @@ class SheveryForegroundService : Service(), ControlPlaneEvents {
         }
 
         try {
-            TermuxRunCommandBridge.dispatchTransportProbe(this)
+            TermuxRunCommandBridge.dispatchTransportProbe(this, jobId)
             jobLedger.transition(
                 jobId,
                 "RECEIVED",
@@ -185,6 +220,18 @@ class SheveryForegroundService : Service(), ControlPlaneEvents {
         } catch (e: Exception) {
             jobLedger.transition(jobId, "RECEIVED", "FAILED", (e.message ?: "Termux dispatch failed").take(1900))
             activeClient.sendFailure(jobId, "TERMUX_DISPATCH_FAILED", e.message ?: "Termux dispatch failed", true)
+        }
+    }
+
+    private fun flushPendingResults() {
+        val activeClient = client ?: return
+        val jobLedger = ledger ?: return
+        try {
+            for (result in jobLedger.pendingResults()) {
+                if (!activeClient.sendResult(result.jobId, result.state, result.payload, result.sha256)) return
+            }
+        } catch (e: Exception) {
+            updateConnectionState("REQUIRES_OPERATOR_ACTION", "Unable to replay durable proof results: ${e.message ?: e.javaClass.simpleName}")
         }
     }
 
@@ -249,6 +296,12 @@ class SheveryForegroundService : Service(), ControlPlaneEvents {
 
     override fun onDestroy() {
         stopConnection()
+        resultRetryExecutor?.shutdownNow()
+        resultRetryExecutor = null
+        if (resultReceiverRegistered) {
+            try { unregisterReceiver(resultReceiver) } catch (_: Exception) { }
+            resultReceiverRegistered = false
+        }
         commandExecutor?.shutdownNow()
         commandExecutor = null
         ledger?.close()
