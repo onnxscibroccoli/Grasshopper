@@ -1,0 +1,25 @@
+[Unit]
+Description=Grasshopper Redroid ARM64 persistent Android worker
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/srv/grasshopper/redroid-data
+ConditionPathExists=/dev/binder
+ConditionPathExists=/dev/hwbinder
+ConditionPathExists=/dev/vndbinder
+
+[Container]
+ContainerName=grasshopper-redroid
+Image=redroid/redroid@sha256:__REQUIRED_IMAGE_DIGEST__
+PublishPort=127.0.0.1:5556:5555
+Volume=/srv/grasshopper/redroid-data:/data:Z
+PodmanArgs=--privileged --memory=3072m --cpus=1
+Exec=androidboot.use_memfd=1 androidboot.redroid_width=1080 androidboot.redroid_height=2400 androidboot.redroid_dpi=400
+
+[Service]
+Restart=always
+RestartSec=12
+TimeoutStartSec=900
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target
