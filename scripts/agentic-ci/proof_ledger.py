@@ -42,7 +42,7 @@ def create(path: Path, output: Path, repo: str, run_id: str, ref: str,
            "output_file": path.name, "sha256": item_hash,
            "gate": {"all_tests_passed": True, "zero_recursion_verified": True},
            "utc": dt.datetime.now(dt.timezone.utc).isoformat(),
-           "binding": "sha256(filename+content) in a signed/immutable Actions artifact",
+           "binding": "sha256(file-bytes) with filename and origin recorded; artifact retention is finite",
            "object_storage_write": "NOT_PERFORMED",
            "worm_retention": "NOT_PROVEN"}
     output.write_text(json.dumps(doc, sort_keys=True, indent=2) + "\n")
