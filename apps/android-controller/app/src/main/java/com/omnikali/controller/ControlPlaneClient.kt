@@ -147,7 +147,7 @@ class ControlPlaneClient(
             events.onConnectionState("CONNECTED", "Mutually authenticated gRPC stream opened")
         } catch (e: Exception) {
             newChannel?.shutdownNow()
-            events.onConnectionState("DISCONNECTED", "Connection attempt failed: \${safeError(e)}")
+            events.onConnectionState("DISCONNECTED", "Connection attempt failed: ${safeError(e)}")
             scheduleReconnect(nextBackoffMs())
         }
     }
