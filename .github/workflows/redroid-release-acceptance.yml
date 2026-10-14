@@ -40,6 +40,7 @@ jobs:
           python3 -m py_compile scripts/cloud-android/redroid-acceptance.py test/redroid-acceptance.test.py
           python3 test/redroid-acceptance.test.py -v
           python3 android/remote-input-probe/smoke_ui.py --self-test
+          python3 -m py_compile android/remote-input-probe/termux_rish_ui.py
           bash -n scripts/cloud-android/termux-physical-parity.sh
           echo "REDROID_CONTRACT=PASS_OFFLINE_NOT_PRODUCTION_PROOF" >> "$GITHUB_STEP_SUMMARY"
 
