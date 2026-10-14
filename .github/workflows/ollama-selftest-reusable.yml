@@ -25,10 +25,37 @@ permissions:
   contents: read
 
 jobs:
+  timeout-budget:
+    name: Plan 200%-500% expected job runtimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      budgets: ${{ steps.plan.outputs.budgets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: onnxscibroccoli/Grasshopper
+          ref: main
+          path: .ci-harness
+          persist-credentials: false
+          fetch-depth: 1
+      - id: plan
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 .ci-harness/scripts/agentic-ci/timeout_budget.py \
+            --config .ci-harness/config/agentic-ci-time-budgets.json \
+            --workflow ollama-selftest-reusable.yml
   verify:
+    needs: timeout-budget
     name: Recheck production contracts and diagnose bounded failures
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: ${{ fromJSON(needs['timeout-budget'].outputs.budgets)['verify'] }}
     services:
       ollama:
         image: ollama/ollama:latest
