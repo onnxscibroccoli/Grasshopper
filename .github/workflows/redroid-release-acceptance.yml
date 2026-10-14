@@ -96,7 +96,7 @@ jobs:
     needs: [offline-contract, build-test-apk]
     if: github.event_name == 'pull_request' || inputs.android15_emulator == true
     runs-on: ubuntu-24.04
-    timeout-minutes: 65
+    timeout-minutes: 110
     steps:
       - uses: actions/checkout@v4
         with:
@@ -113,15 +113,22 @@ jobs:
           set -Eeuo pipefail
           cd android/remote-input-probe
           sha256sum -c test-apk.sha256
-      - name: Assert KVM and Android SDK available
+      - name: Detect acceleration and choose safe software emulation fallback
         shell: bash
         run: |
           set -Eeuo pipefail
-          test -r /dev/kvm && test -w /dev/kvm || {
-            echo "ANDROID15_EMULATOR=BLOCKED_KVM_UNAVAILABLE"; exit 2;
-          }
           test -n "${ANDROID_HOME:-}" || exit 2
           test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" || exit 2
+          mode=off
+          if [[ -c /dev/kvm ]]; then
+            sudo chmod a+rw /dev/kvm || true
+            if [[ -r /dev/kvm && -w /dev/kvm ]]; then
+              mode=on
+            fi
+          fi
+          echo "EMULATOR_ACCEL=$mode" >> "$GITHUB_ENV"
+          echo "EMULATOR_ACCELERATION_MODE=$mode" >> "$GITHUB_STEP_SUMMARY"
+          echo "The emulator is an isolated CI fixture, never the OCI production host." >> "$GITHUB_STEP_SUMMARY"
       - name: Provision actual Android 15 emulator image
         shell: bash
         run: |
@@ -138,9 +145,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/android-evidence"
           timeout 900 "$ANDROID_HOME/emulator/emulator" \
             -avd broccoli-api35 -no-snapshot -no-audio -no-window -no-boot-anim \
-            -gpu swiftshader_indirect -accel on >"$RUNNER_TEMP/android-evidence/emulator.log" 2>&1 &
+            -gpu swiftshader_indirect -memory 2048 -cores 2 -accel "$EMULATOR_ACCEL" >"$RUNNER_TEMP/android-evidence/emulator.log" 2>&1 &
           booted=0
-          for i in $(seq 1 120); do
+          for i in $(seq 1 360); do
             value="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
             if [[ "$value" == 1 ]]; then booted=1; break; fi
             sleep 5
