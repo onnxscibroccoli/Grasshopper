@@ -1,0 +1,177 @@
+name: Isolated Oracle UEK 6.12 Binder boot lab
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/oci-uek-binder-boot-lab.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oci-binder-boot-lab-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  binder-boot-lab:
+    name: Build and boot a Binder-enabled ARM64 kernel in isolated QEMU
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 200
+    steps:
+      - name: Install build tools and isolated QEMU
+        timeout-minutes: 18
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ca-certificates curl rpm2cpio cpio bzip2 make bc flex bison \
+            libelf-dev libssl-dev gcc-14 g++-14 perl python3 rsync \
+            busybox-static qemu-system-arm zstd
+
+      - name: Verify exact Oracle source RPM checksum
+        timeout-minutes: 18
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/oracle-binder-lab"
+          cd "$RUNNER_TEMP/oracle-binder-lab"
+          curl --fail --location --retry 3 --max-time 500 \
+            -o kernel-uek.src.rpm \
+            https://yum.oracle.com/repo/OracleLinux/OL9/UEKR8/x86_64/getPackageSource/kernel-uek-6.12.0-206.104.4.4.el9uek.src.rpm
+          echo 'c72bdcfec66ade95b2735cc2d6f3cf0e3cabab6d992b8dcad6c2a06d8bb17536  kernel-uek.src.rpm' | sha256sum -c -
+          rpm2cpio kernel-uek.src.rpm | cpio -idm --quiet --no-absolute-filenames \
+            config-aarch64 linux-6.12.0.tar.bz2
+
+      - name: Generate isolated Binder/BinderFS kernel config
+        timeout-minutes: 18
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/oracle-binder-lab"
+          tar -xjf linux-6.12.0.tar.bz2
+          cd linux-6.12.0
+          cp ../config-aarch64 .config
+          scripts/config --enable ANDROID_BINDER_IPC \
+                         --enable ANDROID_BINDERFS \
+                         --set-str ANDROID_BINDER_DEVICES 'binder,hwbinder,vndbinder' \
+                         --enable BLK_DEV_INITRD \
+                         --enable DEVTMPFS \
+                         --enable DEVTMPFS_MOUNT \
+                         --disable DEBUG_INFO_BTF \
+                         --set-str SYSTEM_TRUSTED_KEYS '' \
+                         --set-str SYSTEM_REVOCATION_KEYS ''
+          make ARCH=arm64 CC=gcc-14 HOSTCC=gcc-14 olddefconfig
+          grep -qx 'CONFIG_ANDROID_BINDER_IPC=y' .config
+          grep -qx 'CONFIG_ANDROID_BINDERFS=y' .config
+          grep -qx 'CONFIG_DEVTMPFS=y' .config
+          grep -qx 'CONFIG_BLK_DEV_INITRD=y' .config
+          echo 'BINDER_SOURCE_CONFIG=PASS'
+          echo 'OCI_RPM_VENDOR_PATCH_APPLICATION=NOT_PROVEN'
+
+      - name: Build ARM64 kernel Image without host installation
+        timeout-minutes: 145
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/oracle-binder-lab/linux-6.12.0"
+          make ARCH=arm64 CC=gcc-14 HOSTCC=gcc-14 -j4 Image
+          test -s arch/arm64/boot/Image
+          sha256sum arch/arm64/boot/Image > "$RUNNER_TEMP/oracle-binder-lab/kernel-image.sha256"
+          sha256sum .config > "$RUNNER_TEMP/oracle-binder-lab/kernel-config.sha256"
+          echo 'BINDER_KERNEL_IMAGE_BUILT=PASS'
+          echo 'PRODUCTION_VENDOR_KERNEL_PACKAGE=NOT_BUILT'
+
+      - name: Create deterministic minimal aarch64 initramfs
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          base="$RUNNER_TEMP/oracle-binder-lab"
+          mkdir -p "$base/initramfs/bin" "$base/initramfs/proc" \
+                   "$base/initramfs/sys" "$base/initramfs/dev"
+          cp "$(command -v busybox)" "$base/initramfs/bin/busybox"
+          ln -s busybox "$base/initramfs/bin/sh"
+          cat > "$base/initramfs/init" <<'INIT'
+          #!/bin/sh
+          PATH=/bin
+          mount -t proc proc /proc
+          mount -t sysfs sysfs /sys
+          mount -t devtmpfs devtmpfs /dev
+          mkdir -p /dev/binderfs
+          if grep -qw binder /proc/filesystems && \
+             mount -t binder binder /dev/binderfs && \
+             test -c /dev/binderfs/binder-control; then
+            echo BINDERFS_GUEST_BOOT_PROBE_PASS
+          else
+            echo BINDERFS_GUEST_BOOT_PROBE_FAIL
+          fi
+          echo BINDERFS_CANDIDATE_ONLY_NOT_PRODUCTION_KERNEL
+          poweroff -f
+          INIT
+          chmod 700 "$base/initramfs/init"
+          sudo mknod "$base/initramfs/dev/console" c 5 1
+          sudo mknod "$base/initramfs/dev/null" c 1 3
+          (cd "$base/initramfs" && find . -print0 | cpio --null -o --format=newc --quiet | gzip -9) \
+             > "$base/initramfs.cpio.gz"
+          test -s "$base/initramfs.cpio.gz"
+
+      - name: Boot candidate kernel under QEMU without network or OCI privileges
+        timeout-minutes: 24
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          base="$RUNNER_TEMP/oracle-binder-lab"
+          set +e
+          timeout 1200 qemu-system-aarch64 -machine virt \
+            -cpu max -accel tcg,thread=multi -smp 2 -m 2048 \
+            -kernel "$base/linux-6.12.0/arch/arm64/boot/Image" \
+            -initrd "$base/initramfs.cpio.gz" \
+            -append 'console=ttyAMA0 rdinit=/init loglevel=5' \
+            -nographic -nic none -no-reboot \
+            > "$base/guest-boot.log" 2>&1
+          qemu_rc=$?
+          set -e
+          if ! grep -q '^BINDERFS_GUEST_BOOT_PROBE_PASS' "$base/guest-boot.log"; then
+            echo "BINDERFS_GUEST_BOOT_PROBE=FAIL"
+            echo "QEMU_EXIT_CODE=$qemu_rc"
+            tail -n 30 "$base/guest-boot.log" | sed -E 's/[[:cntrl:]]//g' | head -n 30
+            exit 2
+          fi
+          echo "BINDERFS_GUEST_BOOT_PROBE=PASS"
+          echo "QEMU_EXIT_CODE=$qemu_rc"
+
+      - name: Emit strict candidate-only SHA-256 proof
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          base="$RUNNER_TEMP/oracle-binder-lab"
+          python3 - "$base" <<'PY'
+          import hashlib,json,pathlib,sys
+          root=pathlib.Path(sys.argv[1])
+          paths={"kernel":root/"linux-6.12.0/arch/arm64/boot/Image",
+                 "config":root/"linux-6.12.0/.config",
+                 "initramfs":root/"initramfs.cpio.gz"}
+          hashes={k:hashlib.sha256(v.read_bytes()).hexdigest() for k,v in paths.items()}
+          payload={"schema":"grasshopper.oci.binder-isolated-boot/v1",
+                   "source_rpm_sha256":"c72bdcfec66ade95b2735cc2d6f3cf0e3cabab6d992b8dcad6c2a06d8bb17536",
+                   "artifact_sha256":hashes,
+                   "isolated_binderfs_boot":"PASS",
+                   "vendor_patch_series_applied":"NOT_PROVEN",
+                   "oracle_kernel_rpm_built":"NO",
+                   "actual_oci_production_boot":"NO",
+                   "redroid_android_boot":"NOT_TESTED",
+                   "host_reboot_performed":False,
+                   "production_deployment_authorized":False}
+          (root/"boot-proof.json").write_text(json.dumps(payload,sort_keys=True,indent=2)+"\n")
+          print("ISOLATED_BINDERFS_BOOT_SHA256_PROOF=PASS_CANDIDATE_ONLY")
+          PY
+          echo "OCI_PRODUCTION_KERNEL_INSTALL=BLOCKED_NOT_A_VENDOR_BUILT_PACKAGE" >> "$GITHUB_STEP_SUMMARY"
+          echo "NO_HOST_REBOOT=YES" >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish non-executable proof only
+        uses: actions/upload-artifact@v4
+        with:
+          name: oracle-uek612-binder-isolated-boot-proof
+          path: ${{ runner.temp }}/oracle-binder-lab/boot-proof.json
+          retention-days: 7
+          if-no-files-found: error
