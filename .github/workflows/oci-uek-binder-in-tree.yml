@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: oracle-uek-binder-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   binder-source-probe:
     name: Compile upstream in-tree Binder against Oracle UEK source on ARM64
