@@ -9,6 +9,7 @@ on:
       - "test/redroid-acceptance.test.py"
       - "docs/operations/REDROID_RELEASE_ACCEPTANCE.md"
       - "android/remote-input-probe/**"
+      - "scripts/oci-recovery/boot-readiness.sh"
   workflow_dispatch:
     inputs:
       android15_emulator:
@@ -42,6 +43,7 @@ jobs:
           python3 android/remote-input-probe/smoke_ui.py --self-test
           python3 -m py_compile android/remote-input-probe/termux_rish_ui.py
           bash -n scripts/cloud-android/termux-physical-parity.sh
+          bash -n scripts/oci-recovery/boot-readiness.sh
           echo "REDROID_CONTRACT=PASS_OFFLINE_NOT_PRODUCTION_PROOF" >> "$GITHUB_STEP_SUMMARY"
 
 
