@@ -1,0 +1,108 @@
+{
+  "schema": "broccoli.ci.dynamic-time-budget/v1",
+  "rule": "ceil(max(configured_expected_minutes, successful_run_p75_minutes) * multiplier), clamped to 360 GitHub-hosted runner minutes",
+  "min_factor": 2,
+  "max_factor": 5,
+  "minimum_historical_samples": 3,
+  "platform_max_minutes": 360,
+  "planner_expected_minutes": 4,
+  "planner_timeout_minutes": 12,
+  "workflows": {
+    "ollama-ci-activation-gate.yml": {
+      "offline-contract": {
+        "expected_minutes": 4,
+        "multiplier": 3,
+        "job_name": "Deterministic false-PASS and recursion regression tests"
+      },
+      "containerized-ollama-live": {
+        "expected_minutes": 22,
+        "multiplier": 3,
+        "job_name": "Execute Llama 3.2, capture failure, validate safe retry"
+      },
+      "two-model-specialists": {
+        "expected_minutes": 65,
+        "multiplier": 4,
+        "job_name": "Llama mainline architecture and DeepSeek detailed code validation"
+      },
+      "live-recursion": {
+        "expected_minutes": 4,
+        "multiplier": 3,
+        "job_name": "Verify actual canary observer lineage after central main activation"
+      },
+      "reviewer-configured": {
+        "expected_minutes": 2,
+        "multiplier": 3,
+        "job_name": "Prove native environment reviewer protection before publication"
+      },
+      "publish-protected-proof": {
+        "expected_minutes": 5,
+        "multiplier": 3,
+        "job_name": "GitHub Environment HITL — Proceed / Hold Off / Inspect Logs"
+      }
+    },
+    "ollama-selftest-reusable.yml": {
+      "verify": {
+        "expected_minutes": 25,
+        "multiplier": 3,
+        "job_name": "Recheck production contracts and diagnose bounded failures"
+      }
+    },
+    "ollama-ci-observatory.yml": {
+      "lineage": {
+        "expected_minutes": 2,
+        "multiplier": 3,
+        "job_name": "Reject nested or self-triggered observatory runs"
+      },
+      "classify-failed-workflow": {
+        "expected_minutes": 16,
+        "multiplier": 3,
+        "job_name": "Advise on original failure without replay or false PASS"
+      }
+    },
+    "ollama-ci-observer-reusable.yml": {
+      "lineage": {
+        "expected_minutes": 2,
+        "multiplier": 3,
+        "job_name": "Ensure exactly one first-generation failed workflow source"
+      },
+      "diagnose": {
+        "expected_minutes": 16,
+        "multiplier": 3,
+        "job_name": "Classify original failure without mutating caller"
+      }
+    },
+    "ollama-ci-continuity.yml": {
+      "recheck-or-handoff": {
+        "expected_minutes": 18,
+        "multiplier": 3,
+        "job_name": "recheck-or-handoff"
+      }
+    },
+    "ollama-selftest-contract.yml": {
+      "contract": {
+        "expected_minutes": 3,
+        "multiplier": 3,
+        "job_name": "contract"
+      }
+    },
+    "oci-grasshopper-protected-stage.yml": {
+      "authenticate-proof": {
+        "expected_minutes": 5,
+        "multiplier": 3,
+        "job_name": "Verify central CI proof and mandatory native reviewer configuration"
+      },
+      "host-handoff": {
+        "expected_minutes": 5,
+        "multiplier": 3,
+        "job_name": "Protected staging authorization — no public self-hosted runner"
+      }
+    },
+    "ollama-ci-failure-canary.yml": {
+      "emit-controlled-failure": {
+        "expected_minutes": 1,
+        "multiplier": 3,
+        "job_name": "emit-controlled-failure"
+      }
+    }
+  }
+}
