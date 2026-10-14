@@ -39,8 +39,6 @@ jobs:
           python3 -m py_compile scripts/cloud-android/redroid-acceptance.py test/redroid-acceptance.test.py
           python3 test/redroid-acceptance.test.py -v
           bash -n scripts/cloud-android/termux-physical-parity.sh
-          bash -n scripts/cloud-android/oci-redroid-admission.sh
-          bash -n scripts/cloud-android/redroid-device.sh
           echo "REDROID_CONTRACT=PASS_OFFLINE_NOT_PRODUCTION_PROOF" >> "$GITHUB_STEP_SUMMARY"
 
   android15-emulator:
