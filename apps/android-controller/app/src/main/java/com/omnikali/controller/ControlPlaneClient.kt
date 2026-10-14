@@ -166,14 +166,16 @@ class ControlPlaneClient(
                 .addCapabilities("android.status")
                 .build()
             events.onConnectionState("CONNECTING", "TLS stream requested; awaiting an authenticated server welcome")
-            if (!send(ClientMessage.newBuilder().setHello(hello), allowBeforeWelcome = true)) {
-                throw IllegalStateException("Unable to send gRPC hello")
-            }
             welcomeTimeout = scheduler.schedule({
                 if (!authenticated.get() && running.get()) {
                     handleStreamFailure(localChannel, TimeoutException("server welcome timeout"))
                 }
             }, 15, TimeUnit.SECONDS)
+            if (!send(ClientMessage.newBuilder().setHello(hello), allowBeforeWelcome = true)) {
+                welcomeTimeout?.cancel(false)
+                welcomeTimeout = null
+                throw IllegalStateException("Unable to send gRPC hello")
+            }
         } catch (e: Exception) {
             newChannel?.shutdownNow()
             events.onConnectionState("DISCONNECTED", "Connection attempt failed: ${safeError(e)}")
