@@ -12,6 +12,16 @@ The purpose is a persistent cloud Android accessible through:
 - A constrained **agentic automation transport**: policy-approved typed actions, semantic accessibility observation and event correlation, auditable non-replayable receipts. An observation event never re-executes its originating command.
 - A **development/Test environment**, including Termux shell and Android tools where possible, and separately the real physical Android 15 Termux/Shizuku environment.
 
+## Reusable test-only APK and real input round-trip
+
+The `android/remote-input-probe` Gradle project builds a **debug-signed, unprivileged APK** with one text field, a submit button, and a deterministic `BROCCOLLI_ACK:` result. It declares **no Android permissions**, does not access accounts, and stores no submitted text. The same source APK is built in GitHub Actions, exercised in an Android 15 emulator and can be installed deliberately on Redroid or the physical Android 15 device.
+
+- CI builds `app-debug.apk` under `android/remote-input-probe/app/build/outputs/apk/debug/`; it publishes a short-lived `broccoli-android-ime-debug-fixture` artifact with SHA-256 receipt. A debug signature is **not** a production companion signing key.
+- The Android15 emulator job installs that exact APK, launches the fixture, injects a non-sensitive nonce, finds controls by **Android accessibility resource ID**, taps the submit button, and requires an exact echo. An ADB-injected keystroke is **not** proof that a browser or Android companion's native keyboard works; those paths need separate independent transport trials.
+- The operator can inspect the artifact/checksum and install that fixture on the physical phone using the normal Android package installer. Then run `python3 android/remote-input-probe/termux_rish_ui.py --approve-ui-test` from Termux with Shizuku/Rish active. This exercises the **same APK** using `rish -c` (shell UID 2000) and Android touch/input/semantic hierarchy. It requires explicit operator invocation, never installs an APK itself, never copies OAuth secrets and stops only the test app afterward.
+- On Redroid after Binder/boot acceptance, an authorized local loopback ADB client can run `python3 android/remote-input-probe/smoke_ui.py --serial 127.0.0.1:5556 --apk /private/path/app-debug.apk --approve-test-apk-install`. Keep the APK and UI/XML evidence private; do not send user screenshots to public GitHub.
+- These tests can establish Android framework/UI behavior parity but **not** biometric, camera, proprietary device HAL, Shizuku policy, login/session or customer-specific app compatibility. Those are separate approval/acceptance gates.
+
 ## Android version and device-test fidelity
 
 The physical Samsung A14 runs **Android 15 (API 35), ARM64**. The proposed Redroid build is **Android 16 (API 36), ARM64**. Android 16 success alone **does not prove** Android 15 compatibility or Shizuku/rish behavior on the physical phone.
