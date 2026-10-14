@@ -96,8 +96,6 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.CONTROLLER_KEY_PASSWORD }}
         run: bash scripts/build-android-controller.sh :app:assembleRelease
       - name: Verify APK signature and signer identity
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
         run: |
           set -euo pipefail
           APK="apps/android-controller/app/build/outputs/apk/release/app-release.apk"
@@ -112,7 +110,7 @@ jobs:
           test "$ACTUAL" = "$EXPECTED"
           mkdir -p release-output
           cp "$APK" release-output/controller.apk
-          sha256sum release-output/controller.apk > release-output/controller.apk.sha256
+          (cd release-output && sha256sum controller.apk > controller.apk.sha256)
           {
             echo "artifact=controller.apk"
             echo "version=0.1.0"
