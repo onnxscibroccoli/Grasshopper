@@ -76,7 +76,7 @@ jobs:
             echo 'FIXTURE_UNEXPECTED_ANDROID_PERMISSION=BLOCKED'
             exit 2
           fi
-          sha256sum "$path" > android/remote-input-probe/test-apk.sha256
+          (cd android/remote-input-probe && sha256sum app/build/outputs/apk/debug/app-debug.apk > test-apk.sha256)
           echo "TEST_ONLY_APK_BUILD=PASS" >> "$GITHUB_STEP_SUMMARY"
           echo "APK_SIGNING=EPHEMERAL_DEBUG_ONLY" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
@@ -91,7 +91,7 @@ jobs:
   android15-emulator:
     name: Real hosted Android 15 API 35 emulator read-only compatibility
     needs: [offline-contract, build-test-apk]
-    if: github.event_name == 'workflow_dispatch' && inputs.android15_emulator == true
+    if: github.event_name == 'pull_request' || inputs.android15_emulator == true
     runs-on: ubuntu-24.04
     timeout-minutes: 65
     steps:
