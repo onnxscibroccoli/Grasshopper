@@ -44,3 +44,7 @@ See handoff § Open board. High-signal: #145 salvage, #143 Cloud Android, #165 A
 ## Update 2026-10-19 ~19:47 ET — local Samsung evidence
 
 Ian provided Shevery 14.2.0 on samsung SM-A146U (Android 15 / SDK 35): Service **stopped**, Server uid/API **-1**, Authorized apps **0**, Root **unavailable**, ADB permission **limited**. Incorporated into handoff. Step 2 Shizuku/rish routing remains **BLOCKED** (no PASS / no live acceptance / no OEM matrix).
+
+## Update 2026-10-19 ~19:51 ET — rish shell running (supersedes stopped)
+
+Ian: Shevery 14.2.0 on SM-A146U — Service **running**, Server uid **2000**, API **14.2**, Authorized apps **7**, ADB **full**, `rish` → `whoami` → **shell**. Still not OEM matrix / not live_device_acceptance / mobilemcp still lacks `RISH_APPLICATION_ID`+dex wiring.
