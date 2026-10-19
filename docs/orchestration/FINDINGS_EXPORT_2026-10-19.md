@@ -32,3 +32,11 @@ gh pr list --repo onnxscibroccoli/broccoli-rish --state open --limit 10
 
 See handoff § Open board. High-signal: #145 salvage, #143 Cloud Android, #165 ARM64 lead boundary, #187/#188 gateway/OCI, #194 CI continuity.
 
+
+
+## Update 2026-10-19 ~19:44 ET — Android lane
+
+- Merged broccoli-core [#77](https://github.com/onnxscibroccoli/broccoli-core/pull/77) → `f66678ea9749c6c22519028c39dc00d5c9e3bae1`. Does **not** prove live device / Shizuku / rish bootstrap.
+- mobilemcp: no open PR to rebase. Shizuku UserService present; `RISH_APPLICATION_ID` / `rish_shizuku.dex` absent — halt Step 2 until contract decided (UserService vs rish CLI).
+- Next dirty tip if Android continues: Grasshopper #197 (behind 2 / CONFLICTING).
+- broccoli-rish #1 still OPEN draft MERGEABLE (canonical ownership handoff).
