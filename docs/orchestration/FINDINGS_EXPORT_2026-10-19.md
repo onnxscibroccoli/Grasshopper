@@ -48,3 +48,7 @@ Ian provided Shevery 14.2.0 on samsung SM-A146U (Android 15 / SDK 35): Service *
 ## Update 2026-10-19 ~19:51 ET — rish shell running (supersedes stopped)
 
 Ian: Shevery 14.2.0 on SM-A146U — Service **running**, Server uid **2000**, API **14.2**, Authorized apps **7**, ADB **full**, `rish` → `whoami` → **shell**. Still not OEM matrix / not live_device_acceptance / mobilemcp still lacks `RISH_APPLICATION_ID`+dex wiring.
+
+## Update 2026-10-19 ~20:00 ET — upstream mobile-mcp
+
+Ian ran upstream `@mobilenext/mobile-mcp@1.0.12` (mcp sdk 2.0.0) on stdio. Server start only; no device tool call, no broccoli-core/Shizuku/control-plane integration proven. Canonical choice between upstream and `onnxscibroccoli/mobilemcp` still open.
