@@ -19,3 +19,16 @@ test("NUL in argv blocks", () => assert.equal(decide({ ...base, argv: ["id\u0000
 test("empty argv blocks", () => assert.equal(decide({ ...base, argv: [] }).decision, "Block"));
 test("non-object blocks", () => assert.deepEqual(validateEnvelope(null), ["envelope must be an object"]));
 test("mutating status read blocks", () => assert.equal(decide({ ...base, tool: "get_command_access", argv: [], mutating: true }).decision, "Block"));
+
+for (const argv of [["id", "unexpected"], ["whoami", "extra"], ["getprop", "--help"], ["getprop", "ro.product.model", "fallback"], ["getprop", "x\ny"], ["dumpsys", "battery", "set", "level", "1"], ["dumpsys", "activity"], ["dumpsys", "--help"]]) {
+  test(`unsupported read shape escalates: ${JSON.stringify(argv)}`, () => {
+    assert.equal(decide({ ...base, argv }).decision, "Escalate");
+  });
+}
+for (const argv of [["getprop"], ["getprop", "ro.product.model"], ["dumpsys", "battery"], ["dumpsys", "display"]]) {
+  test(`bounded read shape allows: ${JSON.stringify(argv)}`, () => {
+    assert.equal(decide({ ...base, argv }).decision, "Allow");
+  });
+}
+test("status arguments are rejected", () => assert.equal(decide({ ...base, tool: "get_command_access", argv: ["id"] }).decision, "Block"));
+test("sparse argv is rejected", () => assert.equal(decide({ ...base, argv: Array(1) }).decision, "Block"));
