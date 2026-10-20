@@ -1,0 +1,15 @@
+{
+  "schema": "grasshopper.mainline-repository-catalog/v1",
+  "description": "Allowlisted public repositories; only refs/heads/main is read. Other branches and raw commit-SHA fetches are forbidden. Missing main means skip.",
+  "repositories": [
+    "onnxscibroccoli/Grasshopper",
+    "onnxscibroccoli/broccoli-core",
+    "onnxscibroccoli/omn-kali-knowledge-graph-master",
+    "onnxscibroccoli/helix",
+    "onnxscibroccoli/kali-node",
+    "onnxscibroccoli/omnikali",
+    "onnxscibroccoli/morphe-manager",
+    "onnxscibroccoli/grasshopper-kubernetes",
+    "onnxscibroccoli/noVNC"
+  ]
+}
