@@ -123,3 +123,5 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+Mobile action policy: [envelope and pre-execution hook](docs/PHONE_ACTION_ENVELOPE.md). Local hook tests do not establish device acceptance or controller integration.
