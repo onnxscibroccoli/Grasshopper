@@ -1,0 +1,19 @@
+{
+  "name": "@omnikali/control-plane-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check src/server.mjs && node --check src/policy.mjs && node --check src/providers.mjs && node --check src/transport.mjs && node --check src/android-ui.mjs && node --check src/app-intel.mjs && node --check src/app-inspect.mjs && node --check src/agent-loop.mjs && node --check src/human-gate.mjs && python3 -m py_compile ../../tools/apk_inspector.py"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.2.0",
+    "@modelcontextprotocol/server": "2.2.0",
+    "zod": "4.0.0"
+  }
+}
