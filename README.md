@@ -2,7 +2,7 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-19 23:23 UTC
+**Documentation snapshot:** 2026-10-26 09:07 UTC
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
