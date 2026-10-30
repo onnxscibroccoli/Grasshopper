@@ -1,0 +1,28 @@
+{
+  "schema": "omnikali-bist-evidence/v1",
+  "acceptanceId": "cloud-android-r2-20261006",
+  "timestamp": "2026-10-06T18:03:00Z",
+  "path": "QEMU Cloud Android -> ADB 5555 / VNC 5903 / websockify 6082",
+  "checks": {
+    "cloud-android.r2.adb-transport": {
+      "status": "PASS",
+      "detail": "Clean QEMU stop/start verified ADB TCP transport: adb get-state=device, guest id=uid=0(root), sys.boot_completed=1, init.svc.adbd=running, wifi_eth=10.0.2.15/24, legacy_network default route via 10.0.2.2, three disconnect/reconnect cycles returned device."
+    },
+    "cloud-android.r2.screen-transport": {
+      "status": "PASS",
+      "detail": "VNC 127.0.0.1:5903 reachable; websockify 127.0.0.1:6082 served noVNC content; authenticated guest screenshot captured at 1024x768 PNG."
+    },
+    "cloud-android.r2.input-path": {
+      "status": "PASS",
+      "detail": "ADB input keyevent HOME and text injection completed successfully; focused Android activity remained observable."
+    },
+    "cloud-android.r2.persistence": {
+      "status": "PASS",
+      "detail": "Marker written to /data/local/tmp before QEMU stop survived persistent-device.sh stop/start; network policy and adbd were recreated on boot."
+    },
+    "cloud-android.r2.loopback-boundary": {
+      "status": "PASS",
+      "detail": "Host listeners for ADB 5555, VNC 5903, and websockify 6082 were bound to 127.0.0.1 only after restart."
+    }
+  }
+}

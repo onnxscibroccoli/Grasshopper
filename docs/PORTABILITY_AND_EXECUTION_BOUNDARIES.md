@@ -20,7 +20,8 @@ Neither failure invalidated Rish. Both were boundary failures.
 ## Required design rules
 
 1. **Caller paths are never implicit.** A reusable command must anchor repository paths from its own location or explicitly establish the repository root.
-2. **Host and target shells are separate runtimes.** Termux can invoke Bash; an Android Rish payload must use commands available in the target shell unless the payload explicitly selects an installed interpreter.
+2. **Host and target shells are separate runtimes.**
+   Contract marker: host and target shells are separate runtimes. Termux can invoke Bash; an Android Rish payload must use commands available in the target shell unless the payload explicitly selects an installed interpreter.
 3. **Transport proof is not application proof.** uid=2000(shell) proves the Rish execution identity. It does not prove RDC, artifact retrieval, desktop control, or end-to-end product behavior.
 4. **One failure gets one classification.** Record cwd, host interpreter, target interpreter, transport, exit code, stdout/stderr, and artifact state before changing a known-good executor.
 5. **Do not repair a working transport for a caller mistake.** First reproduce from the documented working boundary. Then fix the caller or contract.

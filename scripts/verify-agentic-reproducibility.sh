@@ -13,6 +13,8 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 COMMIT=$(git rev-parse HEAD)
 REMOTE=$(git config --get remote.origin.url || true)
+NODE_VERSION=$(node --version)
+NPM_VERSION=$(npm --version)
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/grasshopper-repro.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 mkdir -p "$TMP/source"
@@ -32,11 +34,21 @@ const s=JSON.parse(process.argv[1]);
 if (!s.agents || Object.keys(s.agents).length !== 1) throw new Error("bootstrap did not register exactly one reference agent");
 if (!s.resources || Object.keys(s.resources).length !== 1) throw new Error("bootstrap did not declare exactly one reference resource");
 ' "$STATUS"
+EVIDENCE_DIR="${GRASSHOPPER_REPRO_EVIDENCE_DIR:-${HOME:-/tmp}/.grasshopper/audit/reproducibility}"
+STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+EVIDENCE_FILE="$EVIDENCE_DIR/repro-$COMMIT-$STAMP.json"
+GRASSHOPPER_REPRO_COMMIT="$COMMIT" \
+GRASSHOPPER_REPRO_NODE="$NODE_VERSION" \
+GRASSHOPPER_REPRO_NPM="$NPM_VERSION" \
+GRASSHOPPER_REPRO_REMOTE="$REMOTE" \
+  node "$ROOT/scripts/emit-agentic-reproducibility-evidence.mjs" "$EVIDENCE_FILE" >/dev/null
+
 printf '%s\n' "Agentic MVP reproducibility: PASS"
 printf '%s\n' "canonical_commit=$COMMIT"
-printf '%s\n' "node=$(node --version)"
-printf '%s\n' "npm=$(npm --version)"
+printf '%s\n' "node=$NODE_VERSION"
+printf '%s\n' "npm=$NPM_VERSION"
 printf '%s\n' "source_remote=$REMOTE"
 printf '%s\n' "reconstructed_from_clean_git_archive=true"
 printf '%s\n' "production_credentials_required=false"
 printf '%s\n' "live_production_mutation_performed=false"
+printf '%s\n' "evidence_file=$EVIDENCE_FILE"

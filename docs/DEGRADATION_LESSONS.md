@@ -9,7 +9,7 @@ Older Broccoli was helpful because the loop lived in the repo: intent, one schem
 ## What actually degraded
 
 1. **The contract left the repo.** `docs/ENGINEERING.md` became `# see chat ENGINEERING.md`. The next agent inherited a pointer, not a rule.
-2. **Shipped was a label.** Milestone issues said M1–M10 shipped while files were `*_PLACEHOLDER`. `docs/KERNEL.md` had to call that a lie.
+2. **Shipped was a label.** Milestone issues said M1–M10 shipped while files were `*_PLACEHOLDER`. That was not a ship. `docs/KERNEL.md` had to call that a lie.
 3. **Incidents became files.** `advance_step*.sh`, root logs, pid files, `.bak` copies, and docx dumps accumulated. Nothing deleted the last attempt.
 4. **The atom forked.** `rish_run.sh` exists at the root and under `lib/`. Event bus exists twice. Two implementations means neither is the source.
 5. **RC=0 replaced evidence.** RDC `rish` and `am` returned 0 with no artifact. That was recorded as if it might be success. Empty stdout is NOT_PROVEN.
