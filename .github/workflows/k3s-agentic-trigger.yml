@@ -10,7 +10,11 @@ permissions:
 
 jobs:
   dispatch-k3s-acceptance:
-    if: startsWith(github.event.issue.title, '[agentic-deploy]')
+    # Public repos accept issues from anyone. Only the owner may dispatch
+    # the live desktop workflow. The title prefix alone is not authorization.
+    if: >
+      startsWith(github.event.issue.title, '[agentic-deploy]') &&
+      github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch current K3s acceptance workflow
@@ -18,6 +22,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TARGET_REF: full-remote-desktop-reproducibility
+          WORKFLOW: k3s-live-desktop.yml
         run: |
-          gh workflow run k3s-live-desktop.yml --repo "$GH_REPO" --ref "$TARGET_REF"
-          echo "Dispatched k3s-live-desktop.yml on $TARGET_REF"
+          set -euo pipefail
+          if ! gh api "repos/${GH_REPO}/contents/.github/workflows/${WORKFLOW}?ref=${TARGET_REF}" >/dev/null; then
+            echo "Refusing to dispatch ${WORKFLOW}: file is not on ${TARGET_REF}."
+            exit 1
+          fi
+          gh workflow run "$WORKFLOW" --repo "$GH_REPO" --ref "$TARGET_REF"
+          echo "Dispatched ${WORKFLOW} on ${TARGET_REF} for owner issue ${{ github.event.issue.number }}"

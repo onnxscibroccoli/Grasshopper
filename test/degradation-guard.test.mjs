@@ -50,3 +50,27 @@ test("copied rish wrapper fails", () => {
   writeFileSync(join(root, "lib/rish_run.sh"), "#!/bin/bash\n");
   assert.ok(audit(root).some((item) => item.startsWith("known_good_copied:")));
 });
+
+test("affirmative placeholder shipped claim fails", () => {
+  const root = tree();
+  writeFileSync(join(root, "docs/EXTRA.md"), "status shipped PLACEHOLDER module\n");
+  assert.ok(audit(root).includes("false_shipped:docs/EXTRA.md"));
+});
+
+test("a lesson that names the anti-pattern is not a ship claim", () => {
+  const root = tree();
+  writeFileSync(
+    join(root, "docs/DEGRADATION_LESSONS.md"),
+    "NOT_PROVEN\nMilestone issues said shipped while files were PLACEHOLDER. That was not a ship.\n",
+  );
+  assert.deepEqual(audit(root), []);
+});
+
+test("capitalized portability prose is not the contract marker", () => {
+  const root = tree();
+  writeFileSync(
+    join(root, "docs/PORTABILITY_AND_EXECUTION_BOUNDARIES.md"),
+    "Host and target shells are separate runtimes\n",
+  );
+  assert.ok(audit(root).some((item) => item.startsWith("marker:docs/PORTABILITY_AND_EXECUTION_BOUNDARIES.md:")));
+});

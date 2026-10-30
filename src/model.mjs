@@ -4,7 +4,8 @@ export const STATES = Object.freeze({
   agent: ["ready", "disabled"],
   task: ["queued", "running", "completed", "failed", "stopped", "orphaned"],
   lock: ["held", "expired"],
-  resource: ["declared", "ready", "degraded", "absent"]
+  resource: ["declared", "ready", "degraded", "absent"],
+  instance: ["provisioning", "ready", "stopped", "destroying", "destroyed", "degraded"]
 });
 
 export function now() { return new Date().toISOString(); }
@@ -15,7 +16,7 @@ export function assertState(kind, value) {
 }
 
 export function emptyState() {
-  return { version: VERSION, createdAt: now(), updatedAt: now(), agents: {}, tasks: {}, locks: {}, resources: {}, events: [] };
+  return { version: VERSION, createdAt: now(), updatedAt: now(), agents: {}, tasks: {}, locks: {}, resources: {}, instances: {}, activeInstanceId: null, events: [] };
 }
 
 export function event(type, data) { return { id: id("evt"), type, at: now(), data }; }

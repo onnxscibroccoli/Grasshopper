@@ -6,7 +6,9 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "*/10 * * * *"
+    # Hourly. A */10 schedule whose concurrency group included github.run_id
+    # never coalesced, so 35-minute jobs queued without bound.
+    - cron: "7 * * * *"
   workflow_dispatch:
     inputs:
       autonomous:
@@ -16,7 +18,7 @@ on:
         type: boolean
 
 concurrency:
-  group: agentic-development-${{ github.ref }}-${{ github.run_id }}
+  group: agentic-development-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -117,6 +119,15 @@ jobs:
 
             Run the narrowest relevant tests after each change, then npm test plus BIST/control-plane/reproducibility checks. Preserve failure cause and evidence in the PR. If there is no justified bounded improvement, make no change and report that clearly. Human remains final merge authority.
 
+      - name: Record agent-generated diff
+        if: always()
+        run: |
+          mkdir -p .ci-evidence
+          git status --short > .ci-evidence/agent-status.txt || true
+          git diff --check > .ci-evidence/agent-diff-check.txt || true
+          git diff --stat > .ci-evidence/agent-diff-stat.txt || true
+          git diff > .ci-evidence/agent-diff.patch || true
+
       - name: Test agent-generated changes in the same workspace
         run: |
           npm install --ignore-scripts
@@ -126,14 +137,6 @@ jobs:
           git clean -fd
           npm run verify:agentic-control-plane
           npm run verify:agentic-reproducibility
-
-      - name: Record agent-generated diff
-        if: always()
-        run: |
-          mkdir -p .ci-evidence
-          git status --short > .ci-evidence/agent-status.txt || true
-          git diff --check > .ci-evidence/agent-diff-check.txt || true
-          git diff --stat > .ci-evidence/agent-diff-stat.txt || true
 
       - name: Upload agent evidence
         if: always()
