@@ -66,22 +66,20 @@ Every infrastructure change must be traceable to:
 
 A clean source checkout plus a passing test suite is the minimum reproducibility signal, not the final production acceptance criterion.
 
-## Automatic merge gate
+## Pull-request verification and human promotion
 
-Automatic merging is permitted only after the repository production-contract gate passes in full.
+Agent-produced and other pull-request code is untrusted. The production-contract verification workflow may run source/tests and publish a technical verdict, but it must not hold a writable repository token, enable automatic merging, or deploy infrastructure.
 
-The gate requires:
+A passing technical gate is necessary but not sufficient for promotion. An authorized maintainer must separately decide whether to merge, subject to the repository's applicable reviews and branch rules. Agents can open PRs; they cannot acquire promotion authority by passing their own tests.
 
-- the complete repository test suite to pass
-- the required production-contract GitHub Actions workflows for the exact proposed commit to pass
-- a documented and verified recovery path to be present
-- no production credentials or production infrastructure mutation by the agent
+Required verification remains fail-closed and includes:
 
-When the pull request is non-draft and every gate is green, the guarded merge workflow may enable GitHub auto-merge. A failing or incomplete gate must not merge.
+- the complete repository test suite;
+- the required production-contract workflows for the proposed commit;
+- evidence of the documented recovery path;
+- an explicit distinction between technical validation, human acceptance, and production readiness.
 
-The recovery evidence currently used by the gate is the verified OpenClaw backup plus disposable restore drill recorded in the dated OCI DEV_SANDBOX evidence. This is recovery readiness evidence, not a claim of automatic production rollback.
-
-If post-merge validation fails, the response must use the documented revert/restore path and preserve the failure evidence. Do not silently continue after a failed production-contract validation.
+The existing workflow name is kept for required-check compatibility. See [PR verification and promotion authority](docs/architecture/PR_VERIFICATION_AND_PROMOTION.md). Its current local regression test does not establish CI or production acceptance. If post-merge validation fails, preserve the failure and use the documented revert/restore path; do not silently continue.
 
 ## Broccoli degradation guard
 
