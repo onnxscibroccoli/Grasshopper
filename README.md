@@ -49,7 +49,7 @@ Key source files:
 
 The file-backed store currently exhibits reproducible multi-process lost updates, and the task lifecycle permits stale callbacks to finalize an orphaned task. These are **open defects**, not supported production guarantees. See [Control-plane concurrency baseline](docs/architecture/CONTROL_PLANE_CONCURRENCY_BASELINE.md) for negative-control tests, known safe behavior, and transaction/fencing acceptance criteria. These tests do not establish live production readiness.
 
-An **experimental, opt-in** [SQLite WAL state store](docs/adr/ADR-0002-transactional-state.md) provides transaction and stale-revision regression tests without changing the default JSON store. The agent dispatch and stale callback ownership invariants remain unresolved; Node 22's built-in SQLite API is experimental.
+An **experimental, opt-in** [SQLite WAL state store](docs/adr/ADR-0002-transactional-state.md) provides transaction and stale-revision regression tests without changing the default JSON store. The [generation-fencing control-plane increment](docs/adr/ADR-0001-agentic-execution-fencing.md) adds atomic operation reservation and current-lease checks for callbacks, with cross-process tests using SQLite. **Default JSON storage still cannot guarantee multi-process integrity, and external side-effect fencing remains unproven.** Node 22's built-in SQLite API is experimental.
 
 ## Production evidence and recovery
 
