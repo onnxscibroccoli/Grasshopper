@@ -65,7 +65,7 @@ test('NEGATIVE CONTROL: two independent file-store writers lose one committed up
   assert.equal(new Set(committed.map(item => item.data.owner)).size, 1);
 });
 
-test('NEGATIVE CONTROL: a delayed completion can finalize an orphaned task without a fencing token', async t => {
+test('orphaned task rejects completion from an obsolete lease holder', async t => {
   const dir = await mkdtemp(join(tmpdir(), 'grasshopper-fencing-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const store = new StateStore(join(dir, 'state.json'));
@@ -87,8 +87,8 @@ test('NEGATIVE CONTROL: a delayed completion can finalize an orphaned task witho
   await plane.reconcile(-1000);
   assert.equal((await store.load()).tasks[task.id].state, 'orphaned');
   await complete({ code: 0, signal: null, stdout: '', stderr: '', completion: 'confirmed' });
-  assert.equal((await store.load()).tasks[task.id].state, 'completed',
-    'known defect: no active generation/lease is checked on completion');
+  assert.equal((await store.load()).tasks[task.id].state, 'orphaned',
+    'obsolete completion must not resurrect an orphaned task');
 });
 
 test('existing duplicate callback is idempotent for a single in-process task', async t => {
