@@ -4,16 +4,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
-    inputs:
-      enable_auto_merge:
-        description: "Enable auto-merge after the complete gate passes"
-        required: true
-        default: "true"
-        type: boolean
 
+# PR head code is untrusted. This workflow validates it; it never promotes it.
+# Keep the legacy workflow name for established required-check compatibility.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
   actions: read
 
 concurrency:
@@ -30,6 +25,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -109,13 +105,6 @@ jobs:
           printf '%s\n' "$runs"
           exit 1
 
-      - name: Enable auto-merge only after every gate passes
-        if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr merge "${{ github.event.pull_request.number }}"             --repo "${{ github.repository }}"             --auto             --squash             --delete-branch
-
       - name: Report manual-dispatch gate result
         if: github.event_name == 'workflow_dispatch'
-        run: echo "Production merge gate passed. No pull request was mutated by manual dispatch."
+        run: echo "Verification passed. Promotion requires an authorized, separately controlled merge."

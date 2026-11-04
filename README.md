@@ -2,9 +2,11 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-11-04 (source and test-harness review; no fresh production acceptance)
+**Documentation snapshot:** 2026-11-04 (source/documentation review; live runtime not re-tested)
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
+
+> **Verification boundary (2026-11-04):** This README was reviewed against the current public source, CI configuration, and the OmniKali coordination graph. It does **not** report a new live-device, cloud, production, multi-process concurrency, or disaster-recovery acceptance run. Earlier live-evidence claims remain dated historical records and must be reverified before use as current production proof.
 
 Its governing idea is simple:
 
@@ -24,8 +26,8 @@ The local reference control plane implements:
 
 - agent registration;
 - resource declaration;
-- file-backed snapshots (concurrent-process integrity is not established);
-- logical lock records (distributed fencing remains an open correctness requirement);
+- file-backed state snapshots (transactional multi-process safety not yet established);
+- logical lock records (distributed fencing and race safety require additional tests);
 - asynchronous task execution;
 - task recovery/reconciliation;
 - deterministic export/import;
@@ -71,10 +73,10 @@ The live-acceptance suite contains explicit scenarios for normal execution, work
 
 ## Current development state
 
-**Phase:** `DEV_SANDBOX`  
-**OpenClaw:** 2026.9.7 on the persistent OCI development workstation  
-**GitHub automation:** repository-side verification plus bounded agentic development loop  
-**Recovery:** verified local OpenClaw backup and disposable restore drill  
+**Phase:** `DEV_SANDBOX` (last documented, not fresh runtime verification)  
+**OpenClaw:** 2026.9.7 on the OCI development workstation (historical documented version; not rechecked)  
+**GitHub automation:** repository-side verification plus bounded agentic development loop (source-level inspection)  
+**Recovery:** prior documented local OpenClaw backup and disposable restore drill (historical evidence; not rerun)  
 
 The development architecture intentionally favors rapid iteration and continuous access inside the isolated development boundary. The safety controls are verified backup/recovery, explicit evidence, and a hard production boundary. See [`docs/SECURITY_PHASE_MODEL.md`](docs/SECURITY_PHASE_MODEL.md) and [`docs/AGENTIC_GITHUB_AUTOMATION.md`](docs/AGENTIC_GITHUB_AUTOMATION.md).
 
@@ -101,6 +103,10 @@ node bin/omnikali.mjs status
 Agentic reproducibility can then be exercised with the repository's dedicated verification commands.
 
 Production acceptance requires the appropriate credentials and authorized infrastructure and must not be simulated by local fixture tests.
+
+## Pull-request security boundary
+
+Pull-request verification is read-only and does **not** authorize merging, deployment, or acceptance. The prior automatic merge command has been removed from `.github/workflows/production-merge-gate.yml`; the existing workflow name remains stable for required-check compatibility. Maintainer-controlled promotion remains a separate decision. See [PR verification and promotion authority](docs/architecture/PR_VERIFICATION_AND_PROMOTION.md) for threat model, regression test, limitations, and recovery policy.
 
 ## AI model instructions
 
