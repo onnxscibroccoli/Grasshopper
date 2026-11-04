@@ -96,6 +96,10 @@ Agentic reproducibility can then be exercised with the repository's dedicated ve
 
 Production acceptance requires the appropriate credentials and authorized infrastructure and must not be simulated by local fixture tests.
 
+## Pull-request security boundary
+
+Pull-request verification is read-only and does **not** authorize merging, deployment, or acceptance. The prior automatic merge command has been removed from `.github/workflows/production-merge-gate.yml`; the existing workflow name remains stable for required-check compatibility. Maintainer-controlled promotion remains a separate decision. See [PR verification and promotion authority](docs/architecture/PR_VERIFICATION_AND_PROMOTION.md) for threat model, regression test, limitations, and recovery policy.
+
 ## AI model instructions
 
 Grasshopper is the repository where an AI should be **most conservative about architecture changes**.
