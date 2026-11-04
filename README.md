@@ -47,6 +47,8 @@ Key source files:
 
 The file-backed store currently exhibits reproducible multi-process lost updates, and the task lifecycle permits stale callbacks to finalize an orphaned task. These are **open defects**, not supported production guarantees. See [Control-plane concurrency baseline](docs/architecture/CONTROL_PLANE_CONCURRENCY_BASELINE.md) for negative-control tests, known safe behavior, and transaction/fencing acceptance criteria. These tests do not establish live production readiness.
 
+An **experimental, opt-in** [SQLite WAL state store](docs/adr/ADR-0002-transactional-state.md) provides transaction and stale-revision regression tests without changing the default JSON store. The agent dispatch and stale callback ownership invariants remain unresolved; Node 22's built-in SQLite API is experimental.
+
 ## Production evidence and recovery
 
 The repository contains an unusually large documentation/evidence surface because it is intended to prevent future agents from destroying validated infrastructure while “improving” it.
