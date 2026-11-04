@@ -2,7 +2,7 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-10-19 23:23 UTC
+**Documentation snapshot:** 2026-11-04 (source and test-harness review; no fresh production acceptance)
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
@@ -24,8 +24,8 @@ The local reference control plane implements:
 
 - agent registration;
 - resource declaration;
-- durable state;
-- exclusive locks;
+- file-backed snapshots (concurrent-process integrity is not established);
+- logical lock records (distributed fencing remains an open correctness requirement);
 - asynchronous task execution;
 - task recovery/reconciliation;
 - deterministic export/import;
@@ -42,6 +42,10 @@ Key source files:
 - `src/clients/grok-control-plane-client.mjs` — authenticated client.
 - `src/mcp/grok-control-plane-tools.mjs` — MCP interface.
 - `bin/omnikali.mjs` — reproducible CLI.
+
+## Concurrency and ownership baseline
+
+The file-backed store currently exhibits reproducible multi-process lost updates, and the task lifecycle permits stale callbacks to finalize an orphaned task. These are **open defects**, not supported production guarantees. See [Control-plane concurrency baseline](docs/architecture/CONTROL_PLANE_CONCURRENCY_BASELINE.md) for negative-control tests, known safe behavior, and transaction/fencing acceptance criteria. These tests do not establish live production readiness.
 
 ## Production evidence and recovery
 
