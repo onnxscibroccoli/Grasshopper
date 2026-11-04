@@ -45,6 +45,10 @@ Key source files:
 - `src/mcp/grok-control-plane-tools.mjs` — MCP interface.
 - `bin/omnikali.mjs` — reproducible CLI.
 
+## Concurrency and ownership baseline
+
+The file-backed store currently exhibits reproducible multi-process lost updates, and the task lifecycle permits stale callbacks to finalize an orphaned task. These are **open defects**, not supported production guarantees. See [Control-plane concurrency baseline](docs/architecture/CONTROL_PLANE_CONCURRENCY_BASELINE.md) for negative-control tests, known safe behavior, and transaction/fencing acceptance criteria. These tests do not establish live production readiness.
+
 ## Production evidence and recovery
 
 The repository contains an unusually large documentation/evidence surface because it is intended to prevent future agents from destroying validated infrastructure while “improving” it.
