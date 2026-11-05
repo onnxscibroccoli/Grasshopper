@@ -135,3 +135,12 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+## Self-hosted remote operations (experimental)
+
+[Remote operations gateway](tools/remote-ops/README.md) provides an independently
+hosted MCP boundary for explicitly enrolled terminal/file engines across devices.
+It removes the hosted RDC relay from the proposed execution path. OAuth identity,
+SSH enrollment, live device acceptance and OCI deployment remain separate gates;
+no device is described as migrated merely because local tests pass. See the
+[architecture and migration plan](docs/architecture/self-hosted-remote-ops.md).

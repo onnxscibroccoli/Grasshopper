@@ -1,0 +1,22 @@
+{
+  "publicUrl": "https://ops.example.com/mcp",
+  "issuer": "https://identity.example.com/realms/remote-ops",
+  "jwksUrl": "https://identity.example.com/realms/remote-ops/protocol/openid-connect/certs",
+  "subjects": ["REPLACE_WITH_OWNER_OIDC_SUBJECT"],
+  "timeoutMs": 30000,
+  "maxBodyBytes": 65536,
+  "devices": [
+    {
+      "id": "oci",
+      "command": "/usr/bin/node",
+      "args": ["/opt/owner-mcp/backend/dist/index.js"],
+      "tools": ["list_directory", "read_file", "get_file_info"]
+    },
+    {
+      "id": "android",
+      "command": "/usr/bin/ssh",
+      "args": ["-T", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=2", "owner-phone", "/data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/home/owner-mcp/backend/dist/index.js"],
+      "tools": ["list_directory", "read_file", "get_file_info"]
+    }
+  ]
+}
