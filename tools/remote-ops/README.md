@@ -84,5 +84,7 @@ contains request UUID, subject and MCP method, never arguments or results.
 An HTTP client disconnect does not prove remote cancellation. Inspect the actual
 backend state before retrying. A valid token is not independent human approval.
 
+An example systemd unit is included (`remote-ops.service`). Adjust paths and user before enabling.
+
 See [deployment and device acceptance](DEPLOYMENT.md) and the
 [architecture decision](../../docs/architecture/self-hosted-remote-ops.md).

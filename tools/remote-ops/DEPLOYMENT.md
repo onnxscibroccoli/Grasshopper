@@ -6,6 +6,15 @@ protected AWS Helix/Kali services and ingress remain untouched.
 
 ## 1. Host prerequisites
 
+### Example systemd unit
+Copy `remote-ops.service` to `/etc/systemd/system/`, adjust `User`/`WorkingDirectory`/`ExecStart` paths, then:
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now omnikali-remote-ops
+journalctl -u omnikali-remote-ops -f
+```
+The unit binds only loopback, drops privileges, and does not touch protected ingress.
+
 Record existing listeners, routes, services, Git state, available disk/RAM and a
 restore point. Use a nonprivileged dedicated account and an isolated directory.
 Install the pinned package with `npm ci --ignore-scripts`. Existing cloud charges
@@ -69,7 +78,7 @@ commands. Android background/reboot behavior requires live verification.
 
 For each distinct physical system (deduplicate old RDC registrations):
 
-1. Verify MCP initialization and expected tool names.
+1. Verify MCP initialize and expected tool names.
 2. Read a deliberately created, harmless fixture file.
 3. Enable and invoke an explicitly approved harmless process tool.
 4. Write a test file within the approved test directory; verify its SHA-256.
