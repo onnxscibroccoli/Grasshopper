@@ -1,0 +1,9 @@
+{
+  "name": "@omnikali/remote-ops",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"test": "node --test test/*.test.mjs", "start": "node gateway.mjs"},
+  "dependencies": {"@modelcontextprotocol/sdk": "1.32.2", "jose": "6.2.15"}
+}

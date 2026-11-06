@@ -1,0 +1,32 @@
+[Unit]
+Description=OmniKali self-hosted remote operations MCP gateway
+Documentation=https://github.com/onnxscibroccoli/Grasshopper/blob/feat/self-hosted-remote-ops/tools/remote-ops/DEPLOYMENT.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=grasshopper
+Group=grasshopper
+WorkingDirectory=/opt/omnikali/remote-ops
+Environment=NODE_ENV=production
+Environment=REMOTE_OPS_PORT=8788
+ExecStart=/usr/bin/node gateway.mjs /etc/omnikali/remote-ops.json
+Restart=on-failure
+RestartSec=5
+# Hard limits — adjust after measuring real device load
+LimitNOFILE=4096
+MemoryMax=512M
+# Never run as root. Config must be mode 600 and owned by the service user.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/omnikali/remote-ops
+# Logs go to journal; gateway already redacts arguments/results
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omnikali-remote-ops
+
+[Install]
+WantedBy=multi-user.target
