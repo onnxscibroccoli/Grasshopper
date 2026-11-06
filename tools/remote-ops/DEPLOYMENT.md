@@ -20,6 +20,40 @@ restore point. Use a nonprivileged dedicated account and an isolated directory.
 Install the pinned package with `npm ci --ignore-scripts`. Existing cloud charges
 and domain costs are separate from the removed RDC relay credit dependency.
 
+## Preferred exposure: existing reverse proxy (no new hostname)
+
+The gateway binds only to `127.0.0.1:8788`. Expose it through an already-running reverse proxy on the OCI development host using a path or virtual host on an existing domain. Do not create a new DNS name unless you explicitly want one.
+
+Example Caddy path on an existing site (adjust the existing site block):
+
+```caddyfile
+# inside the existing site block for your current hostname
+handle /mcp/* {
+    reverse_proxy 127.0.0.1:8788
+}
+```
+
+Or a dedicated location in nginx:
+
+```nginx
+location /mcp/ {
+    proxy_pass http://127.0.0.1:8788/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+```
+
+Set `publicUrl` in the gateway config to the external URL the client will use (e.g. `https://existing-host.example.com/mcp`). The gateway validates Host and Origin against that value. TLS and the OIDC issuer remain outside the gateway.
+
+After the proxy is in place, verify protected-resource discovery:
+
+```sh
+curl -H "Host: existing-host.example.com" https://existing-host.example.com/.well-known/oauth-protected-resource/mcp
+```
+
+No new certificate or DNS change is required if the existing host already terminates TLS.
+
 ## 2. Identity and HTTPS
 
 Use a self-hosted OAuth/OIDC provider, such as Keycloak, with HTTPS. Configure an
@@ -34,7 +68,7 @@ commit them. The gateway exposes protected-resource discovery at
 This design requires client compatibility verification; no live ChatGPT sign-in
 has been performed. Do not switch to unauthenticated public access to make it work.
 
-Use an isolated HTTPS virtual host (example only):
+Use an isolated HTTPS virtual host only if you prefer a dedicated name (example only):
 
 ```caddyfile
 ops.example.com {
@@ -94,6 +128,6 @@ Existing RDC remains a temporary fallback until the replacement passes acceptanc
 
 ## Remaining deployment inputs
 
-OCI SSH access, dedicated hostname/TLS route, authorization-server location,
-owner subject, and verified host keys must be established. Current offline RDC
+OCI SSH access, reverse-proxy path on an existing hostname, authorization-server location,
+owner subject, and verified device host keys must be established. Current offline RDC
 entries are not proof of reachable machines. Do not invent these values.
