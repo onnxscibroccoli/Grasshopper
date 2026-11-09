@@ -2,11 +2,11 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-11-04 (source/documentation review; live runtime not re-tested)
+**Documentation snapshot:** 2026-11-09 (source/documentation review; live runtime not re-tested)
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
-> **Verification boundary (2026-11-04):** This README was reviewed against the current public source, CI configuration, and the OmniKali coordination graph. It does **not** report a new live-device, cloud, production, multi-process concurrency, or disaster-recovery acceptance run. Earlier live-evidence claims remain dated historical records and must be reverified before use as current production proof.
+> **Verification boundary (2026-11-09):** This README was reviewed against the current public source, CI configuration, and the OmniKali coordination graph. It does **not** report a new live-device, cloud, production, multi-process concurrency, or disaster-recovery acceptance run. Earlier live-evidence claims remain dated historical records and must be reverified before use as current production proof.
 
 Its governing idea is simple:
 
