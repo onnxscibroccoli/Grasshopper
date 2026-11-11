@@ -1,5 +1,8 @@
 # Grasshopper
 
+
+> **For technical reviewers:** [Source-linked capability evidence, executable checks and current limitations](docs/PORTFOLIO_READINESS.md) · [prioritized remediation issue](https://github.com/onnxscibroccoli/Grasshopper/issues/212). This is an experimental/software evidence portfolio, not an attestation of production operation or employment history.
+
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
 **Documentation snapshot:** 2026-11-04 (source/documentation review; live runtime not re-tested)
