@@ -1,0 +1,109 @@
+name: Prompt Orchestrator (Grok + ChatGPT)
+
+# Prompt-initialized companion to agentic-development-loop.yml.
+# Output is a PROPOSAL file on a new branch + DRAFT PR. Never pushes main, never merges.
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Instruction for the orchestrator"
+        required: true
+        type: string
+      provider:
+        description: "grok | chatgpt | both"
+        required: true
+        default: both
+        type: choice
+        options: [grok, chatgpt, both]
+      dry_run:
+        description: "Skip API calls (default true)"
+        required: true
+        default: true
+        type: boolean
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: prompt-orchestrator
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  orchestrate:
+    # Comment trigger: only the repo owner, only "/orchestrate <provider> <prompt>", only on issues (not PRs).
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       !github.event.issue.pull_request &&
+       github.event.comment.user.login == github.repository_owner &&
+       github.event.comment.author_association == 'OWNER' &&
+       startsWith(github.event.comment.body, '/orchestrate '))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Unit tests (mocked HTTP, no keys)
+        run: node --test test/prompt-orchestrator.test.mjs
+      - name: Resolve inputs
+        id: in
+        env:
+          EVENT: ${{ github.event_name }}
+          D_PROMPT: ${{ inputs.prompt }}
+          D_PROVIDER: ${{ inputs.provider }}
+          D_DRY: ${{ inputs.dry_run }}
+          C_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -eu
+          if [ "$EVENT" = workflow_dispatch ]; then
+            provider="$D_PROVIDER"; dry="$D_DRY"; printf '%s' "$D_PROMPT" > "$RUNNER_TEMP/prompt.txt"
+          else
+            rest="${C_BODY#/orchestrate }"; provider="${rest%% *}"; printf '%s' "${rest#* }" > "$RUNNER_TEMP/prompt.txt"
+            dry=false
+            case "$provider" in grok|chatgpt|both) ;; *) echo "fail-closed: bad provider"; exit 1;; esac
+          fi
+          echo "provider=$provider" >> "$GITHUB_OUTPUT"
+          echo "dry=$dry" >> "$GITHUB_OUTPUT"
+      - name: Call providers (fail-closed on missing secret)
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          XAI_MODEL: ${{ vars.XAI_MODEL }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          ORCH_PROVIDER: ${{ steps.in.outputs.provider }}
+          ORCH_DRY_RUN: ${{ steps.in.outputs.dry }}
+        run: |
+          set -eu
+          export ORCH_PROMPT="$(cat "$RUNNER_TEMP/prompt.txt")"
+          export ORCH_OUT="docs/orchestration/proposals/run-${GITHUB_RUN_ID}.md"
+          node scripts/prompt-orchestrator.mjs
+      - name: Upload proposal artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: orchestrator-proposal-${{ github.run_id }}
+          path: docs/orchestration/proposals/
+      - name: Open DRAFT PR (skipped on dry_run)
+        if: steps.in.outputs.dry == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          b="orchestrator/run-${GITHUB_RUN_ID}"
+          git config user.name "prompt-orchestrator[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$b"
+          git add docs/orchestration/proposals/
+          git commit -m "orchestrator: proposal from run ${GITHUB_RUN_ID}"
+          git push origin "HEAD:refs/heads/$b"
+          gh pr create --draft --base main --head "$b" \
+            --title "orchestrator proposal (run ${GITHUB_RUN_ID})" \
+            --body "Proposal only. Model output not executed or verified. Human is merge authority."
