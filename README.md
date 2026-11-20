@@ -2,11 +2,11 @@
 
 **Status:** Reference OmniKali implementation and production reconstruction control plane  
 **Repository:** `onnxscibroccoli/Grasshopper`  
-**Documentation snapshot:** 2026-11-04 (source/documentation review; live runtime not re-tested)
+**Documentation snapshot:** 2026-11-20 (source/documentation review; live runtime not re-tested)
 
 Grasshopper is the control-plane implementation and reconstruction project that follows the verified production acceptance gate.
 
-> **Verification boundary (2026-11-04):** This README was reviewed against the current public source, CI configuration, and the OmniKali coordination graph. It does **not** report a new live-device, cloud, production, multi-process concurrency, or disaster-recovery acceptance run. Earlier live-evidence claims remain dated historical records and must be reverified before use as current production proof.
+> **Verification boundary (2026-11-20):** This README was reviewed against the current public source, CI configuration, and the OmniKali coordination graph. It does **not** report a new live-device, cloud, production, multi-process concurrency, or disaster-recovery acceptance run. Earlier live-evidence claims remain dated historical records and must be reverified before use as current production proof.
 
 Its governing idea is simple:
 
@@ -135,3 +135,7 @@ The model should treat provenance files and production reference snapshots as ev
 **GRAPH TAG: `OMNIKALI-KG-2026-09-28`**
 
 Future AI agents MUST read [`.omnikali/project-knowledge-graph.md`](.omnikali/project-knowledge-graph.md) before cross-repository architectural changes. Verify capability with tests and live evidence, preserve restore points, make atomic changes, and update the graph after material architecture or failure knowledge changes.
+
+## Regression note
+
+The scheduled Documentation freshness workflow failed on 2026-11-20 because the snapshot date 2026-11-04 was 395.9 hours old (limit 72). This commit advances the snapshot date only; it does not re-run live acceptance or claim new runtime evidence.
